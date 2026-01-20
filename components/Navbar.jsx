@@ -31,8 +31,8 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-black">
             C
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-300 bg-clip-text text-transparent">
-            CodeViz
+          <span className="text-xl font-bold bg-linear-to-r from-white to-blue-300 bg-clip-text text-transparent">
+           vs-integrate
           </span>
         </motion.div>
 
