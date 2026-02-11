@@ -1,14 +1,16 @@
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { ThemeProvider } from '@/components/theme-provider'
+import { SessionProvider } from '@/components/session-provider'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata = {
-  title: 'CodeViz - Track Your Real Coding Activity',
+  title: 'vs-integrate - Track Your Real Coding Activity',
   description: 'Visualize real VS Code activity with contribution graphs, streaks, and productivity insights — automatically.',
-  generator: 'v0.app',
+  generator: 'Next.js',
   icons: {
     icon: [
       {
@@ -28,11 +30,20 @@ export const metadata = {
   },
 }
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased bg-black text-white`}>
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </SessionProvider>
         <Analytics />
       </body>
     </html>

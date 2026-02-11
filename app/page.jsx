@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AuthProvider } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
@@ -20,16 +19,14 @@ export default function Home() {
   if (!isMounted) return null;
 
   return (
-    <AuthProvider>
-      <main className="bg-black text-white overflow-hidden">
-        <Navbar />
-        <Hero />
-        <Features />
-        <Insights />
-        <Privacy />
-        <Stats />
-        <FinalCTA />
-      </main>
-    </AuthProvider>
+    <main className="min-h-screen overflow-hidden">
+      <Navbar />
+      <Hero />
+      <Features />
+      <Insights />
+      <Privacy />
+      <Stats />
+      <FinalCTA />
+    </main>
   );
 }

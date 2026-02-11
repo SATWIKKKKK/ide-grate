@@ -38,7 +38,7 @@ const insights = [
 
 export default function Insights() {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-blue-950/5 to-black relative overflow-hidden">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -50,7 +50,7 @@ export default function Insights() {
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">
             Intelligence & Insights
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Discover patterns in your coding habits with intelligent analytics
           </p>
         </motion.div>
@@ -70,7 +70,7 @@ export default function Insights() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300 opacity-0 group-hover:opacity-100" />
                 
-                <div className="relative bg-gradient-to-br from-gray-900/80 to-gray-950 border border-gray-800 hover:border-blue-500/50 rounded-2xl p-8 transition-all duration-300">
+                <div className="relative bg-card border border-border hover:border-blue-500/50 rounded-2xl p-8 transition-all duration-300">
                   <div className="flex items-center gap-3 mb-6">
                     <motion.div
                       whileHover={{ rotate: 20, scale: 1.1 }}
@@ -78,7 +78,7 @@ export default function Insights() {
                     >
                       <Icon className="w-6 h-6 text-white" />
                     </motion.div>
-                    <h3 className="text-lg font-bold text-white">{insight.title}</h3>
+                    <h3 className="text-lg font-bold">{insight.title}</h3>
                   </div>
 
                   <ul className="space-y-3">
@@ -89,9 +89,9 @@ export default function Insights() {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: idx * 0.1 + itemIdx * 0.05 }}
-                        className="flex items-start gap-3 text-gray-300 hover:text-blue-300 transition-colors"
+                        className="flex items-start gap-3 text-muted-foreground hover:text-blue-500 transition-colors"
                       >
-                        <span className="text-blue-400 mt-1 flex-shrink-0">✓</span>
+                        <span className="text-blue-500 mt-1 flex-shrink-0">✓</span>
                         <span>{item}</span>
                       </motion.li>
                     ))}

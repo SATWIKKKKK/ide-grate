@@ -64,7 +64,7 @@ export default function Stats() {
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-t from-blue-900/5 via-black to-black pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-blue-900/5 via-transparent to-transparent pointer-events-none dark:block hidden" />
 
       <div className="max-w-7xl mx-auto relative z-10">
         <motion.div
@@ -77,7 +77,7 @@ export default function Stats() {
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">
             Your Coding Personality
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Fun stats that reveal your unique developer profile
           </p>
         </motion.div>
@@ -97,17 +97,17 @@ export default function Stats() {
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                <div className="relative bg-black rounded-2xl p-6 h-full flex flex-col justify-between">
+                <div className="relative bg-card rounded-2xl p-6 h-full flex flex-col justify-between">
                   <div>
                     <p className="text-4xl mb-2">{card.emoji}</p>
-                    <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                    <p className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors">
                       {card.label}
                     </p>
                   </div>
 
                   <div className="mt-6">
                     <motion.div
-                      className="text-3xl font-bold text-white mb-1"
+                      className="text-3xl font-bold mb-1"
                       key={`${card.value}-${idx}`}
                     >
                       {isNumeric ? (
@@ -116,7 +116,7 @@ export default function Stats() {
                         card.value
                       )}
                     </motion.div>
-                    <p className="text-xs text-gray-500">{card.unit}</p>
+                    <p className="text-xs text-muted-foreground">{card.unit}</p>
                   </div>
                 </div>
               </motion.div>
@@ -132,9 +132,9 @@ export default function Stats() {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="mt-12 text-center"
         >
-          <p className="text-gray-400">
+          <p className="text-muted-foreground">
             These insights help you understand your coding patterns and stay motivated. 
-            <span className="text-blue-400 font-semibold"> No judgment, just data.</span>
+            <span className="text-blue-500 font-semibold"> No judgment, just data.</span>
           </p>
         </motion.div>
       </div>

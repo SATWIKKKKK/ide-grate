@@ -3,80 +3,82 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Light Mode - Blue gradient background */
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #1a1a1a;
-  --card-foreground: #ffffff;
-  --popover: #1a1a1a;
-  --popover-foreground: #ffffff;
-  --primary: #3B82F6;
-  --primary-foreground: #000000;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ffffff;
-  --muted: #404040;
-  --muted-foreground: #a0a0a0;
-  --accent: #3B82F6;
-  --accent-foreground: #000000;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --muted: #e2e8f0;
+  --muted-foreground: #64748b;
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #2a2a2a;
-  --input: #2a2a2a;
-  --ring: #3B82F6;
-  --chart-1: #3B82F6;
-  --chart-2: #60a5fa;
-  --chart-3: #93c5fd;
-  --chart-4: #dbeafe;
+  --border: #cbd5e1;
+  --input: #cbd5e1;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #3b82f6;
+  --chart-3: #60a5fa;
+  --chart-4: #93c5fd;
   --chart-5: #1e40af;
   --radius: 0.75rem;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #3B82F6;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #3B82F6;
-  --sidebar-accent-foreground: #000000;
-  --sidebar-border: #2a2a2a;
-  --sidebar-ring: #3B82F6;
+  --sidebar: #f1f5f9;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2563eb;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #cbd5e1;
+  --sidebar-ring: #2563eb;
 }
 
+/* Dark Mode - Blue, grey, black */
 .dark {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #1a1a1a;
-  --card-foreground: #ffffff;
-  --popover: #1a1a1a;
-  --popover-foreground: #ffffff;
-  --primary: #3B82F6;
-  --primary-foreground: #000000;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ffffff;
-  --muted: #404040;
-  --muted-foreground: #a0a0a0;
-  --accent: #3B82F6;
-  --accent-foreground: #000000;
+  --background: #030712;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #030712;
+  --secondary: #1f2937;
+  --secondary-foreground: #f8fafc;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --accent: #3b82f6;
+  --accent-foreground: #030712;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #2a2a2a;
-  --input: #2a2a2a;
-  --ring: #3B82F6;
-  --chart-1: #3B82F6;
+  --destructive-foreground: #f8fafc;
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
   --chart-2: #60a5fa;
   --chart-3: #93c5fd;
   --chart-4: #dbeafe;
   --chart-5: #1e40af;
   --sidebar: #0a0a0a;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #3B82F6;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #3B82F6;
-  --sidebar-accent-foreground: #000000;
-  --sidebar-border: #2a2a2a;
-  --sidebar-ring: #3B82F6;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #030712;
+  --sidebar-accent: #3b82f6;
+  --sidebar-accent-foreground: #030712;
+  --sidebar-border: #1f2937;
+  --sidebar-ring: #3b82f6;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-sans), 'Geist', system-ui, sans-serif;
+  --font-mono: var(--font-mono), 'Geist Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -121,5 +123,15 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Light mode blue gradient background */
+  html:not(.dark) body {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 25%, #f8fafc 50%, #dbeafe 75%, #eff6ff 100%);
+    background-attachment: fixed;
+  }
+  /* Dark mode solid black with subtle blue tint */
+  html.dark body {
+    background: linear-gradient(180deg, #030712 0%, #0a1628 50%, #030712 100%);
+    background-attachment: fixed;
   }
 }

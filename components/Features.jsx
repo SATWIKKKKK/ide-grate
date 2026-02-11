@@ -59,7 +59,7 @@ export default function Features() {
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">
             Core Features
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Everything you need to understand your real coding habits
           </p>
         </motion.div>
@@ -78,7 +78,7 @@ export default function Features() {
                 key={idx}
                 variants={item}
                 whileHover={{ y: -8, boxShadow: '0 20px 40px rgba(59, 130, 246, 0.2)' }}
-                className="group relative bg-gradient-to-br from-gray-900/50 to-black border border-gray-800 hover:border-blue-500/50 rounded-2xl p-8 transition-all duration-300"
+                className="group relative bg-card border border-border hover:border-blue-500/50 rounded-2xl p-8 transition-all duration-300"
               >
                 {/* Background gradient on hover */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-300`} />
@@ -91,11 +91,11 @@ export default function Features() {
                     <Icon className="w-7 h-7 text-white" />
                   </motion.div>
 
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-blue-400 transition-colors">
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-blue-500 transition-colors">
                     {feature.title}
                   </h3>
 
-                  <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
+                  <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors">
                     {feature.description}
                   </p>
                 </div>

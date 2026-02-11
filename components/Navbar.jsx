@@ -2,39 +2,38 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon, User, LogOut } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { Sun, Moon, User, LogOut, Code2 } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { useTheme } from 'next-themes';
+import Link from 'next/link';
 
 export default function Navbar() {
-  const [isDark, setIsDark] = useState(true);
-  const { user, signOut } = useAuth();
+  const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
-
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle('dark');
-  };
 
   return (
     <motion.nav
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-black/30 border-b border-blue-900/30"
+      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-background/80 border-b border-border"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         {/* Logo */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white bg-black bg-linear-to-br">
-            v
-          </div>
-          <span className="text-xl font-bold bg-linear-to-r from-white to-blue-400 bg-clip-text text-transparent">
-           vs-integrate
-          </span>
-        </motion.div>
+        <Link href="/">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+              <Code2 className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-foreground to-blue-500 bg-clip-text text-transparent">
+              vs-integrate
+            </span>
+          </motion.div>
+        </Link>
 
         {/* Right Section */}
         <div className="flex items-center gap-4">
@@ -42,10 +41,10 @@ export default function Navbar() {
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-gray-900 transition-colors"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
           >
-            {isDark ? (
+            {theme === 'dark' ? (
               <Sun className="w-5 h-5 text-yellow-400" />
             ) : (
               <Moon className="w-5 h-5 text-gray-700" />
@@ -53,33 +52,44 @@ export default function Navbar() {
           </motion.button>
 
           {/* User Menu or Sign In */}
-          {user ? (
+          {session ? (
             <div className="relative">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all duration-300 flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-all duration-300 flex items-center gap-2"
               >
-                <User className="w-4 h-4" />
-                {user.name}
+                {session.user.image ? (
+                  <img src={session.user.image} alt="" className="w-6 h-6 rounded-full" />
+                ) : (
+                  <User className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">{session.user.name}</span>
               </motion.button>
 
               {showUserMenu && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
+                  className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-xl overflow-hidden"
                 >
-                  <div className="p-4 border-b border-gray-700">
-                    <p className="text-sm text-gray-400">{user.email}</p>
+                  <div className="p-4 border-b border-border">
+                    <p className="text-sm text-muted-foreground">{session.user.email}</p>
                   </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setShowUserMenu(false)}
+                    className="block w-full px-4 py-2 text-left hover:bg-muted transition-colors"
+                  >
+                    Dashboard
+                  </Link>
                   <motion.button
-                    whileHover={{ backgroundColor: '#1a1a1a' }}
+                    whileHover={{ backgroundColor: 'var(--muted)' }}
                     onClick={() => {
-                      signOut();
+                      signOut({ callbackUrl: '/' });
                       setShowUserMenu(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800 flex items-center gap-2 transition-colors"
+                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-muted flex items-center gap-2 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign Out
@@ -88,13 +98,15 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' }}
-              whileTap={{ scale: 0.95 }}
-              className="text-xl font-bold bg-linear-to-r from-white to-blue-400 bg-clip-text text-transparent"
-            >
-              Sign In
-            </motion.button>
+            <Link href="/auth/signin">
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-all"
+              >
+                Sign In
+              </motion.button>
+            </Link>
           )}
         </div>
       </div>
