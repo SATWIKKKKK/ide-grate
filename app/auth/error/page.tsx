@@ -11,14 +11,14 @@ function AuthErrorContent() {
   const error = searchParams.get('error')
 
   const errorMessages: Record<string, string> = {
-    Configuration: 'There is a problem with the server configuration. Please contact support.',
+    Configuration: 'There is a problem with the server configuration. Check environment variables.',
     AccessDenied: 'You do not have permission to sign in.',
     Verification: 'The sign in link is no longer valid. It may have been used already or expired.',
-    OAuthSignin: 'Error in the OAuth sign in flow. Please try again.',
-    OAuthCallback: 'Error in the OAuth callback. Please try again.',
-    OAuthCreateAccount: 'Could not create an OAuth account. Please try again.',
+    OAuthSignin: 'Error starting OAuth sign in. Check provider configuration.',
+    OAuthCallback: 'Error in the OAuth callback. Provider may have rejected the request.',
+    OAuthCreateAccount: 'Could not create your account. Database may be unavailable.',
     EmailCreateAccount: 'Could not create an email account. Please try again.',
-    Callback: 'Error in the callback handler. Please try again.',
+    Callback: 'Error in the callback handler. Database connection may have failed.',
     OAuthAccountNotLinked: 'This email is already associated with another account. Sign in with the original provider.',
     EmailSignin: 'Error sending the verification email. Please try again.',
     CredentialsSignin: 'Sign in failed. Check your credentials and try again.',
@@ -44,9 +44,15 @@ function AuthErrorContent() {
             Authentication Error
           </h1>
           
-          <p className="text-gray-400 mb-8">
+          <p className="text-gray-400 mb-4">
             {message}
           </p>
+
+          {error && (
+            <p className="text-xs text-gray-500 mb-8 font-mono">
+              Error code: {error}
+            </p>
+          )}
 
           <Link
             href="/auth/signin"
