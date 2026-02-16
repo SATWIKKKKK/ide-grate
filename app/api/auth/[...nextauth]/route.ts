@@ -46,10 +46,22 @@ export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
   providers,
   callbacks: {
-    async session({ session, user }: { session: any; user: any }) {
-      if (session.user) {
-        session.user.id = user.id
+    async jwt({ token, account, profile }) {
+      if (account) {
+        token.accessToken = account.access_token
+        token.provider = account.provider
       }
+      if (profile) {
+        token.id = (profile as any).id || (profile as any).sub
+      }
+      return token
+    },
+    async session({ session, token }: { session: any; token: any }) {
+      if (session.user) {
+        session.user.id = token.id || token.sub
+        session.user.provider = token.provider
+      }
+      session.accessToken = token.accessToken
       return session
     },
     async signIn({ user, account }: { user: any; account: any }) {
@@ -74,15 +86,22 @@ export const authOptions: AuthOptions = {
         return true // Still allow sign in even if stats creation fails
       }
     },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to dashboard after sign in
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (url.startsWith(baseUrl)) return url
+      return `${baseUrl}/dashboard`
+    },
   },
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
   session: {
-    strategy: "database" as const,
+    strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 }
 
 const handler = NextAuth(authOptions)

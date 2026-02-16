@@ -1,12 +1,13 @@
 'use client'
 
+import { Suspense } from 'react'
 import { signIn, getProviders } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Github, Zap, Code2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 
-export default function SignIn() {
+function SignInContent() {
   const [providers, setProviders] = useState<any>(null)
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const searchParams = useSearchParams()
@@ -107,5 +108,17 @@ export default function SignIn() {
         </motion.a>
       </motion.div>
     </div>
+  )
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-950 flex items-center justify-center p-4">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   )
 }
