@@ -14,7 +14,12 @@ import {
   Activity,
   Sun,
   Moon,
-  ChevronDown
+  ChevronDown,
+  Key,
+  Copy,
+  RefreshCw,
+  Check,
+  Download
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
@@ -38,6 +43,10 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [apiKey, setApiKey] = useState<string | null>(null)
+  const [apiKeyLoading, setApiKeyLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -48,6 +57,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (session?.user) {
       fetchAnalytics()
+      fetchApiKey()
     }
   }, [session])
 
@@ -62,6 +72,41 @@ export default function Dashboard() {
       console.error('Failed to fetch analytics:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchApiKey = async () => {
+    try {
+      const res = await fetch('/api/apikey')
+      if (res.ok) {
+        const data = await res.json()
+        setApiKey(data.apiKey)
+      }
+    } catch (error) {
+      console.error('Failed to fetch API key:', error)
+    }
+  }
+
+  const generateApiKey = async () => {
+    setApiKeyLoading(true)
+    try {
+      const res = await fetch('/api/apikey', { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        setApiKey(data.apiKey)
+      }
+    } catch (error) {
+      console.error('Failed to generate API key:', error)
+    } finally {
+      setApiKeyLoading(false)
+    }
+  }
+
+  const copyApiKey = () => {
+    if (apiKey) {
+      navigator.clipboard.writeText(apiKey)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -137,6 +182,13 @@ export default function Dashboard() {
                     <p className="text-sm font-medium">{session.user.name}</p>
                     <p className="text-xs text-muted-foreground">{session.user.email}</p>
                   </div>
+                  <button
+                    onClick={() => { setShowSettings(true); setShowUserMenu(false); }}
+                    className="w-full px-4 py-3 text-left hover:bg-muted flex items-center gap-2 transition-colors"
+                  >
+                    <Key className="w-4 h-4" />
+                    VS Code Setup
+                  </button>
                   <button
                     onClick={() => signOut({ callbackUrl: '/' })}
                     className="w-full px-4 py-3 text-left text-red-400 hover:bg-muted flex items-center gap-2 transition-colors"
@@ -311,12 +363,128 @@ export default function Dashboard() {
               Install the VS Code extension to start tracking your coding activity automatically.
               Your data stays private - we only track time, not your code.
             </p>
-            <button className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors">
+            <button 
+              onClick={() => setShowSettings(true)}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors"
+            >
               Install VS Code Extension
             </button>
           </motion.div>
         )}
       </main>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+          >
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Download className="w-5 h-5 text-blue-500" />
+                VS Code Extension Setup
+              </h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Step 1 */}
+              <div className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center">1</span>
+                  Generate Your API Key
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  This key connects your VS Code to your account.
+                </p>
+                
+                {apiKey ? (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 p-3 bg-muted rounded-lg text-sm font-mono break-all">
+                      {apiKey}
+                    </code>
+                    <button
+                      onClick={copyApiKey}
+                      className="p-3 bg-muted hover:bg-muted/80 rounded-lg transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={generateApiKey}
+                      disabled={apiKeyLoading}
+                      className="p-3 bg-muted hover:bg-muted/80 rounded-lg transition-colors"
+                      title="Regenerate key"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${apiKeyLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={generateApiKey}
+                    disabled={apiKeyLoading}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {apiKeyLoading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Key className="w-4 h-4" />
+                    )}
+                    Generate API Key
+                  </button>
+                )}
+              </div>
+
+              {/* Step 2 */}
+              <div className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center">2</span>
+                  Install the VS Code Extension
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Install our extension from the VS Code Marketplace or build from source.
+                </p>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-mono mb-2">Build from source:</p>
+                  <code className="text-xs text-muted-foreground block">
+                    cd vscode-extension && npm install && npm run compile
+                  </code>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center">3</span>
+                  Configure the Extension
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  In VS Code, open Command Palette (<code className="px-1 bg-muted rounded">Ctrl+Shift+P</code>) and run:
+                </p>
+                <code className="block p-3 bg-muted rounded-lg text-sm">
+                  VS Integrate: Set API Key
+                </code>
+                <p className="text-sm text-muted-foreground">
+                  Paste your API key when prompted. That's it!
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-border bg-muted/50">
+              <p className="text-xs text-muted-foreground text-center">
+                🔒 Privacy: We only track time and language usage. No code content or file names are stored.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

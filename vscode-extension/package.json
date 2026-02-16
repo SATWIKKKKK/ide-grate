@@ -1,0 +1,75 @@
+{
+  "name": "vs-integrate-tracker",
+  "displayName": "VS Integrate - Coding Activity Tracker",
+  "description": "Track your coding activity and visualize it with beautiful contribution graphs on vs-integrate",
+  "version": "0.1.0",
+  "publisher": "vs-integrate",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vs-integrate.setApiKey",
+        "title": "VS Integrate: Set API Key"
+      },
+      {
+        "command": "vs-integrate.showStatus",
+        "title": "VS Integrate: Show Status"
+      },
+      {
+        "command": "vs-integrate.openDashboard",
+        "title": "VS Integrate: Open Dashboard"
+      }
+    ],
+    "configuration": {
+      "title": "VS Integrate",
+      "properties": {
+        "vsIntegrate.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your VS Integrate API key (get it from your dashboard)"
+        },
+        "vsIntegrate.apiEndpoint": {
+          "type": "string",
+          "default": "http://localhost:3000/api/heartbeat",
+          "description": "API endpoint for heartbeat data (change for production)"
+        },
+        "vsIntegrate.heartbeatInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "How often to send heartbeats (in seconds)"
+        },
+        "vsIntegrate.idleTimeout": {
+          "type": "number",
+          "default": 120,
+          "description": "How long before considering user idle (in seconds)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}

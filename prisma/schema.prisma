@@ -43,10 +43,12 @@ model User {
   email         String?    @unique
   emailVerified DateTime?
   image         String?
+  apiKey        String?    @unique  // API key for VS Code extension
   accounts      Account[]
   sessions      Session[]
   activities    Activity[]
   stats         UserStats?
+  dailyContributions DailyContribution[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -103,6 +105,8 @@ model DailyContribution {
   sessions  Int      @default(0)
   languages Json     @default("[]") // Array of languages used that day
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([userId])

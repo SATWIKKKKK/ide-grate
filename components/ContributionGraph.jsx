@@ -1,41 +1,122 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 export default function ContributionGraph() {
-  // Generate mock contribution data
-  const generateContributions = () => {
-    const weeks = 52;
-    const days = 7;
-    const data = [];
-    
-    for (let i = 0; i < weeks; i++) {
-      const week = [];
-      for (let j = 0; j < days; j++) {
-        week.push(Math.random() > 0.6 ? Math.floor(Math.random() * 5) : 0);
-      }
-      data.push(week);
+  const { data: session } = useSession();
+  const [contributionData, setContributionData] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchContributions();
+    } else {
+      // Show mock data for non-authenticated users
+      setContributionData(generateMockContributions());
+      setStats({ totalHours: 0, activeDays: 0, avgHoursPerDay: 0 });
+      setLoading(false);
     }
-    return data;
+  }, [session]);
+
+  const fetchContributions = async () => {
+    try {
+      const res = await fetch('/api/contributions?days=365');
+      if (res.ok) {
+        const data = await res.json();
+        setContributionData(data.contributions);
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch contributions:', error);
+      setContributionData(generateMockContributions());
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const contributions = generateContributions();
+  // Generate mock contribution data for display
+  const generateMockContributions = () => {
+    const contributions = {};
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      contributions[dateStr] = {
+        hours: Math.random() > 0.6 ? Math.random() * 8 : 0,
+        sessions: Math.random() > 0.6 ? Math.floor(Math.random() * 5) : 0,
+        level: Math.random() > 0.6 ? Math.floor(Math.random() * 5) : 0,
+      };
+    }
+    return contributions;
+  };
+
+  // Convert contribution data to weeks grid format
+  const getContributionGrid = () => {
+    const weeks = [];
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() - 51 * 7); // Go back 52 weeks
+
+    for (let w = 0; w < 52; w++) {
+      const week = [];
+      for (let d = 0; d < 7; d++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + w * 7 + d);
+        const dateStr = date.toISOString().split('T')[0];
+        const contribution = contributionData?.[dateStr];
+        
+        let level = 0;
+        if (contribution) {
+          const hours = contribution.hours || 0;
+          if (hours > 0) level = 1;
+          if (hours >= 1) level = 2;
+          if (hours >= 3) level = 3;
+          if (hours >= 5) level = 4;
+        }
+        
+        week.push({
+          date: dateStr,
+          level,
+          hours: contribution?.hours || 0,
+        });
+      }
+      weeks.push(week);
+    }
+    return weeks;
+  };
+
+  const contributions = contributionData ? getContributionGrid() : [];
   
-  const getColor = (value) => {
-    if (value === 0) return 'bg-muted';
-    if (value === 1) return 'bg-blue-900';
-    if (value === 2) return 'bg-blue-700';
-    if (value === 3) return 'bg-blue-500';
-    if (value === 4) return 'bg-blue-400';
+  const getColor = (level) => {
+    if (level === 0) return 'bg-muted';
+    if (level === 1) return 'bg-blue-900';
+    if (level === 2) return 'bg-blue-700';
+    if (level === 3) return 'bg-blue-500';
+    if (level === 4) return 'bg-blue-400';
     return 'bg-blue-300';
   };
 
   const dayLabels = ['Mon', 'Wed', 'Fri'];
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+  if (loading) {
+    return (
+      <div className="w-full flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      <h3 className="text-lg font-semibold text-foreground mb-6">12-Month Contribution Graph</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-6">
+        12-Month VS Code Activity
+        {!session && <span className="text-sm font-normal text-muted-foreground ml-2">(Demo data - Sign in to track)</span>}
+      </h3>
       
       <div className="flex gap-2 items-start overflow-x-auto pb-4">
         {/* Day labels */}
@@ -59,8 +140,8 @@ export default function ContributionGraph() {
                 <motion.div
                   key={`${weekIdx}-${dayIdx}`}
                   whileHover={{ scale: 1.2, rotate: 5 }}
-                  className={`w-3 h-3 rounded-sm ${getColor(day)} cursor-pointer border border-border hover:border-blue-400 transition-all`}
-                  title={`${day} contributions`}
+                  className={`w-3 h-3 rounded-sm ${getColor(day.level)} cursor-pointer border border-border hover:border-blue-400 transition-all`}
+                  title={`${day.date}: ${day.hours.toFixed(1)}h coding`}
                 />
               ))}
             </motion.div>
@@ -87,9 +168,22 @@ export default function ContributionGraph() {
           whileHover={{ y: -5 }}
           className="bg-card rounded-lg p-4 border border-border hover:border-blue-500/50 transition-all"
         >
-          <p className="text-muted-foreground text-xs mb-1">Coding Streak</p>
-          <p className="text-2xl font-bold text-blue-500">17 days</p>
-          <p className="text-xs text-muted-foreground mt-2">🔥 On fire!</p>
+          <p className="text-muted-foreground text-xs mb-1">Total Hours</p>
+          <p className="text-2xl font-bold text-blue-500">
+            {stats?.totalHours || 0}h
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">This year</p>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ y: -5 }}
+          className="bg-card rounded-lg p-4 border border-border hover:border-blue-500/50 transition-all"
+        >
+          <p className="text-muted-foreground text-xs mb-1">Active Days</p>
+          <p className="text-2xl font-bold text-blue-500">
+            {stats?.activeDays || 0}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">Days coded</p>
         </motion.div>
 
         <motion.div
@@ -97,17 +191,10 @@ export default function ContributionGraph() {
           className="bg-card rounded-lg p-4 border border-border hover:border-blue-500/50 transition-all"
         >
           <p className="text-muted-foreground text-xs mb-1">Avg. Daily</p>
-          <p className="text-2xl font-bold text-blue-500">4h 32m</p>
-          <p className="text-xs text-muted-foreground mt-2">Consistent</p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ y: -5 }}
-          className="bg-card rounded-lg p-4 border border-border hover:border-blue-500/50 transition-all"
-        >
-          <p className="text-muted-foreground text-xs mb-1">Top Lang</p>
-          <p className="text-2xl font-bold text-blue-500">TypeScript</p>
-          <p className="text-xs text-muted-foreground mt-2">67% of code</p>
+          <p className="text-2xl font-bold text-blue-500">
+            {stats?.avgHoursPerDay || 0}h
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">Per active day</p>
         </motion.div>
       </div>
     </div>
