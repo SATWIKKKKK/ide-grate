@@ -194,7 +194,7 @@ function showStatus() {
         ? `VS Integrate is ${isTracking ? 'tracking' : 'not tracking'}.\nLast activity: ${timeSinceActivity}s ago\nEndpoint: ${config.apiEndpoint}`
         : 'VS Integrate needs an API key. Get one from your dashboard.';
     
-    vscode.window.showInformationMessage(message, 'Set API Key', 'Open Dashboard').then(selection => {
+    vscode.window.showInformationMessage(message, 'Set API Key', 'Open Dashboard').then((selection: string | undefined) => {
         if (selection === 'Set API Key') {
             setApiKey();
         } else if (selection === 'Open Dashboard') {

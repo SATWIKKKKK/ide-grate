@@ -66,7 +66,7 @@ export default function Hero() {
         <motion.div variants={container} initial="hidden" animate="show">
           <motion.h1
             variants={item}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-balance"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance"
           >
             Track Your Real Coding.{' '}
             <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
@@ -76,7 +76,7 @@ export default function Hero() {
 
           <motion.p
             variants={item}
-            className="text-xl text-muted-foreground mb-8 max-w-lg leading-relaxed"
+            className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed"
           >
             Visualize real VS Code activity with contribution graphs, streaks, and productivity insights — automatically.
           </motion.p>

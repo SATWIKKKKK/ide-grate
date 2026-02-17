@@ -36,6 +36,45 @@ interface Analytics {
   recentActivities: any[]
 }
 
+// Demo data for when auth is disabled
+const DEMO_ANALYTICS: Analytics = {
+  stats: {
+    longestStreak: 14,
+    currentStreak: 5,
+    totalHours: 127,
+    totalSessions: 89,
+    topLanguages: [
+      { language: 'TypeScript', hours: 45 },
+      { language: 'JavaScript', hours: 32 },
+      { language: 'Python', hours: 28 },
+      { language: 'CSS', hours: 12 },
+      { language: 'JSON', hours: 10 },
+    ]
+  },
+  contributions: (() => {
+    const contributions: Record<string, number> = {};
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      contributions[dateStr] = Math.random() > 0.3 ? Math.floor(Math.random() * 8) : 0;
+    }
+    return contributions;
+  })(),
+  weeklyBreakdown: [2.5, 4.2, 3.8, 5.1, 4.7, 1.2, 0.8],
+  recentActivities: [
+    { project: 'ide-grate', language: 'TypeScript', duration: 45, timestamp: new Date().toISOString() },
+    { project: 'my-app', language: 'JavaScript', duration: 30, timestamp: new Date(Date.now() - 3600000).toISOString() },
+  ]
+};
+
+const DEMO_USER = {
+  name: 'Demo User',
+  email: 'demo@example.com',
+  image: null
+};
+
 export default function Dashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -47,19 +86,30 @@ export default function Dashboard() {
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [apiKeyLoading, setApiKeyLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  
+  // Use demo mode when not authenticated
+  const isDemoMode = status === 'unauthenticated' || !session
+  const currentUser = isDemoMode ? DEMO_USER : session?.user
 
+  // Skip redirect - allow demo mode
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-    }
+    // Auth redirect disabled for development
+    // if (status === 'unauthenticated') {
+    //   router.push('/auth/signin')
+    // }
   }, [status, router])
 
   useEffect(() => {
-    if (session?.user) {
+    if (isDemoMode) {
+      // Use demo data
+      setAnalytics(DEMO_ANALYTICS)
+      setApiKey('demo-api-key-xxxx-xxxx-xxxx')
+      setLoading(false)
+    } else if (session?.user) {
       fetchAnalytics()
       fetchApiKey()
     }
-  }, [session])
+  }, [session, isDemoMode])
 
   const fetchAnalytics = async () => {
     try {
@@ -118,9 +168,8 @@ export default function Dashboard() {
     )
   }
 
-  if (!session) {
-    return null
-  }
+  // Removed auth check - demo mode enabled
+  // if (!session) { return null }
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -155,19 +204,19 @@ export default function Dashboard() {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
               >
-                {session.user.image ? (
+                {currentUser?.image ? (
                   <img
-                    src={session.user.image}
-                    alt={session.user.name || ''}
+                    src={currentUser.image}
+                    alt={currentUser.name || ''}
                     className="w-8 h-8 rounded-full"
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                    {session.user.name?.[0] || session.user.email?.[0] || '?'}
+                    {currentUser?.name?.[0] || currentUser?.email?.[0] || '?'}
                   </div>
                 )}
                 <span className="text-sm font-medium hidden sm:block">
-                  {session.user.name || session.user.email}
+                  {currentUser?.name || currentUser?.email}
                 </span>
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -179,8 +228,8 @@ export default function Dashboard() {
                   className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
                 >
                   <div className="p-4 border-b border-border">
-                    <p className="text-sm font-medium">{session.user.name}</p>
-                    <p className="text-xs text-muted-foreground">{session.user.email}</p>
+                    <p className="text-sm font-medium">{currentUser?.name}</p>
+                    <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
                   </div>
                   <button
                     onClick={() => { setShowSettings(true); setShowUserMenu(false); }}
@@ -190,11 +239,11 @@ export default function Dashboard() {
                     VS Code Setup
                   </button>
                   <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-muted flex items-center gap-2 transition-colors"
+                    onClick={() => isDemoMode ? router.push('/auth/signin') : signOut({ callbackUrl: '/' })}
+                    className={`w-full px-4 py-3 text-left ${isDemoMode ? 'text-blue-400' : 'text-red-400'} hover:bg-muted flex items-center gap-2 transition-colors`}
                   >
                     <LogOut className="w-4 h-4" />
-                    Sign Out
+                    {isDemoMode ? 'Sign In' : 'Sign Out'}
                   </button>
                 </motion.div>
               )}
@@ -210,8 +259,13 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
+          {isDemoMode && (
+            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 dark:text-yellow-400 text-sm">
+              ⚠️ Demo Mode - Sign in to track your real coding activity
+            </div>
+          )}
           <h1 className="text-3xl font-bold">
-            Welcome back, {session.user.name?.split(' ')[0] || 'Developer'}!
+            Welcome back, {currentUser?.name?.split(' ')[0] || 'Developer'}!
           </h1>
           <p className="text-muted-foreground mt-1">
             Here's your coding activity overview
@@ -350,27 +404,7 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Getting Started */}
-        {(!analytics?.stats.totalSessions || analytics.stats.totalSessions === 0) && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="mt-8 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-2xl p-8 text-center"
-          >
-            <h2 className="text-xl font-semibold mb-3">Get Started</h2>
-            <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-              Install the VS Code extension to start tracking your coding activity automatically.
-              Your data stays private - we only track time, not your code.
-            </p>
-            <button 
-              onClick={() => setShowSettings(true)}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors"
-            >
-              Install VS Code Extension
-            </button>
-          </motion.div>
-        )}
+        {/* Getting Started moved to homepage */}
       </main>
 
       {/* Settings Modal */}

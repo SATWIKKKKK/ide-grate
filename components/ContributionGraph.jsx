@@ -139,6 +139,9 @@ export default function ContributionGraph() {
               {week.map((day, dayIdx) => (
                 <motion.div
                   key={`${weekIdx}-${dayIdx}`}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: weekIdx * 0.01 + dayIdx * 0.003, duration: 0.3 }}
                   whileHover={{ scale: 1.2, rotate: 5 }}
                   className={`w-3 h-3 rounded-sm ${getColor(day.level)} cursor-pointer border border-border hover:border-blue-400 transition-all`}
                   title={`${day.date}: ${day.hours.toFixed(1)}h coding`}

@@ -1,73 +1,111 @@
 import NextAuth, { type AuthOptions } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
 import AzureADProvider from "next-auth/providers/azure-ad"
+import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import type { Adapter } from "next-auth/adapters"
 import prisma from "@/lib/prisma"
+import crypto from "crypto"
 
-// Validate required environment variables
-const requiredEnvVars = {
-  GITHUB_ID: process.env.GITHUB_ID,
-  GITHUB_SECRET: process.env.GITHUB_SECRET,
-  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-}
-
-const missingEnvVars = Object.entries(requiredEnvVars)
-  .filter(([_, value]) => !value)
-  .map(([key]) => key)
-
-if (missingEnvVars.length > 0) {
-  console.error(`Missing required environment variables: ${missingEnvVars.join(", ")}`)
-}
+// Check if OAuth credentials are configured
+const hasGitHub = process.env.GITHUB_ID && process.env.GITHUB_SECRET
+const hasMicrosoft = process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET
+const hasOAuthProviders = hasGitHub || hasMicrosoft
 
 // Build providers array dynamically based on available credentials
-const providers = []
+const providers: any[] = []
 
-if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
+if (hasGitHub) {
   providers.push(
     GitHubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
     })
   )
 }
 
-if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
+if (hasMicrosoft) {
   providers.push(
     AzureADProvider({
-      clientId: process.env.MICROSOFT_CLIENT_ID,
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+      clientId: process.env.MICROSOFT_CLIENT_ID!,
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
       tenantId: "common",
     })
   )
 }
 
+// Add Credentials provider for development/demo mode when no OAuth is configured
+if (!hasOAuthProviders || process.env.ENABLE_DEV_LOGIN === "true") {
+  providers.push(
+    CredentialsProvider({
+      id: "dev-login",
+      name: "Development Login",
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "dev@example.com" },
+        name: { label: "Name", type: "text", placeholder: "Developer" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) return null
+        
+        // Find or create user
+        let user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        })
+        
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              email: credentials.email,
+              name: credentials.name || "Developer",
+              apiKey: `vsi_${crypto.randomBytes(32).toString("hex")}`,
+            },
+          })
+        }
+        
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: null,
+        }
+      },
+    })
+  )
+}
+
+// Use adapter only for OAuth providers (not credentials)
+const useAdapter = hasOAuthProviders && !process.env.ENABLE_DEV_LOGIN
+
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma) as Adapter,
+  // Only use adapter when we have real OAuth providers
+  ...(useAdapter ? { adapter: PrismaAdapter(prisma) as Adapter } : {}),
   providers,
   callbacks: {
-    async jwt({ token, account, profile }) {
+    async jwt({ token, user, account }) {
+      // Initial sign in
+      if (user) {
+        token.id = user.id
+        token.email = user.email
+        token.name = user.name
+      }
       if (account) {
         token.accessToken = account.access_token
         token.provider = account.provider
-      }
-      if (profile) {
-        token.id = (profile as any).id || (profile as any).sub
       }
       return token
     },
     async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
         session.user.id = token.id || token.sub
-        session.user.provider = token.provider
+        session.user.provider = token.provider || "credentials"
       }
       session.accessToken = token.accessToken
       return session
     },
-    async signIn({ user, account }: { user: any; account: any }) {
+    async signIn({ user }: { user: any }) {
       try {
         // Create or update user stats on first sign in
-        if (user.id) {
+        if (user?.id) {
           await prisma.userStats.upsert({
             where: { userId: user.id },
             update: {},

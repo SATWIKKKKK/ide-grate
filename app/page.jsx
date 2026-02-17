@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
-import Features from '@/components/Features';
-import Insights from '@/components/Insights';
-import Privacy from '@/components/Privacy';
-import Stats from '@/components/Stats';
+import GetStarted from '@/components/GetStarted';
 import FinalCTA from '@/components/FinalCTA';
 
 export default function Home() {
@@ -22,10 +19,7 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden">
       <Navbar />
       <Hero />
-      <Features />
-      <Insights />
-      <Privacy />
-      <Stats />
+      <GetStarted />
       <FinalCTA />
     </main>
   );
