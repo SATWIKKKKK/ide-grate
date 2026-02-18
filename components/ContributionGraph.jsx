@@ -100,7 +100,6 @@ export default function ContributionGraph() {
     return 'bg-blue-300';
   };
 
-  const dayLabels = ['Mon', 'Wed', 'Fri'];
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   if (loading) {
@@ -114,17 +113,13 @@ export default function ContributionGraph() {
   return (
     <div className="w-full">
       <h3 className="text-lg font-semibold text-foreground mb-6">
-        12-Month VS Code Activity
-        {!session && <span className="text-sm font-normal text-muted-foreground ml-2">(Demo data - Sign in to track)</span>}
+        
+        
       </h3>
       
       <div className="flex gap-2 items-start overflow-x-auto pb-4">
         {/* Day labels */}
-        <div className="flex flex-col gap-1 justify-center">
-          {dayLabels.map((day, i) => (
-            <div key={day} className="text-xs text-muted-foreground h-3">{day}</div>
-          ))}
-        </div>
+       
 
         {/* Contribution grid */}
         <div className="flex gap-1">
@@ -157,10 +152,10 @@ export default function ContributionGraph() {
         <span>Less</span>
         <div className="flex gap-1">
           <div className="w-3 h-3 bg-muted rounded-sm" />
-          <div className="w-3 h-3 bg-blue-900 rounded-sm" />
-          <div className="w-3 h-3 bg-blue-700 rounded-sm" />
-          <div className="w-3 h-3 bg-blue-500 rounded-sm" />
           <div className="w-3 h-3 bg-blue-300 rounded-sm" />
+          <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+          <div className="w-3 h-3 bg-blue-700 rounded-sm" />
+          <div className="w-3 h-3 bg-blue-900 rounded-sm" />
         </div>
         <span>More</span>
       </div>

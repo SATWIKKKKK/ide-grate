@@ -59,7 +59,7 @@ export default function Hero() {
   return (
     <section className="min-h-screen pt-32 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
       {/* Background gradient overlay for dark mode */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-transparent to-transparent pointer-events-none dark:block hidden" />
+      <div className="absolute inset-0 bg-linear-to-br bg-black  pointer-events-none dark:block hidden" />
       
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
         {/* Left Content */}
@@ -69,7 +69,7 @@ export default function Hero() {
             className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance"
           >
             Track Your Real Coding.{' '}
-            <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
               Not Just Commits.
             </span>
           </motion.h1>
