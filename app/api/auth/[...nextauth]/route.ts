@@ -1,5 +1,6 @@
 import NextAuth, { type AuthOptions } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
+import GoogleProvider from "next-auth/providers/google"
 import AzureADProvider from "next-auth/providers/azure-ad"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
@@ -7,10 +8,11 @@ import type { Adapter } from "next-auth/adapters"
 import prisma from "@/lib/prisma"
 import crypto from "crypto"
 
-// Check if OAuth credentials are configured
+// Check which OAuth credentials are configured
 const hasGitHub = process.env.GITHUB_ID && process.env.GITHUB_SECRET
+const hasGoogle = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
 const hasMicrosoft = process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET
-const hasOAuthProviders = hasGitHub || hasMicrosoft
+const hasOAuthProviders = hasGitHub || hasGoogle || hasMicrosoft
 
 // Build providers array dynamically based on available credentials
 const providers: any[] = []
@@ -20,6 +22,15 @@ if (hasGitHub) {
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
+    })
+  )
+}
+
+if (hasGoogle) {
+  providers.push(
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     })
   )
 }

@@ -3,25 +3,30 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Code2, 
-  LogOut, 
   TrendingUp, 
   Clock, 
   Flame, 
   Calendar,
   Activity,
-  Sun,
-  Moon,
-  ChevronDown,
   Key,
   Copy,
   RefreshCw,
   Check,
-  Download
+  X,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Sparkles,
+  ArrowRight,
+  Info,
+  Zap
 } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import Link from 'next/link'
+import Navbar from '@/components/Navbar'
 
 interface Analytics {
   stats: {
@@ -36,80 +41,46 @@ interface Analytics {
   recentActivities: any[]
 }
 
-// Demo data for when auth is disabled
-const DEMO_ANALYTICS: Analytics = {
-  stats: {
-    longestStreak: 14,
-    currentStreak: 5,
-    totalHours: 127,
-    totalSessions: 89,
-    topLanguages: [
-      { language: 'TypeScript', hours: 45 },
-      { language: 'JavaScript', hours: 32 },
-      { language: 'Python', hours: 28 },
-      { language: 'CSS', hours: 12 },
-      { language: 'JSON', hours: 10 },
-    ]
-  },
-  contributions: (() => {
-    const contributions: Record<string, number> = {};
-    const today = new Date();
-    for (let i = 0; i < 365; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      contributions[dateStr] = Math.random() > 0.3 ? Math.floor(Math.random() * 8) : 0;
-    }
-    return contributions;
-  })(),
-  weeklyBreakdown: [2.5, 4.2, 3.8, 5.1, 4.7, 1.2, 0.8],
-  recentActivities: [
-    { project: 'ide-grate', language: 'TypeScript', duration: 45, timestamp: new Date().toISOString() },
-    { project: 'my-app', language: 'JavaScript', duration: 30, timestamp: new Date(Date.now() - 3600000).toISOString() },
-  ]
-};
-
-const DEMO_USER = {
-  name: 'Demo User',
-  email: 'demo@example.com',
-  image: null
-};
-
 export default function Dashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { theme, setTheme } = useTheme()
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [apiKeyLoading, setApiKeyLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false)
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [testMessage, setTestMessage] = useState('')
   
-  // Use demo mode when not authenticated
-  const isDemoMode = status === 'unauthenticated' || !session
-  const currentUser = isDemoMode ? DEMO_USER : session?.user
+  const currentUser = session?.user
 
-  // Skip redirect - allow demo mode
+  // Check if should show welcome popup
   useEffect(() => {
-    // Auth redirect disabled for development
-    // if (status === 'unauthenticated') {
-    //   router.push('/auth/signin')
-    // }
+    const hasSeenWelcome = sessionStorage.getItem('dashboard_welcome_seen')
+    if (!hasSeenWelcome && session?.user) {
+      setShowWelcomePopup(true)
+    }
+  }, [session])
+
+  const dismissWelcomePopup = () => {
+    sessionStorage.setItem('dashboard_welcome_seen', 'true')
+    setShowWelcomePopup(false)
+  }
+
+  // Redirect unauthenticated users to login
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+    }
   }, [status, router])
 
   useEffect(() => {
-    if (isDemoMode) {
-      // Use demo data
-      setAnalytics(DEMO_ANALYTICS)
-      setApiKey('demo-api-key-xxxx-xxxx-xxxx')
-      setLoading(false)
-    } else if (session?.user) {
+    if (session?.user) {
       fetchAnalytics()
       fetchApiKey()
     }
-  }, [session, isDemoMode])
+  }, [session])
 
   const fetchAnalytics = async () => {
     try {
@@ -160,6 +131,38 @@ export default function Dashboard() {
     }
   }
 
+  const testConnection = async () => {
+    setTestStatus('testing')
+    setTestMessage('Checking for recent activity...')
+    
+    try {
+      const res = await fetch('/api/analytics')
+      if (res.ok) {
+        const data = await res.json()
+        
+        if (data.stats?.totalSessions > 0 || data.recentActivities?.length > 0) {
+          setTestStatus('success')
+          setTestMessage('Your VS Code extension is connected and tracking!')
+        } else {
+          setTestStatus('error')
+          setTestMessage('No activity detected. Make sure your VS Code extension is configured with your API key.')
+        }
+      } else {
+        setTestStatus('error')
+        setTestMessage('Failed to check connection.')
+      }
+    } catch (error) {
+      setTestStatus('error')
+      setTestMessage('Connection test failed.')
+    }
+    
+    // Reset after 5 seconds
+    setTimeout(() => {
+      setTestStatus('idle')
+      setTestMessage('')
+    }, 5000)
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -168,108 +171,215 @@ export default function Dashboard() {
     )
   }
 
-  // Removed auth check - demo mode enabled
-  // if (!session) { return null }
+  if (!session) return null
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const hasActivity = analytics && (analytics.stats.totalHours > 0 || analytics.stats.totalSessions > 0)
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-              <Code2 className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-foreground to-blue-400 bg-clip-text text-transparent">
-              vs-integrate
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-yellow-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-700" />
-              )}
-            </button>
-
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-              >
-                {currentUser?.image ? (
-                  <img
-                    src={currentUser.image}
-                    alt={currentUser.name || ''}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                    {currentUser?.name?.[0] || currentUser?.email?.[0] || '?'}
-                  </div>
-                )}
-                <span className="text-sm font-medium hidden sm:block">
-                  {currentUser?.name || currentUser?.email}
-                </span>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              </button>
-
-              {showUserMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
-                >
-                  <div className="p-4 border-b border-border">
-                    <p className="text-sm font-medium">{currentUser?.name}</p>
-                    <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
-                  </div>
-                  <button
-                    onClick={() => { setShowSettings(true); setShowUserMenu(false); }}
-                    className="w-full px-4 py-3 text-left hover:bg-muted flex items-center gap-2 transition-colors"
-                  >
-                    <Key className="w-4 h-4" />
-                    VS Code Setup
-                  </button>
-                  <button
-                    onClick={() => isDemoMode ? router.push('/auth/signin') : signOut({ callbackUrl: '/' })}
-                    className={`w-full px-4 py-3 text-left ${isDemoMode ? 'text-blue-400' : 'text-red-400'} hover:bg-muted flex items-center gap-2 transition-colors`}
-                  >
-                    <LogOut className="w-4 h-4" />
-                    {isDemoMode ? 'Sign In' : 'Sign Out'}
-                  </button>
-                </motion.div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      <Navbar />
+      
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          {isDemoMode && (
-            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 dark:text-yellow-400 text-sm">
-              ⚠️ Demo Mode - Sign in to track your real coding activity
-            </div>
-          )}
           <h1 className="text-3xl font-bold">
             Welcome back, {currentUser?.name?.split(' ')[0] || 'Developer'}!
           </h1>
           <p className="text-muted-foreground mt-1">
             Here's your coding activity overview
           </p>
+        </motion.div>
+
+        {/* Connection Status Banner */}
+        {!hasActivity && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-6 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-800/40 rounded-2xl"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-6 h-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">No activity yet</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Connect your VS Code extension to start tracking your coding activity.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/onboarding"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+              >
+                Setup Extension
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"
+        >
+          {/* API Key Card */}
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <Key className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold">API Key</h3>
+                <p className="text-xs text-muted-foreground">
+                  {apiKey ? 'Click to copy' : 'Generate to connect'}
+                </p>
+              </div>
+            </div>
+            
+            {apiKey ? (
+              <div className="space-y-3">
+                <button
+                  onClick={copyApiKey}
+                  className="w-full p-3 bg-muted rounded-lg text-xs font-mono text-left truncate hover:bg-muted/80 transition-colors"
+                >
+                  {copied ? (
+                    <span className="text-green-500">Copied!</span>
+                  ) : (
+                    apiKey.substring(0, 20) + '...'
+                  )}
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={copyApiKey}
+                    className="flex-1 px-3 py-2 bg-muted hover:bg-muted/80 rounded-lg text-xs flex items-center justify-center gap-1 transition-colors"
+                  >
+                    {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                    Copy
+                  </button>
+                  <button
+                    onClick={generateApiKey}
+                    disabled={apiKeyLoading}
+                    className="flex-1 px-3 py-2 bg-muted hover:bg-muted/80 rounded-lg text-xs flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${apiKeyLoading ? 'animate-spin' : ''}`} />
+                    Regenerate
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={generateApiKey}
+                disabled={apiKeyLoading}
+                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                {apiKeyLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Key className="w-4 h-4" />
+                )}
+                Generate API Key
+              </button>
+            )}
+          </div>
+
+          {/* Test Connection Card */}
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                testStatus === 'success' ? 'bg-green-600' :
+                testStatus === 'error' ? 'bg-red-600' :
+                'bg-gradient-to-br from-purple-500 to-purple-600'
+              }`}>
+                {testStatus === 'success' ? (
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                ) : testStatus === 'error' ? (
+                  <AlertCircle className="w-5 h-5 text-white" />
+                ) : (
+                  <Activity className="w-5 h-5 text-white" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold">Connection Status</h3>
+                <p className="text-xs text-muted-foreground">
+                  {testStatus === 'success' ? 'Connected' :
+                   testStatus === 'error' ? 'Not Connected' :
+                   'Test your setup'}
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={testConnection}
+              disabled={testStatus === 'testing'}
+              className={`w-full px-4 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm ${
+                testStatus === 'success' 
+                  ? 'bg-green-600/20 text-green-400 border border-green-600/30' 
+                  : testStatus === 'error'
+                  ? 'bg-red-600/20 text-red-400 border border-red-600/30'
+                  : 'bg-purple-600 hover:bg-purple-500 text-white'
+              }`}
+            >
+              {testStatus === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {testStatus === 'success' && <CheckCircle2 className="w-4 h-4" />}
+              {testStatus === 'error' && <AlertCircle className="w-4 h-4" />}
+              {testStatus === 'idle' && <Activity className="w-4 h-4" />}
+              
+              {testStatus === 'testing' ? 'Testing...' :
+               testStatus === 'success' ? 'Extension Connected!' :
+               testStatus === 'error' ? 'Check Setup' :
+               'Test Connection'}
+            </button>
+            
+            {testMessage && (
+              <p className={`mt-3 text-xs ${
+                testStatus === 'success' ? 'text-green-400' : 
+                testStatus === 'error' ? 'text-red-400' : 
+                'text-muted-foreground'
+              }`}>
+                {testMessage}
+              </p>
+            )}
+          </div>
+
+          {/* Quick Setup Card */}
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                <ExternalLink className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Quick Links</h3>
+                <p className="text-xs text-muted-foreground">Helpful resources</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Link
+                href="/onboarding"
+                className="w-full px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors flex items-center gap-2 text-sm"
+              >
+                <Code2 className="w-4 h-4 text-muted-foreground" />
+                Setup Guide
+              </Link>
+              <Link
+                href="/settings"
+                className="w-full px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors flex items-center gap-2 text-sm"
+              >
+                <Key className="w-4 h-4 text-muted-foreground" />
+                Settings
+              </Link>
+            </div>
+          </div>
         </motion.div>
 
         {/* Stats Grid */}
@@ -280,7 +390,7 @@ export default function Dashboard() {
             value={analytics?.stats.totalHours.toFixed(1) || '0'}
             suffix="hrs"
             color="blue"
-            delay={0}
+            delay={0.2}
           />
           <StatCard
             icon={Flame}
@@ -288,7 +398,7 @@ export default function Dashboard() {
             value={analytics?.stats.currentStreak || 0}
             suffix="days"
             color="orange"
-            delay={0.1}
+            delay={0.3}
           />
           <StatCard
             icon={TrendingUp}
@@ -296,7 +406,7 @@ export default function Dashboard() {
             value={analytics?.stats.longestStreak || 0}
             suffix="days"
             color="green"
-            delay={0.2}
+            delay={0.4}
           />
           <StatCard
             icon={Activity}
@@ -304,7 +414,7 @@ export default function Dashboard() {
             value={analytics?.stats.totalSessions || 0}
             suffix=""
             color="purple"
-            delay={0.3}
+            delay={0.5}
           />
         </div>
 
@@ -312,7 +422,7 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.6 }}
           className="bg-card border border-border rounded-2xl p-6 mb-8"
         >
           <div className="flex items-center justify-between mb-6">
@@ -332,7 +442,7 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.7 }}
             className="bg-card border border-border rounded-2xl p-6"
           >
             <h2 className="text-lg font-semibold mb-6">Weekly Activity</h2>
@@ -349,7 +459,7 @@ export default function Dashboard() {
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${percentage}%` }}
-                        transition={{ delay: 0.6 + i * 0.05, duration: 0.5 }}
+                        transition={{ delay: 0.8 + i * 0.05, duration: 0.5 }}
                         className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg"
                       />
                     </div>
@@ -366,7 +476,7 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.8 }}
             className="bg-card border border-border rounded-2xl p-6"
           >
             <h2 className="text-lg font-semibold mb-6">Top Languages</h2>
@@ -383,7 +493,7 @@ export default function Dashboard() {
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${percentage}%` }}
-                          transition={{ delay: 0.7 + i * 0.05, duration: 0.5 }}
+                          transition={{ delay: 0.9 + i * 0.05, duration: 0.5 }}
                           className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg"
                         />
                       </div>
@@ -403,122 +513,93 @@ export default function Dashboard() {
             )}
           </motion.div>
         </div>
-
-        {/* Getting Started moved to homepage */}
       </main>
 
-      {/* Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
-          >
-            <div className="p-6 border-b border-border flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Download className="w-5 h-5 text-blue-500" />
-                VS Code Extension Setup
-              </h2>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Step 1 */}
-              <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center">1</span>
-                  Generate Your API Key
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  This key connects your VS Code to your account.
-                </p>
-                
-                {apiKey ? (
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 p-3 bg-muted rounded-lg text-sm font-mono break-all">
-                      {apiKey}
-                    </code>
-                    <button
-                      onClick={copyApiKey}
-                      className="p-3 bg-muted hover:bg-muted/80 rounded-lg transition-colors"
-                      title="Copy to clipboard"
-                    >
-                      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                    <button
-                      onClick={generateApiKey}
-                      disabled={apiKeyLoading}
-                      className="p-3 bg-muted hover:bg-muted/80 rounded-lg transition-colors"
-                      title="Regenerate key"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${apiKeyLoading ? 'animate-spin' : ''}`} />
-                    </button>
+      {/* Welcome Popup */}
+      <AnimatePresence>
+        {showWelcomePopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="relative p-6 bg-gradient-to-r from-blue-600 to-purple-600">
+                <button
+                  onClick={dismissWelcomePopup}
+                  className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 text-white" />
                   </div>
-                ) : (
-                  <button
-                    onClick={generateApiKey}
-                    disabled={apiKeyLoading}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    {apiKeyLoading ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Key className="w-4 h-4" />
-                    )}
-                    Generate API Key
-                  </button>
-                )}
-              </div>
-
-              {/* Step 2 */}
-              <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center">2</span>
-                  Install the VS Code Extension
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Install our extension from the VS Code Marketplace or build from source.
-                </p>
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-mono mb-2">Build from source:</p>
-                  <code className="text-xs text-muted-foreground block">
-                    cd vscode-extension && npm install && npm run compile
-                  </code>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">
+                      Welcome to Your Dashboard!
+                    </h2>
+                    <p className="text-white/80">
+                      Track your real coding activity
+                    </p>
+                  </div>
                 </div>
               </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Info className="w-5 h-5 text-blue-500" />
+                    How it works
+                  </h3>
+                  <ul className="space-y-3 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
+                      <span>Generate an API key from this dashboard</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
+                      <span>Install our VS Code extension and configure the API key</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
+                      <span>Start coding! Your activity will appear here automatically</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-900/20 border border-blue-800/30 rounded-xl p-4">
+                  <p className="text-sm text-blue-300 flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <strong>Privacy first:</strong> We only track time and language usage. 
+                      No code content or sensitive file names are ever stored.
+                    </span>
+                  </p>
+                </div>
 
-              {/* Step 3 */}
-              <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center">3</span>
-                  Configure the Extension
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  In VS Code, open Command Palette (<code className="px-1 bg-muted rounded">Ctrl+Shift+P</code>) and run:
-                </p>
-                <code className="block p-3 bg-muted rounded-lg text-sm">
-                  VS Integrate: Set API Key
-                </code>
-                <p className="text-sm text-muted-foreground">
-                  Paste your API key when prompted. That's it!
-                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={dismissWelcomePopup}
+                    className="flex-1 px-4 py-3 bg-muted hover:bg-muted/80 rounded-xl transition-colors"
+                  >
+                    Got it
+                  </button>
+                  <Link
+                    href="/onboarding"
+                    onClick={dismissWelcomePopup}
+                    className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    Setup Extension
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
-            </div>
-
-            <div className="p-6 border-t border-border bg-muted/50">
-              <p className="text-xs text-muted-foreground text-center">
-                🔒 Privacy: We only track time and language usage. No code content or file names are stored.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -597,13 +678,13 @@ function ContributionGraph({ contributions }: { contributions: Record<string, nu
   const currentDate = new Date(startDate)
   
   for (let week = 0; week < weeks; week++) {
-    const days = []
+    const daysArray = []
     for (let day = 0; day < 7; day++) {
       const dateStr = currentDate.toISOString().split('T')[0]
       const hours = contributions[dateStr] || 0
       const level = getLevel(hours)
       
-      days.push(
+      daysArray.push(
         <div
           key={dateStr}
           className={`w-3 h-3 rounded-sm ${levelColors[level]} transition-colors`}
@@ -614,7 +695,7 @@ function ContributionGraph({ contributions }: { contributions: Record<string, nu
     }
     weekColumns.push(
       <div key={week} className="flex flex-col gap-1">
-        {days}
+        {daysArray}
       </div>
     )
   }

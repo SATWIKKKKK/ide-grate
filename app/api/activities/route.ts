@@ -2,18 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import prisma from "@/lib/prisma"
+import { requireServerUser } from "@/lib/serverAuth"
 
 // GET /api/activities - Get user's activities
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
-    }
+    const sessionUser = await requireServerUser()
+    if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get("days") || "30")
@@ -23,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const activities = await prisma.activity.findMany({
       where: {
-        userId: session.user.id,
+        userId: sessionUser.id,
         startTime: {
           gte: startDate,
         },
@@ -47,14 +42,8 @@ export async function GET(request: NextRequest) {
 // POST /api/activities - Log a new activity
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
-    }
+    const sessionUser = await requireServerUser()
+    if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await request.json()
     const { startTime, endTime, duration, language, fileType, extensions, idleTime } = body
@@ -69,7 +58,7 @@ export async function POST(request: NextRequest) {
     // Create the activity
     const activity = await prisma.activity.create({
       data: {
-        userId: session.user.id,
+        userId: sessionUser.id,
         startTime: new Date(startTime),
         endTime: new Date(endTime || new Date()),
         duration: parseInt(duration),
@@ -88,7 +77,7 @@ export async function POST(request: NextRequest) {
     await prisma.dailyContribution.upsert({
       where: {
         userId_date: {
-          userId: session.user.id,
+          userId: sessionUser.id,
           date: activityDate,
         },
       },
@@ -98,7 +87,7 @@ export async function POST(request: NextRequest) {
         languages: language ? { push: language } : undefined,
       },
       create: {
-        userId: session.user.id,
+        userId: sessionUser.id,
         date: activityDate,
         hours,
         sessions: 1,
@@ -107,7 +96,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Update user stats
-    await updateUserStats(session.user.id, duration, language)
+    await updateUserStats(sessionUser.id, duration, language)
 
     return NextResponse.json(activity, { status: 201 })
   } catch (error) {

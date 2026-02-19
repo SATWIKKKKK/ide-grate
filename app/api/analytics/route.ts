@@ -2,18 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import prisma from "@/lib/prisma"
+import { requireServerUser } from "@/lib/serverAuth"
 
 // GET /api/analytics - Get user analytics data
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
-    }
+    const sessionUser = await requireServerUser()
+    if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get("days") || "365")
@@ -23,13 +18,13 @@ export async function GET(request: NextRequest) {
 
     // Get user stats
     const stats = await prisma.userStats.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: sessionUser.id },
     })
 
     // Get daily contributions for contribution graph
     const contributions = await prisma.dailyContribution.findMany({
       where: {
-        userId: session.user.id,
+        userId: sessionUser.id,
         date: {
           gte: startDate,
         },
@@ -42,7 +37,7 @@ export async function GET(request: NextRequest) {
     // Get recent activities for activity breakdown
     const recentActivities = await prisma.activity.findMany({
       where: {
-        userId: session.user.id,
+        userId: sessionUser.id,
         startTime: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
         },

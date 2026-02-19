@@ -2,18 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import prisma from "@/lib/prisma"
+import { requireServerUser } from "@/lib/serverAuth"
 
 // GET /api/contributions - Get contribution graph data
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
-    }
+    const sessionUser = await requireServerUser()
+    if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get("days") || "365")
@@ -23,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const contributions = await prisma.dailyContribution.findMany({
       where: {
-        userId: session.user.id,
+        userId: sessionUser.id,
         date: {
           gte: startDate,
         },

@@ -2,21 +2,18 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import prisma from "@/lib/prisma"
+import { requireServerUser } from "@/lib/serverAuth"
 
 // GET /api/users - Get current user data
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    const sessionUser = await requireServerUser()
+    if (!sessionUser?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: sessionUser.id },
       include: {
         stats: true,
       },
@@ -49,20 +46,14 @@ export async function GET(request: NextRequest) {
 // PATCH /api/users - Update user profile
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
-    }
+    const sessionUser = await requireServerUser()
+    if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await request.json()
     const { name } = body
 
     const user = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: sessionUser.id },
       data: {
         name: name || undefined,
       },
