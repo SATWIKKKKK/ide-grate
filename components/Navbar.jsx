@@ -102,7 +102,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-all"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all"
               >
                 Sign In
               </motion.button>

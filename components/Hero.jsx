@@ -69,7 +69,7 @@ export default function Hero() {
             className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance"
           >
             Track Your Real Coding.{' '}
-            <span className="bg-linear-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-foreground to-blue-800 bg-clip-text text-transparent">
               Not Just Commits.
             </span>
           </motion.h1>

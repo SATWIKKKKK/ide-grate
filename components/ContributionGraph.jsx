@@ -112,12 +112,16 @@ export default function ContributionGraph() {
 
   return (
     <div className="w-full">
+      <style>{`@keyframes glitter { 0% { transform: scale(1); filter: brightness(1); } 
+      6% { transform: scale(1.15); filter: brightness(1.45); } 
+      12% { transform: scale(1); filter: brightness(1); } 
+      100% { transform: scale(1); filter: brightness(1); } }`}</style>
       <h3 className="text-lg font-semibold text-foreground mb-6">
         
         
       </h3>
       
-      <div className="flex gap-2 items-start overflow-x-auto pb-4">
+      <div className="flex gap-2 items-start overflow-x-hidden pb-4">
         {/* Day labels */}
        
 
@@ -131,17 +135,24 @@ export default function ContributionGraph() {
               transition={{ delay: weekIdx * 0.01 }}
               className="flex flex-col gap-1"
             >
-              {week.map((day, dayIdx) => (
-                <motion.div
-                  key={`${weekIdx}-${dayIdx}`}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: weekIdx * 0.01 + dayIdx * 0.003, duration: 0.3 }}
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  className={`w-3 h-3 rounded-sm ${getColor(day.level)} cursor-pointer border border-border hover:border-blue-400 transition-all`}
-                  title={`${day.date}: ${day.hours.toFixed(1)}h coding`}
-                />
-              ))}
+              {week.map((day, dayIdx) => {
+                const animDuration = (Math.random() * 1 + 2).toFixed(2); // 2.00 - 3.00s
+                const animDelay = (Math.random() * Number(animDuration)).toFixed(2);
+                const squareStyle = day.level > 0 ? { animation: `glitter ${animDuration}s linear infinite`, animationDelay: `${animDelay}s` } : {};
+
+                return (
+                  <motion.div
+                    key={`${weekIdx}-${dayIdx}`}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: weekIdx * 0.01 + dayIdx * 0.003, duration: 0.3 }}
+                    whileHover={{ scale: 1.2, rotate: 5 }}
+                    className={`w-3 h-3 rounded-sm ${getColor(day.level)} cursor-pointer border border-border hover:border-blue-400 transition-all`}
+                    style={squareStyle}
+                    title={`${day.date}: ${day.hours.toFixed(1)}h coding`}
+                  />
+                );
+              })}
             </motion.div>
           ))}
         </div>
