@@ -179,13 +179,18 @@ export default function OnboardingPage() {
 
   const goToNextStep = () => {
     if (currentStep < steps.length) {
+      // mark the current step complete when user advances
+      markStepComplete(currentStep)
       setCurrentStep(currentStep + 1)
     }
   }
 
   const goToPrevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      const newStep = currentStep - 1
+      // keep only steps up to the new current step completed
+      setCompletedSteps(prev => prev.filter(id => id <= newStep))
+      setCurrentStep(newStep)
     }
   }
 
@@ -201,7 +206,7 @@ export default function OnboardingPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
       </div>
     )
@@ -214,77 +219,77 @@ export default function OnboardingPage() {
   const allStepsComplete = completedSteps.length >= steps.length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-950/20">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/80 border-b border-gray-800 shrink-0">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
               <Code2 className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-foreground to-blue-400 bg-clip-text text-transparent">
+            <span className="text-lg font-bold text-white">
               vs-integrate
             </span>
           </Link>
           
           <button
             onClick={skipOnboarding}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs text-gray-500 hover:text-white transition-colors"
           >
             Skip for now
           </button>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
         {/* Progress Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="text-center mb-5"
         >
-          <h1 className="text-3xl font-bold mb-3">
+          <h1 className="text-xl font-bold mb-1.5 text-white">
             Welcome, {session.user?.name?.split(' ')[0] || 'Developer'}! 👋
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-gray-400 text-sm">
             Let's get your VS Code extension set up in just a few steps
           </p>
         </motion.div>
 
         {/* Progress Bar */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
+              <div key={step.id} className="flex items-center flex-1">
                 <motion.button
                   onClick={() => setCurrentStep(step.id)}
-                  className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                    completedSteps.includes(step.id)
+                  className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ${
+                    currentStep === step.id
+                      ? 'bg-blue-600 text-white ring-2 ring-blue-600/30'
+                      : completedSteps.includes(step.id)
                       ? 'bg-green-600 text-white'
-                      : currentStep === step.id
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-600/30'
-                      : 'bg-muted text-muted-foreground'
+                      : 'bg-gray-800 text-gray-500'
                   }`}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {completedSteps.includes(step.id) ? (
-                    <Check className="w-5 h-5" />
+                  {completedSteps.includes(step.id) && currentStep !== step.id ? (
+                    <Check className="w-3.5 h-3.5" />
                   ) : (
-                    <span className="text-sm font-semibold">{step.id}</span>
+                    <span className="text-xs font-semibold">{step.id}</span>
                   )}
                 </motion.button>
                 {index < steps.length - 1 && (
-                  <div 
-                    className={`w-12 sm:w-20 h-1 mx-2 rounded ${
-                      completedSteps.includes(step.id) ? 'bg-green-600' : 'bg-muted'
-                    }`} 
+                  <div
+                    className={`flex-1 h-1 mx-1 ${
+                      completedSteps.includes(step.id) && currentStep !== step.id ? 'bg-green-600' : 'bg-gray-800'
+                    }`}
                   />
                 )}
               </div>
             ))}
           </div>
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-gray-400">
             Step {currentStep} of {steps.length}: {activeStep.title}
           </p>
         </div>
@@ -297,46 +302,46 @@ export default function OnboardingPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="bg-card border border-border rounded-2xl p-8 mb-8"
+            className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex-1 overflow-y-auto"
           >
-            <div className="flex items-start gap-6 mb-6">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0">
-                <activeStep.icon className="w-7 h-7 text-white" />
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                <activeStep.icon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-semibold mb-2">{activeStep.title}</h2>
-                <p className="text-muted-foreground">{activeStep.description}</p>
+                <h2 className="text-lg font-semibold mb-0.5 text-white">{activeStep.title}</h2>
+                <p className="text-gray-400 text-sm">{activeStep.description}</p>
               </div>
             </div>
 
             {/* Step-specific content */}
             {currentStep === 1 && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {apiKey ? (
-                  <div className="space-y-3">
-                    <label className="text-sm text-muted-foreground">Your API Key:</label>
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 p-4 bg-muted rounded-lg text-sm font-mono break-all border border-border">
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-400">Your API Key:</label>
+                    <div className="flex items-center gap-1.5">
+                      <code className="flex-1 p-2 bg-gray-800 rounded-lg text-xs font-mono break-all border border-gray-700 text-gray-300">
                         {apiKey}
                       </code>
                       <button
                         onClick={copyApiKey}
-                        className="p-4 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border"
+                        className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700"
                         title="Copy to clipboard"
                       >
-                        {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
+                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
                       </button>
                       <button
                         onClick={generateApiKey}
                         disabled={apiKeyLoading}
-                        className="p-4 bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border"
+                        className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700"
                         title="Regenerate key"
                       >
-                        <RefreshCw className={`w-5 h-5 ${apiKeyLoading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className="w-4 h-4 animate-spin" />
                       </button>
                     </div>
-                    <p className="text-sm text-green-500 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" />
+                    <p className="text-sm text-green-500 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
                       API key generated successfully!
                     </p>
                   </div>
@@ -344,12 +349,12 @@ export default function OnboardingPage() {
                   <button
                     onClick={generateApiKey}
                     disabled={apiKeyLoading}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
                   >
                     {apiKeyLoading ? (
-                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      <RefreshCw className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Key className="w-5 h-5" />
+                      <Key className="w-4 h-4" />
                     )}
                     Generate API Key
                   </button>
@@ -358,10 +363,10 @@ export default function OnboardingPage() {
             )}
 
             {currentStep === 2 && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="relative">
-                  <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto">
-                    <code className="text-sm">
+                  <pre className="bg-gray-800 border border-gray-700 rounded-lg p-3 overflow-x-auto text-sm text-gray-300">
+                    <code>
 {`cd vscode-extension
 npm install
 npm run compile`}
@@ -369,137 +374,85 @@ npm run compile`}
                   </pre>
                   <CopyButton text={`cd vscode-extension\nnpm install\nnpm run compile`} />
                 </div>
-                <button
-                  onClick={() => markStepComplete(2)}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                    isStepComplete
-                      ? 'bg-green-600/20 text-green-500 border border-green-600/30'
-                      : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
-                  }`}
-                >
-                  {isStepComplete ? <Check className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                  {isStepComplete ? 'Completed' : 'Mark as done'}
-                </button>
               </div>
             )}
 
             {currentStep === 3 && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="relative">
-                  <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto">
-                    <code className="text-sm">npx @vscode/vsce package</code>
+                  <pre className="bg-gray-800 border border-gray-700 rounded-lg p-3 overflow-x-auto text-sm text-gray-300">
+                    <code>npx @vscode/vsce package</code>
                   </pre>
                   <CopyButton text="npx @vscode/vsce package" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  This will create a file called <code className="px-1 bg-muted rounded">vs-integrate-tracker-0.1.0.vsix</code>
+                <p className="text-sm text-gray-400">
+                  Creates <code className="px-1 bg-gray-800 rounded text-gray-300">vs-integrate-tracker-0.1.0.vsix</code>
                 </p>
-                <button
-                  onClick={() => markStepComplete(3)}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                    isStepComplete
-                      ? 'bg-green-600/20 text-green-500 border border-green-600/30'
-                      : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
-                  }`}
-                >
-                  {isStepComplete ? <Check className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                  {isStepComplete ? 'Completed' : 'Mark as done'}
-                </button>
               </div>
             )}
 
             {currentStep === 4 && (
-              <div className="space-y-4">
-                <p className="text-muted-foreground mb-4">
-                  You can install the extension via command line or through VS Code's UI:
-                </p>
-                
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Option 1: Command Line</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium">Option 1: Terminal</p>
                   <div className="relative">
-                    <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto">
-                      <code className="text-sm">code --install-extension vs-integrate-tracker-0.1.0.vsix</code>
+                    <pre className="bg-gray-800 border border-gray-700 rounded-lg p-2.5 overflow-x-auto text-sm text-gray-300">
+                      <code>code --install-extension vs-integrate-tracker-0.1.0.vsix</code>
                     </pre>
                     <CopyButton text="code --install-extension vs-integrate-tracker-0.1.0.vsix" />
                   </div>
                 </div>
-
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   <p className="text-sm font-medium">Option 2: VS Code UI</p>
-                  <ol className="list-decimal list-inside text-sm text-muted-foreground space-y-1">
-                    <li>Open VS Code</li>
-                    <li>Go to Extensions (Ctrl+Shift+X)</li>
-                    <li>Click the "..." menu at the top</li>
+                  <ol className="list-decimal list-inside text-sm text-gray-400 space-y-1">
+                    <li>Open Extensions <span className="text-gray-500">(Ctrl+Shift+X)</span></li>
+                    <li>Click "..." menu at the top</li>
                     <li>Select "Install from VSIX..."</li>
-                    <li>Choose the generated .vsix file</li>
+                    <li>Choose the .vsix file</li>
                   </ol>
                 </div>
-
-                <button
-                  onClick={() => markStepComplete(4)}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                    isStepComplete
-                      ? 'bg-green-600/20 text-green-500 border border-green-600/30'
-                      : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
-                  }`}
-                >
-                  {isStepComplete ? <Check className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                  {isStepComplete ? 'Completed' : 'Mark as done'}
-                </button>
               </div>
             )}
 
             {currentStep === 5 && (
-              <div className="space-y-4">
-                <ol className="list-decimal list-inside text-muted-foreground space-y-3">
+              <div className="space-y-3">
+                <ol className="list-decimal list-inside text-gray-400 text-sm space-y-2">
                   <li>Open VS Code</li>
-                  <li>Press <code className="px-2 py-1 bg-muted rounded text-foreground">Ctrl+Shift+P</code> (or <code className="px-2 py-1 bg-muted rounded text-foreground">Cmd+Shift+P</code> on Mac)</li>
-                  <li>Type <code className="px-2 py-1 bg-muted rounded text-foreground">VS Integrate: Set API Key</code></li>
+                  <li>Press <code className="px-1 py-0.5 bg-gray-800 rounded text-white">Ctrl+Shift+P</code> (or <code className="px-1 py-0.5 bg-gray-800 rounded text-white">Cmd+Shift+P</code> on Mac)</li>
+                  <li>Type <code className="px-1 py-0.5 bg-gray-800 rounded text-white">VS Integrate: Set API Key</code></li>
                   <li>Paste your API key when prompted</li>
                 </ol>
 
                 {apiKey && (
-                  <div className="mt-4 p-4 bg-blue-900/20 border border-blue-800/30 rounded-lg">
-                    <p className="text-sm text-blue-300 mb-2">Your API Key (click to copy):</p>
+                  <div className="p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+                    <p className="text-xs text-blue-300 mb-1">Your API Key (click to copy):</p>
                     <button
                       onClick={copyApiKey}
-                      className="font-mono text-sm bg-muted px-3 py-2 rounded border border-border hover:bg-muted/80 transition-colors w-full text-left break-all"
+                      className="font-mono text-xs bg-gray-800 px-2 py-1.5 rounded border border-gray-700 hover:bg-gray-700 transition-colors w-full text-left break-all text-gray-300"
                     >
                       {apiKey}
                       {copied && <span className="ml-2 text-green-500">(Copied!)</span>}
                     </button>
                   </div>
                 )}
-
-                <button
-                  onClick={() => markStepComplete(5)}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                    isStepComplete
-                      ? 'bg-green-600/20 text-green-500 border border-green-600/30'
-                      : 'bg-muted hover:bg-muted/80 text-foreground border border-border'
-                  }`}
-                >
-                  {isStepComplete ? <Check className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                  {isStepComplete ? 'Completed' : 'Mark as done'}
-                </button>
               </div>
             )}
 
             {currentStep === 6 && (
-              <div className="space-y-6">
-                <p className="text-muted-foreground">
-                  Open a file in VS Code and start coding for a few seconds. Then click the button below to verify the connection.
+              <div className="space-y-3">
+                <p className="text-sm text-gray-400">
+                  Open a file in VS Code and start coding for a few seconds, then verify below.
                 </p>
                 
                 <button
                   onClick={testConnection}
                   disabled={testStatus === 'testing'}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
                 >
                   {testStatus === 'testing' ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Play className="w-5 h-5" />
+                    <Play className="w-4 h-4" />
                   )}
                   {testStatus === 'testing' ? 'Testing...' : 'Test Connection'}
                 </button>
@@ -508,7 +461,7 @@ npm run compile`}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`p-4 rounded-lg flex items-start gap-3 ${
+                    className={`p-3 rounded-lg flex items-start gap-2 ${
                       testStatus === 'success'
                         ? 'bg-green-900/20 border border-green-600/30'
                         : testStatus === 'error'
@@ -516,10 +469,10 @@ npm run compile`}
                         : 'bg-blue-900/20 border border-blue-600/30'
                     }`}
                   >
-                    {testStatus === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />}
-                    {testStatus === 'error' && <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />}
-                    {testStatus === 'testing' && <Loader2 className="w-5 h-5 text-blue-500 animate-spin flex-shrink-0 mt-0.5" />}
-                    <p className={`text-sm ${
+                    {testStatus === 'success' && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />}
+                    {testStatus === 'error' && <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
+                    {testStatus === 'testing' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin shrink-0 mt-0.5" />}
+                      <p className={`text-sm ${
                       testStatus === 'success' ? 'text-green-400' :
                       testStatus === 'error' ? 'text-red-400' :
                       'text-blue-400'
@@ -530,12 +483,12 @@ npm run compile`}
                 )}
 
                 {testStatus === 'error' && (
-                  <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-                    <p className="text-sm font-medium">Troubleshooting tips:</p>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                  <div className="p-3 bg-gray-800/50 rounded-lg space-y-1">
+                    <p className="text-sm font-medium text-white">Troubleshooting tips:</p>
+                    <ul className="list-disc list-inside text-sm text-gray-400 space-y-1">
                       <li>Make sure VS Code is open with the extension installed</li>
                       <li>Check that you've set the correct API key</li>
-                      <li>Look for "VS Integrate: Tracking" in the VS Code status bar</li>
+                      <li>Look for "VS Integrate: Tracking" in the status bar</li>
                       <li>Try reloading VS Code (Ctrl+Shift+P → "Reload Window")</li>
                     </ul>
                   </div>
@@ -546,63 +499,43 @@ npm run compile`}
         </AnimatePresence>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-4 shrink-0">
           <button
             onClick={goToPrevStep}
             disabled={currentStep === 1}
-            className="px-6 py-3 bg-muted hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+            className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-1.5 text-sm text-gray-300"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
             Previous
           </button>
+
+          <a
+            href="https://github.com/SATWIKKKKK/ide-grate"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-gray-500 hover:text-white transition-colors flex items-center gap-1"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Help
+          </a>
 
           {currentStep < steps.length ? (
             <button
               onClick={goToNextStep}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-2"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm"
             >
               Next
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={finishOnboarding}
-              className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors flex items-center gap-2"
+              className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm"
             >
-              <Check className="w-5 h-5" />
-              Go to Dashboard
+              <Check className="w-4 h-4" />
+              Dashboard
             </button>
           )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-12 p-6 bg-muted/30 rounded-2xl border border-border">
-          <h3 className="font-semibold mb-4">Need help?</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <a
-              href="https://github.com/SATWIKKKKK/ide-grate"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-4 bg-card border border-border rounded-lg hover:border-blue-600/50 transition-colors flex items-center gap-3"
-            >
-              <ExternalLink className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm">View on GitHub</span>
-            </a>
-            <button
-              onClick={skipOnboarding}
-              className="p-4 bg-card border border-border rounded-lg hover:border-blue-600/50 transition-colors flex items-center gap-3"
-            >
-              <ArrowRight className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm">Skip to Dashboard</span>
-            </button>
-            <Link
-              href="/"
-              className="p-4 bg-card border border-border rounded-lg hover:border-blue-600/50 transition-colors flex items-center gap-3"
-            >
-              <Code2 className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm">Back to Home</span>
-            </Link>
-          </div>
         </div>
       </main>
     </div>
@@ -621,13 +554,13 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-2 right-2 p-2 rounded bg-background/80 hover:bg-background transition-colors border border-border"
+      className="absolute top-2 right-2 p-2 rounded bg-black/80 hover:bg-gray-800 transition-colors border border-gray-700"
       title="Copy to clipboard"
     >
       {copied ? (
         <Check className="w-4 h-4 text-green-500" />
       ) : (
-        <Copy className="w-4 h-4 text-muted-foreground" />
+        <Copy className="w-4 h-4 text-gray-400" />
       )}
     </button>
   )

@@ -135,3 +135,44 @@
     background-attachment: fixed;
   }
 }
+
+/* Global glitter animation used by ContributionGraph */
+/* Only uses filter+shadow — avoids conflicts with framer-motion's inline transform control */
+@keyframes glitter {
+  0%   { filter: brightness(1);    box-shadow: none; }
+  6%   { filter: brightness(2.2);  box-shadow: 0 0 6px 2px rgba(147, 197, 253, 0.8); }
+  12%  { filter: brightness(1.4);  box-shadow: 0 0 3px 1px rgba(147, 197, 253, 0.4); }
+  18%  { filter: brightness(1);    box-shadow: none; }
+  100% { filter: brightness(1);    box-shadow: none; }
+}
+
+.glitter {
+  animation-name: glitter;
+  animation-duration: 3s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@layer utilities {
+  .animate-glitter {
+    /* use CSS vars so duration/delay can be set per-element via inline styles */
+    animation-name: glitter;
+    animation-duration: var(--glitter-duration, 3s);
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-delay: var(--glitter-delay, 0s);
+    animation-play-state: running !important;
+  }
+}
+
+/* Ensure spin animations always run continuously and don't get paused on reload */
+.animate-spin,
+[class*="animate-spin"] {
+  animation-iteration-count: infinite !important;
+  animation-play-state: running !important;
+}
+
+/* Override any accidental paused utility to keep animations running */
+.paused {
+  animation-play-state: running !important;
+}

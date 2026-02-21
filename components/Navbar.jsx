@@ -2,16 +2,15 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon, User, LogOut, Code2, Home, LayoutDashboard, Settings, ChevronDown } from 'lucide-react';
+import { User, LogOut, Code2, Home, LayoutDashboard, Settings, ChevronDown, Menu, X } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const { data: session } = useSession();
-  const { theme, setTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const pathname = usePathname();
 
   const navLinks = [
@@ -27,26 +26,28 @@ export default function Navbar() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-background/80 border-b border-border"
+      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-black/80 border-b border-gray-800"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
+        {/* Logo (left) */}
+        <div className="flex items-center gap-2">
           <Link href="/">
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-2 cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
                 <Code2 className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-foreground to-blue-500 bg-clip-text text-transparent">
+              <span className="text-xl font-bold text-white">
                 vs-integrate
               </span>
             </motion.div>
           </Link>
+        </div>
 
-          {/* Navigation Links */}
+        {/* Centered Navigation Links (md+) */}
+        <div className="flex-1 flex justify-center">
           <div className="hidden md:flex items-center gap-1">
             {filteredLinks.map((link) => {
               const Icon = link.icon;
@@ -59,7 +60,7 @@ export default function Navbar() {
                     className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-blue-600/20 text-blue-500'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -71,21 +72,14 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Right Section */}
-        <div className="flex items-center gap-4">
-          {/* Theme Toggle */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
+        <div className="flex items-center gap-3">
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400"
           >
-            {theme === 'dark' ? (
-              <Sun className="w-5 h-5 text-yellow-400" />
-            ) : (
-              <Moon className="w-5 h-5 text-gray-700" />
-            )}
-          </motion.button>
+            {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
 
           {/* User Menu or Sign In */}
           {session ? (
@@ -93,7 +87,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-all duration-300 flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all duration-300 flex items-center gap-2"
               >
                 {session.user.image ? (
                   <img src={session.user.image} alt="" className="w-7 h-7 rounded-full" />
@@ -103,22 +97,22 @@ export default function Navbar() {
                   </div>
                 )}
                 <span className="hidden sm:inline text-sm font-medium">{session.user.name}</span>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                <ChevronDown className="w-4 h-4 text-gray-500" />
               </motion.button>
 
               {showUserMenu && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
+                  className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden"
                 >
-                  <div className="p-4 border-b border-border">
-                    <p className="font-medium text-sm">{session.user.name}</p>
-                    <p className="text-xs text-muted-foreground">{session.user.email}</p>
+                  <div className="p-4 border-b border-gray-800">
+                    <p className="font-medium text-sm text-white">{session.user.name}</p>
+                    <p className="text-xs text-gray-400">{session.user.email}</p>
                   </div>
                   
                   {/* Mobile Navigation */}
-                  <div className="md:hidden border-b border-border">
+                  <div className="md:hidden border-b border-gray-800">
                     {filteredLinks.map((link) => {
                       const Icon = link.icon;
                       return (
@@ -126,9 +120,9 @@ export default function Navbar() {
                           key={link.href}
                           href={link.href}
                           onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-muted transition-colors"
+                          className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-800 transition-colors text-gray-300"
                         >
-                          <Icon className="w-4 h-4 text-muted-foreground" />
+                          <Icon className="w-4 h-4 text-gray-500" />
                           {link.label}
                         </Link>
                       );
@@ -138,9 +132,9 @@ export default function Navbar() {
                   <Link
                     href="/onboarding"
                     onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-800 transition-colors text-gray-300"
                   >
-                    <Code2 className="w-4 h-4 text-muted-foreground" />
+                    <Code2 className="w-4 h-4 text-gray-500" />
                     Setup Guide
                   </Link>
                   <button
@@ -148,7 +142,7 @@ export default function Navbar() {
                       signOut({ callbackUrl: '/' });
                       setShowUserMenu(false);
                     }}
-                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-muted flex items-center gap-3 transition-colors"
+                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-gray-800 flex items-center gap-3 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign Out
@@ -162,7 +156,7 @@ export default function Navbar() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
                 >
                   Sign In
                 </motion.button>

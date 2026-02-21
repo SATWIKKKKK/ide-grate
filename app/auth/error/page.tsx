@@ -29,13 +29,13 @@ function AuthErrorContent() {
   const message = error ? errorMessages[error] || errorMessages.Default : errorMessages.Default
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-gray-900/80 backdrop-blur-xl border border-red-900/40 rounded-2xl p-8 shadow-2xl text-center">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-900/30 flex items-center justify-center">
             <AlertTriangle className="w-8 h-8 text-red-400" />
           </div>
@@ -55,15 +55,15 @@ function AuthErrorContent() {
           )}
 
           <Link
-            href="/auth/signin"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold rounded-xl transition-all duration-300"
+            href="/login"
+            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-all"
           >
             Try Again
           </Link>
 
           <Link
             href="/"
-            className="block mt-4 text-gray-500 hover:text-blue-400 transition-colors"
+            className="block mt-4 text-gray-500 hover:text-blue-400 transition-colors text-sm"
           >
             ← Back to home
           </Link>
@@ -76,8 +76,8 @@ function AuthErrorContent() {
 export default function AuthError() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-950 flex items-center justify-center p-4">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
       </div>
     }>
       <AuthErrorContent />

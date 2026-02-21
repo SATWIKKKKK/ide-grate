@@ -11,16 +11,30 @@ export async function GET(request: NextRequest) {
     if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
+    const fromParam = searchParams.get("from")
+    const toParam = searchParams.get("to")
     const days = parseInt(searchParams.get("days") || "30")
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    let startDate: Date
+    let endDate: Date | undefined
+
+    if (fromParam) {
+      startDate = new Date(fromParam)
+      if (toParam) {
+        endDate = new Date(toParam)
+        endDate.setHours(23, 59, 59, 999)
+      }
+    } else {
+      startDate = new Date()
+      startDate.setDate(startDate.getDate() - days)
+    }
 
     const activities = await prisma.activity.findMany({
       where: {
         userId: sessionUser.id,
         startTime: {
           gte: startDate,
+          ...(endDate ? { lte: endDate } : {}),
         },
       },
       orderBy: {

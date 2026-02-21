@@ -15,13 +15,13 @@ function CopyButton({ text }) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-2 right-2 p-2 rounded bg-muted hover:bg-muted/80 transition-colors"
+      className="absolute top-2 right-2 p-2 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
       title="Copy to clipboard"
     >
       {copied ? (
         <Check className="w-4 h-4 text-green-500" />
       ) : (
-        <Copy className="w-4 h-4 text-muted-foreground" />
+        <Copy className="w-4 h-4 text-gray-400" />
       )}
     </button>
   )
@@ -64,18 +64,18 @@ export default function GetStarted() {
   ]
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Get Started</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">Get Started</h2>
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
             Follow these steps to install the VS Code extension and start tracking your coding activity.
           </p>
         </div>
 
         <div className="relative">
           {/* Vertical timeline line */}
-          <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-border" />
+          <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-800" />
 
           {/* Steps */}
           <div className="space-y-12">
@@ -84,7 +84,7 @@ export default function GetStarted() {
               return (
                 <div key={index} className="relative flex gap-6">
                   {/* Icon circle */}
-                  <div className="relative z-10 flex-shrink-0">
+                  <div className="relative z-10 shrink-0">
                     <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
                       <Icon className="w-7 h-7 text-white" />
                     </div>
@@ -92,18 +92,18 @@ export default function GetStarted() {
 
                   {/* Content */}
                   <div className="flex-1 pb-8">
-                    <h3 className="text-xl font-semibold mb-2">
+                    <h3 className="text-xl font-semibold mb-2 text-white">
                       {index + 1}. {step.title}
                     </h3>
-                    <p className="text-muted-foreground mb-4">
+                    <p className="text-gray-400 mb-4">
                       {step.description}
                     </p>
 
                     {/* Commands */}
                     {step.commands.length > 0 && (
                       <div className="relative">
-                        <pre className="bg-card border border-border rounded-lg p-4 overflow-x-auto text-sm">
-                          <code className="text-muted-foreground">
+                        <pre className="bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-x-auto text-sm">
+                          <code className="text-gray-300">
                             {step.commands.join('\n')}
                           </code>
                         </pre>
@@ -117,8 +117,8 @@ export default function GetStarted() {
           </div>
         </div>
 
-        <div className="mt-12 p-6 bg-muted/50 rounded-lg text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-12 p-6 bg-gray-900/50 rounded-lg text-center border border-gray-800">
+          <p className="text-sm text-gray-400">
             💡 <strong>Tip:</strong> If you don't have a database configured, the app runs in demo mode. 
             You can still explore the dashboard and see sample data.
           </p>

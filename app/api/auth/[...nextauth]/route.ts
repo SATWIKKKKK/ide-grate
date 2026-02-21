@@ -11,7 +11,7 @@ import crypto from "crypto"
 // Check which OAuth credentials are configured
 const hasGitHub = process.env.GITHUB_ID && process.env.GITHUB_SECRET
 const hasGoogle = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-const hasMicrosoft = process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET
+const hasMicrosoft = process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET && process.env.AZURE_AD_TENANT_ID
 const hasOAuthProviders = hasGitHub || hasGoogle || hasMicrosoft
 
 // Build providers array dynamically based on available credentials
@@ -38,9 +38,9 @@ if (hasGoogle) {
 if (hasMicrosoft) {
   providers.push(
     AzureADProvider({
-      clientId: process.env.MICROSOFT_CLIENT_ID!,
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
-      tenantId: "common",
+      clientId: process.env.AZURE_AD_CLIENT_ID!,
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+      tenantId: process.env.AZURE_AD_TENANT_ID!,
     })
   )
 }
@@ -85,7 +85,7 @@ if (!hasOAuthProviders || process.env.ENABLE_DEV_LOGIN === "true") {
 }
 
 // Use adapter only for OAuth providers (not credentials)
-const useAdapter = hasOAuthProviders && !process.env.ENABLE_DEV_LOGIN
+const useAdapter = (hasOAuthProviders) && !process.env.ENABLE_DEV_LOGIN
 
 export const authOptions: AuthOptions = {
   // Only use adapter when we have real OAuth providers
@@ -136,14 +136,14 @@ export const authOptions: AuthOptions = {
       }
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to dashboard after sign in
+      // Redirect to hero page after sign in
       if (url.startsWith("/")) return `${baseUrl}${url}`
       if (url.startsWith(baseUrl)) return url
-      return `${baseUrl}/dashboard`
+      return baseUrl
     },
   },
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/login",
     error: "/auth/error",
   },
   session: {
