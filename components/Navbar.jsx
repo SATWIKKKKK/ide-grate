@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { User, LogOut, Code2, Home, LayoutDashboard, Settings, ChevronDown, Menu, X } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
@@ -34,14 +35,16 @@ export default function Navbar() {
           <Link href="/">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 cursor-pointer"
+              className="flex items-center cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-                <Code2 className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">
-                vs-integrate
-              </span>
+              <Image
+                src="/logo.png"
+                alt="vs-integrate"
+                width={300}
+                height={300}
+                className="h-16 w-auto object-contain -my-3"
+                priority
+              />
             </motion.div>
           </Link>
         </div>

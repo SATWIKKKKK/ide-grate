@@ -61,7 +61,7 @@ export default function Dashboard() {
   const router = useRouter()
   const [stats, setStats] = useState<StatsOverview | null>(null)
   const [loading, setLoading] = useState(true)
-  const [apiKey, setApiKey] = useState<string | null>(null)
+  const [apiKey, setApiKey] = useState<string | null | undefined>(undefined)
   const [apiKeyLoading, setApiKeyLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
@@ -87,6 +87,7 @@ export default function Dashboard() {
 
   const dismissWelcomePopup = () => {
     sessionStorage.setItem('dashboard_welcome_seen', 'true')
+    localStorage.setItem('onboarding_skipped', 'true')
     setShowWelcomePopup(false)
   }
 
@@ -98,11 +99,11 @@ export default function Dashboard() {
   // Once they have a key OR dismiss onboarding, they stay on dashboard.
   useEffect(() => {
     if (!session?.user || loading) return
-    // apiKey === null means fetch returned no key (brand new user)
-    // stats check ensures we don't redirect returning users with existing data
+    // apiKey is undefined while still loading — only act when confirmed null
+    if (apiKey === undefined) return
     if (apiKey === null && (!stats || stats.totalSessions === 0)) {
-      // Check sessionStorage flag — if user explicitly skipped, don't redirect
-      const skipped = sessionStorage.getItem('onboarding_skipped')
+      // Check localStorage flag — persists across tabs/sessions
+      const skipped = localStorage.getItem('onboarding_skipped')
       if (!skipped) {
         router.push('/onboarding')
       }

@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { signIn, getProviders } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { Github, Code2, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -105,11 +106,15 @@ function SignUpContent() {
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-            <Code2 className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold text-white">vs-integrate</span>
+        <Link href="/" className="flex items-center justify-center mb-8">
+          <Image
+            src="/logo.png"
+            alt="vs-integrate"
+            width={400}
+            height={400}
+            className="h-36 w-auto object-contain"
+            priority
+          />
         </Link>
 
         <Card className="bg-gray-900 border-gray-800">

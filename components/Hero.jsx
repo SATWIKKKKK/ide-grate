@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Code2, ArrowRight, Key, LayoutDashboard } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import ContributionGraph from './ContributionGraph';
 
 const container = {
@@ -38,9 +39,14 @@ export default function Hero() {
           className="max-w-2xl mx-auto text-center relative z-10"
         >
           <motion.div variants={item} className="mb-6 flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-600/30 flex items-center justify-center">
-              <Key className="w-8 h-8 text-blue-400" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="vs-integrate"
+              width={300}
+              height={300}
+              className="h-28 w-auto object-contain"
+              priority
+            />
           </motion.div>
 
           <motion.h1
