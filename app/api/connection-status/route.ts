@@ -37,6 +37,16 @@ export async function GET(request: NextRequest) {
       select: { endTime: true },
     })
 
+    // Check UserStats (also updated by connection_test heartbeats)
+    const stats = await prisma.userStats.findUnique({
+      where: { userId: sessionUser.id },
+      select: { totalSessions: true, totalHours: true, lastActiveDate: true },
+    })
+
+    // connection_test heartbeats only update UserStats.lastActiveDate, not Activity records
+    // so we also check lastActiveDate to detect fresh connections
+    const recentConnectionTest = stats?.lastActiveDate && stats.lastActiveDate >= fiveMinutesAgo
+
     // Check for any activity ever
     const anyActivity = recentActivity || await prisma.activity.findFirst({
       where: { userId: sessionUser.id },
@@ -44,15 +54,10 @@ export async function GET(request: NextRequest) {
       select: { endTime: true },
     })
 
-    const stats = await prisma.userStats.findUnique({
-      where: { userId: sessionUser.id },
-      select: { totalSessions: true, totalHours: true, lastActiveDate: true },
-    })
-
     return NextResponse.json({
-      connected: !!recentActivity,
+      connected: !!recentActivity || !!recentConnectionTest,
       hasApiKey: true,
-      hasActivity: !!anyActivity,
+      hasActivity: !!anyActivity || !!recentConnectionTest,
       lastActivityAt: anyActivity?.endTime || stats?.lastActiveDate || null,
       totalSessions: stats?.totalSessions || 0,
       totalHours: stats?.totalHours || 0,

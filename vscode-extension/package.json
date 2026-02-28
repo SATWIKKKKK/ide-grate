@@ -3,7 +3,7 @@
   "displayName": "VS Integrate - Coding Activity Tracker",
   "description": "Track your coding activity and visualize it with beautiful contribution graphs on vs-integrate",
   "version": "0.1.0",
-  "publisher": "vs-integrate",
+  "publisher": "vsintegrate",
   "engines": {
     "vscode": "^1.85.0"
   },

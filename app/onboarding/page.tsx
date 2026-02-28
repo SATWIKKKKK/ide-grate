@@ -5,126 +5,108 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Code2, Key, Download, Check, Copy, RefreshCw,
-  ArrowRight, CheckCircle2, Loader2, ExternalLink,
-  Wifi, WifiOff, Radio
+  Code2, Download, Check, RefreshCw,
+  ArrowRight, CheckCircle2, Loader2,
+  Wifi
 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function OnboardingPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [step, setStep] = useState(1)
   const [apiKey, setApiKey] = useState<string | null>(null)
-  const [apiKeyLoading, setApiKeyLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'receiving_data'>('disconnected')
-  const [vsixDownloaded, setVsixDownloaded] = useState(false)
+  const [connecting, setConnecting] = useState(false)
+  const [connected, setConnected] = useState(false)
+  const [receivingData, setReceivingData] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
+  // Redirect unauthenticated users
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
 
+  // Check if user already has an API key on load
   useEffect(() => {
-    if (session?.user) fetchApiKey()
+    if (session?.user) {
+      fetch('/api/apikey')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.apiKey) setApiKey(data.apiKey)
+        })
+        .catch(() => {})
+    }
   }, [session])
 
-  // Poll connection status every 3 seconds during onboarding
+  // Poll connection status when on step 3
   useEffect(() => {
-    if (!apiKey || connectionStatus === 'receiving_data') return
-    const interval = setInterval(async () => {
+    if (step < 3) return
+
+    const poll = async () => {
       try {
         const res = await fetch('/api/connection-status')
         if (res.ok) {
           const data = await res.json()
-          if (data.hasActivity && data.totalSessions > 0) {
-            setConnectionStatus('receiving_data')
-          } else if (data.connected) {
-            setConnectionStatus('connected')
-          } else if (data.hasApiKey) {
-            // Has API key but no activity yet — extension might be connected but hasn't sent data
-            setConnectionStatus(connectionStatus === 'disconnected' ? 'disconnected' : 'connecting')
+          if (data.connected) {
+            setConnected(true)
+            if (data.hasActivity && data.totalSessions > 0) {
+              setReceivingData(true)
+            }
           }
         }
-      } catch { /* ignore */ }
-    }, 3000)
+      } catch { /* ignore polling errors */ }
+    }
+
+    poll()
+    const interval = setInterval(poll, 3000)
     return () => clearInterval(interval)
-  }, [apiKey, connectionStatus])
+  }, [step])
 
-  const fetchApiKey = async () => {
+  // Auto-redirect to dashboard when receiving data
+  useEffect(() => {
+    if (receivingData) {
+      const timeout = setTimeout(() => router.push('/dashboard'), 2500)
+      return () => clearTimeout(timeout)
+    }
+  }, [receivingData, router])
+
+  // Step 2: Generate API key (if needed) + open deep link — one click
+  const handleConnect = async () => {
+    setConnecting(true)
+    setError(null)
     try {
-      const res = await fetch('/api/apikey')
-      if (res.ok) {
+      let key = apiKey
+      if (!key) {
+        const res = await fetch('/api/apikey', { method: 'POST' })
+        if (!res.ok) throw new Error('Failed to generate API key')
         const data = await res.json()
-        if (data.apiKey) {
-          setApiKey(data.apiKey)
-          setConnectionStatus('connected')
-        }
+        key = data.apiKey
+        setApiKey(key)
       }
-    } catch { /* ignore */ }
-  }
 
-  const generateApiKey = async () => {
-    setApiKeyLoading(true)
-    try {
-      const res = await fetch('/api/apikey', { method: 'POST' })
-      if (res.ok) {
-        const data = await res.json()
-        setApiKey(data.apiKey)
-        setConnectionStatus('connected')
-      }
-    } catch { /* ignore */ }
-    setApiKeyLoading(false)
-  }
+      const endpoint = `${window.location.origin}/api/heartbeat`
+      const deepLink = `vscode://vsintegrate.vs-integrate-tracker/auth?key=${encodeURIComponent(key!)}&endpoint=${encodeURIComponent(endpoint)}`
+      window.location.href = deepLink
 
-  const copyApiKey = () => {
-    if (apiKey) {
-      navigator.clipboard.writeText(apiKey)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      // Move to verification step after a brief delay
+      setTimeout(() => {
+        setStep(3)
+        setConnecting(false)
+      }, 1500)
+    } catch {
+      setError('Failed to connect. Please try again.')
+      setConnecting(false)
     }
   }
 
-  const openInVSCode = () => {
-    if (!apiKey) return
-    const endpoint = typeof window !== 'undefined'
-      ? `${window.location.origin}/api/heartbeat`
-      : 'http://localhost:3000/api/heartbeat'
-    // VS Code URI scheme: vscode://<publisher>.<extensionName>/<path>
-    const deepLink = `vscode://vs-integrate.vs-integrate-tracker/auth?key=${encodeURIComponent(apiKey)}&endpoint=${encodeURIComponent(endpoint)}`
-    setConnectionStatus('connecting')
-    window.location.href = deepLink
-  }
-
+  // Step 1: Download the VSIX file
   const downloadVSIX = () => {
-    setVsixDownloaded(true)
-    // Download VSIX directly from our public folder
-    const vsixUrl = process.env.NEXT_PUBLIC_VSIX_URL || '/vs-integrate-tracker.vsix'
-    // Use an anchor element to trigger a download instead of opening in a new tab
     const a = document.createElement('a')
-    a.href = vsixUrl
+    a.href = '/downloads/extension.vsix'
     a.download = 'vs-integrate-tracker.vsix'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-  }
-
-  const testConnection = async () => {
-    setConnectionStatus('connecting')
-    try {
-      const res = await fetch('/api/connection-status')
-      if (res.ok) {
-        const data = await res.json()
-        if (data.hasActivity && data.totalSessions > 0) {
-          setConnectionStatus('receiving_data')
-        } else if (data.connected) {
-          setConnectionStatus('connected')
-        } else {
-          setConnectionStatus('disconnected')
-        }
-      }
-    } catch {
-      setConnectionStatus('disconnected')
-    }
   }
 
   if (status === 'loading') {
@@ -137,253 +119,266 @@ export default function OnboardingPage() {
 
   if (!session) return null
 
-  const isStep1Done = !!apiKey
-  const isStep2Done = connectionStatus === 'connected' || connectionStatus === 'receiving_data'
-  const isStep3Done = connectionStatus === 'receiving_data'
-  const completedSteps = [isStep1Done, isStep2Done, isStep3Done].filter(Boolean).length
-
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Header */}
+      {/* Navbar */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/80 border-b border-gray-800 shrink-0">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
               <Code2 className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">vs-integrate</span>
+            <span className="text-lg font-bold">vs-integrate</span>
           </Link>
           <Link href="/dashboard" className="text-xs text-gray-500 hover:text-white transition-colors">
-            Skip to Dashboard →
+            Skip →
           </Link>
         </div>
       </nav>
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-white">
-            Get started in 3 simple steps
-          </h1>
-          <p className="text-gray-400">
-            Connect your VS Code in under a minute
-          </p>
-          {/* Progress */}
-          <div className="flex items-center justify-center gap-2 mt-4">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-10">
+        {/* Header + Progress */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+          <h1 className="text-3xl font-bold mb-2">Setup in 3 clicks</h1>
+          <p className="text-gray-400">Install → Connect → Code</p>
+
+          <div className="flex items-center justify-center gap-2 mt-6">
             {[1, 2, 3].map(i => (
               <div key={i} className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                  (i === 1 && isStep1Done) || (i === 2 && isStep2Done) || (i === 3 && isStep3Done)
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  step > i
                     ? 'bg-green-600 text-white'
-                    : 'bg-gray-800 text-gray-400'
+                    : step === i
+                    ? 'bg-blue-600 text-white ring-2 ring-blue-400/50'
+                    : 'bg-gray-800 text-gray-500'
                 }`}>
-                  {((i === 1 && isStep1Done) || (i === 2 && isStep2Done) || (i === 3 && isStep3Done))
-                    ? <Check className="w-4 h-4" />
-                    : i
-                  }
+                  {step > i ? <Check className="w-4 h-4" /> : i}
                 </div>
-                {i < 3 && <div className={`w-12 h-1 rounded ${completedSteps >= i ? 'bg-green-600' : 'bg-gray-800'}`} />}
+                {i < 3 && (
+                  <div className={`w-14 h-1 rounded-full ${step > i ? 'bg-green-600' : 'bg-gray-800'}`} />
+                )}
               </div>
             ))}
           </div>
         </motion.div>
 
-        <div className="space-y-4">
-          {/* Step 1: Get Extension + API Key */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className={`bg-gray-900 border rounded-xl overflow-hidden transition-all ${isStep1Done ? 'border-green-600/30' : 'border-gray-800'}`}
-          >
-            <div className="p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isStep1Done ? 'bg-green-600' : 'bg-blue-600'}`}>
-                  {isStep1Done ? <Check className="w-5 h-5 text-white" /> : <Download className="w-5 h-5 text-white" />}
+        <AnimatePresence mode="wait">
+          {/* ─── STEP 1: Install Extension ─── */}
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center">
+                    <Download className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Install the Extension</h2>
+                    <p className="text-sm text-gray-400">Download and install in VS Code</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Step 1: Download & Generate Key</h2>
-                  <p className="text-sm text-gray-400 mt-0.5">Get the extension and your personal API key</p>
-                </div>
-              </div>
-              <div className="space-y-3">
+
+                {/* Download button */}
                 <button
                   onClick={downloadVSIX}
-                  className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-3 text-sm"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-semibold text-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  <Download className="w-4 h-4 text-blue-400" />
-                  <span className="text-gray-300">Download VS Integrate Extension (.vsix)</span>
-                  {vsixDownloaded && <CheckCircle2 className="w-4 h-4 text-green-400 ml-auto" />}
+                  <Download className="w-5 h-5" />
+                  Download Extension
                 </button>
-                <p className="text-xs text-gray-500 ml-1">
-                  Then: Extensions panel → ··· → Install from VSIX
-                </p>
-                {apiKey ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 p-2.5 bg-gray-800 rounded-lg text-xs font-mono break-all border border-gray-700 text-gray-300">
-                        {apiKey}
-                      </code>
-                      <button onClick={copyApiKey} className="p-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700" title="Copy">
-                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-green-500 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> API key ready
-                    </p>
-                  </div>
-                ) : (
-                  <button
-                    onClick={generateApiKey}
-                    disabled={apiKeyLoading}
-                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium"
-                  >
-                    {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
-                    Generate API Key
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.div>
 
-          {/* Step 2: Connect to VS Code */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className={`bg-gray-900 border rounded-xl overflow-hidden transition-all ${isStep2Done ? 'border-green-600/30' : 'border-gray-800'} ${!isStep1Done ? 'opacity-50 pointer-events-none' : ''}`}
-          >
-            <div className="p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isStep2Done ? 'bg-green-600' : 'bg-blue-600'}`}>
-                  {isStep2Done ? <Check className="w-5 h-5 text-white" /> : <Code2 className="w-5 h-5 text-white" />}
+                {/* Install instructions */}
+                <div className="mt-5 space-y-3">
+                  <p className="text-sm font-medium text-gray-300">After downloading:</p>
+                  <div className="space-y-2">
+                    {[
+                      'Open VS Code',
+                      'Go to Extensions panel (Ctrl+Shift+X)',
+                      'Click ··· menu → "Install from VSIX..."',
+                      'Select the downloaded file',
+                    ].map((text, i) => (
+                      <div key={i} className="flex items-start gap-3 p-2.5 bg-gray-800/50 rounded-lg">
+                        <span className="w-6 h-6 rounded-full bg-gray-700 text-gray-300 flex items-center justify-center text-xs font-bold shrink-0">
+                          {i + 1}
+                        </span>
+                        <span className="text-sm text-gray-300">{text}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Step 2: Connect to Your Account</h2>
-                  <p className="text-sm text-gray-400 mt-0.5">Auto-configure your API key in VS Code</p>
-                </div>
-              </div>
-              <div className="space-y-3">
+
+                {/* Confirm installed */}
                 <button
-                  onClick={openInVSCode}
-                  disabled={!apiKey}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                  onClick={() => setStep(2)}
+                  className="w-full mt-5 py-3.5 bg-green-600 hover:bg-green-500 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  Open VS Code & Auto-Connect
+                  <Check className="w-5 h-5" />
+                  I&apos;ve Installed the Extension
                 </button>
-                <p className="text-xs text-gray-500 text-center">
-                  This will open VS Code and automatically configure your API key
+              </div>
+            </motion.div>
+          )}
+
+          {/* ─── STEP 2: Connect VS Code ─── */}
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center">
+                    <Wifi className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Connect VS Code</h2>
+                    <p className="text-sm text-gray-400">One click to link your account</p>
+                  </div>
+                </div>
+
+                {/* Single connect button */}
+                <button
+                  onClick={handleConnect}
+                  disabled={connecting}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 rounded-xl text-white font-semibold text-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  {connecting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Opening VS Code...
+                    </>
+                  ) : (
+                    <>
+                      <Code2 className="w-5 h-5" />
+                      Connect VS Code
+                    </>
+                  )}
+                </button>
+
+                {error && (
+                  <p className="text-sm text-red-400 mt-3 text-center">{error}</p>
+                )}
+
+                <p className="text-xs text-gray-500 mt-4 text-center">
+                  This generates your API key and opens VS Code to auto-configure it.
+                  <br />Make sure VS Code is open and the extension is installed.
                 </p>
-                <details className="text-xs text-gray-500">
+
+                {/* Manual fallback */}
+                <details className="mt-4 text-xs text-gray-500">
                   <summary className="cursor-pointer hover:text-gray-300 transition-colors">
-                    Manual setup (if auto-connect doesn't work)
+                    Manual setup (if auto-connect doesn&apos;t work)
                   </summary>
                   <div className="mt-2 p-3 bg-gray-800 rounded-lg space-y-2 text-gray-400">
                     <p>1. Open VS Code Command Palette: <code className="px-1 bg-gray-700 rounded text-white">Ctrl+Shift+P</code></p>
                     <p>2. Type: <code className="px-1 bg-gray-700 rounded text-white">VS Integrate: Set API Key</code></p>
                     <p>3. Paste your API key when prompted</p>
+                    {apiKey && (
+                      <div className="mt-2 p-2 bg-gray-900 rounded border border-gray-700">
+                        <p className="text-xs text-gray-500 mb-1">Your API Key:</p>
+                        <code className="text-xs text-gray-300 break-all">{apiKey}</code>
+                      </div>
+                    )}
                   </div>
                 </details>
-              </div>
-            </div>
-          </motion.div>
 
-          {/* Step 3: Start Coding */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className={`bg-gray-900 border rounded-xl overflow-hidden transition-all ${isStep3Done ? 'border-green-600/30' : 'border-gray-800'} ${!isStep1Done ? 'opacity-50 pointer-events-none' : ''}`}
-          >
-            <div className="p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isStep3Done ? 'bg-green-600' : 'bg-blue-600'}`}>
-                  {isStep3Done ? <Check className="w-5 h-5 text-white" /> : <Radio className="w-5 h-5 text-white" />}
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Step 3: Start Coding</h2>
-                  <p className="text-sm text-gray-400 mt-0.5">Open any file in VS Code and code for 30 seconds</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className={`p-3 rounded-lg flex items-center gap-3 ${
-                  connectionStatus === 'receiving_data'
-                    ? 'bg-green-900/20 border border-green-600/30'
-                    : connectionStatus === 'connecting'
-                    ? 'bg-blue-900/20 border border-blue-600/30'
-                    : 'bg-gray-800 border border-gray-700'
-                }`}>
-                  {connectionStatus === 'receiving_data' ? (
-                    <>
-                      <Wifi className="w-5 h-5 text-green-400" />
-                      <div>
-                        <p className="text-sm font-medium text-green-400">Receiving data!</p>
-                        <p className="text-xs text-green-400/60">Your coding activity is being tracked</p>
-                      </div>
-                    </>
-                  ) : connectionStatus === 'connecting' ? (
-                    <>
-                      <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
-                      <div>
-                        <p className="text-sm font-medium text-blue-400">Checking connection...</p>
-                        <p className="text-xs text-blue-400/60">Looking for activity data</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <WifiOff className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-400">Waiting for activity...</p>
-                        <p className="text-xs text-gray-500">Start coding in VS Code to see data here</p>
-                      </div>
-                    </>
-                  )}
-                </div>
                 <button
-                  onClick={testConnection}
-                  disabled={connectionStatus === 'connecting'}
-                  className="w-full px-4 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm text-gray-300"
+                  onClick={() => setStep(1)}
+                  className="w-full mt-4 py-2 text-sm text-gray-500 hover:text-gray-300 transition-colors"
                 >
-                  <RefreshCw className={`w-4 h-4 ${connectionStatus === 'connecting' ? 'animate-spin' : ''}`} />
-                  Test Connection
+                  ← Back to Step 1
                 </button>
               </div>
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
+          )}
 
-        {/* Success State */}
-        <AnimatePresence>
-          {isStep3Done && (
+          {/* ─── STEP 3: Verify Connection ─── */}
+          {step === 3 && (
             <motion.div
+              key="step3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-6 text-center"
+              exit={{ opacity: 0, y: -20 }}
             >
-              <div className="p-6 bg-green-900/20 border border-green-600/30 rounded-xl">
-                <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-white mb-1">You&apos;re all set!</h3>
-                <p className="text-sm text-gray-400 mb-4">Your coding activity is being tracked. Head to your dashboard to see it.</p>
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                {receivingData ? (
+                  /* ── All done ── */
+                  <div className="text-center py-4">
+                    <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold mb-2">You&apos;re All Set!</h2>
+                    <p className="text-gray-400 mb-6">
+                      Your coding activity is being tracked. Redirecting to dashboard...
+                    </p>
+                    <Link
+                      href="/dashboard"
+                      className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-semibold"
+                    >
+                      Go to Dashboard
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                ) : connected ? (
+                  /* ── Connected but no activity data yet ── */
+                  <div className="text-center py-4">
+                    <Wifi className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold mb-2">Connected!</h2>
+                    <p className="text-gray-400 mb-2">VS Code is linked to your account.</p>
+                    <p className="text-sm text-gray-500 mb-6">
+                      Open any file in VS Code and start coding. We&apos;ll detect your activity automatically.
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-sm text-blue-400">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Waiting for coding activity...
+                    </div>
+                    <Link
+                      href="/dashboard"
+                      className="inline-flex items-center gap-2 px-8 py-3 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-semibold"
+                    >
+                      Go to Dashboard
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                ) : (
+                  /* ── Waiting for connection ── */
+                  <div className="text-center py-4">
+                    <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                    </div>
+                    <h2 className="text-xl font-semibold mb-2">Waiting for Connection...</h2>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Make sure VS Code is open. The extension should connect automatically.
+                    </p>
+                    <button
+                      onClick={handleConnect}
+                      className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
+                    >
+                      <RefreshCw className="w-4 h-4 inline mr-2" />
+                      Try Again
+                    </button>
+                    <button
+                      onClick={() => setStep(2)}
+                      className="block mx-auto mt-3 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      ← Back
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {!isStep3Done && (
-          <div className="mt-6 text-center">
-            <Link href="/dashboard" className="text-sm text-gray-500 hover:text-white transition-colors">
-              Skip to Dashboard →
-            </Link>
-          </div>
-        )}
+        <div className="mt-8 text-center">
+          <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-400 transition-colors">
+            Skip to Dashboard →
+          </Link>
+        </div>
       </main>
     </div>
   )
