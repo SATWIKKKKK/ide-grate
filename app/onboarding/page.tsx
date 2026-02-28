@@ -89,15 +89,23 @@ export default function OnboardingPage() {
     const endpoint = typeof window !== 'undefined'
       ? `${window.location.origin}/api/heartbeat`
       : 'http://localhost:3000/api/heartbeat'
-    const deepLink = `vscode://vs-integrate-tracker/auth?key=${encodeURIComponent(apiKey)}&endpoint=${encodeURIComponent(endpoint)}`
+    // VS Code URI scheme: vscode://<publisher>.<extensionName>/<path>
+    const deepLink = `vscode://vs-integrate.vs-integrate-tracker/auth?key=${encodeURIComponent(apiKey)}&endpoint=${encodeURIComponent(endpoint)}`
+    setConnectionStatus('connecting')
     window.location.href = deepLink
   }
 
   const downloadVSIX = () => {
     setVsixDownloaded(true)
-    // Use env var for direct VSIX download, fallback to GitHub releases page
-    const vsixUrl = process.env.NEXT_PUBLIC_VSIX_URL || 'https://github.com/SATWIKKKKK/ide-grate/releases/latest'
-    window.open(vsixUrl, '_blank')
+    // Download VSIX directly from our public folder
+    const vsixUrl = process.env.NEXT_PUBLIC_VSIX_URL || '/vs-integrate-tracker.vsix'
+    // Use an anchor element to trigger a download instead of opening in a new tab
+    const a = document.createElement('a')
+    a.href = vsixUrl
+    a.download = 'vs-integrate-tracker.vsix'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   const testConnection = async () => {

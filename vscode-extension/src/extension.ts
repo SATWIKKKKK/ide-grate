@@ -20,17 +20,18 @@ export function activate(context: vscode.ExtensionContext) {
     // Register URI handler for deep-link authentication
     context.subscriptions.push(
         vscode.window.registerUriHandler({
-            handleUri(uri: vscode.Uri) {
+            async handleUri(uri: vscode.Uri) {
                 if (uri.path === '/auth') {
                     const params = new URLSearchParams(uri.query);
                     const apiKey = params.get('key');
                     const endpoint = params.get('endpoint');
                     if (apiKey) {
-                        vscode.workspace.getConfiguration('vsIntegrate').update(
-                            'apiKey', apiKey, vscode.ConfigurationTarget.Global
-                        ).then(() => {
+                        try {
+                            await vscode.workspace.getConfiguration('vsIntegrate').update(
+                                'apiKey', apiKey, vscode.ConfigurationTarget.Global
+                            );
                             if (endpoint) {
-                                vscode.workspace.getConfiguration('vsIntegrate').update(
+                                await vscode.workspace.getConfiguration('vsIntegrate').update(
                                     'apiEndpoint', endpoint, vscode.ConfigurationTarget.Global
                                 );
                             }
@@ -39,16 +40,21 @@ export function activate(context: vscode.ExtensionContext) {
                             );
                             startTracking();
                             // Send a connection test heartbeat immediately
-                            sendConnectionTest().then(() => {
+                            try {
+                                await sendConnectionTest();
                                 vscode.window.showInformationMessage(
                                     '✅ Connection verified — you\'re all set!'
                                 );
-                            }).catch(() => {
+                            } catch {
                                 vscode.window.showWarningMessage(
                                     '⚠️ API key saved, but connection test failed. Check your endpoint.'
                                 );
-                            });
-                        });
+                            }
+                        } catch (err) {
+                            vscode.window.showErrorMessage(
+                                `Failed to save API key: ${err}`
+                            );
+                        }
                     }
                 }
             }
