@@ -103,7 +103,7 @@ export default function OnboardingPage() {
   const downloadVSIX = () => {
     const a = document.createElement('a')
     a.href = '/downloads/extension.vsix'
-    a.download = 'vs-integrate-tracker.vsix'
+    a.download = 'vs-integrate-extension.vsix'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

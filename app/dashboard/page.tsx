@@ -94,12 +94,18 @@ export default function Dashboard() {
     if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
 
-  // Redirect new users (no API key, no activity) to onboarding
+  // Only redirect brand-new users who have never generated an API key.
+  // Once they have a key OR dismiss onboarding, they stay on dashboard.
   useEffect(() => {
     if (!session?.user || loading) return
-    // After data loads, check if user has ever set up the extension
-    if (!apiKey && (!stats || stats.totalSessions === 0)) {
-      router.push('/onboarding')
+    // apiKey === null means fetch returned no key (brand new user)
+    // stats check ensures we don't redirect returning users with existing data
+    if (apiKey === null && (!stats || stats.totalSessions === 0)) {
+      // Check sessionStorage flag — if user explicitly skipped, don't redirect
+      const skipped = sessionStorage.getItem('onboarding_skipped')
+      if (!skipped) {
+        router.push('/onboarding')
+      }
     }
   }, [session, loading, apiKey, stats, router])
 
@@ -258,7 +264,7 @@ export default function Dashboard() {
   const openInVSCode = () => {
     if (!apiKey) return
     const endpoint = `${window.location.origin}/api/heartbeat`
-    window.location.href = `vscode://vs-integrate-tracker/auth?key=${encodeURIComponent(apiKey)}&endpoint=${encodeURIComponent(endpoint)}`
+    window.location.href = `vscode://vsintegrate.vs-integrate-tracker/auth?key=${encodeURIComponent(apiKey)}&endpoint=${encodeURIComponent(endpoint)}`
   }
 
   // Radar chart data

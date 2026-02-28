@@ -40,6 +40,11 @@ export default withAuth(
         if (pathname.startsWith('/api/download/')) {
           return true
         }
+
+        // Allow debug endpoints (DB connectivity test)
+        if (pathname.startsWith('/api/debug/')) {
+          return true
+        }
         
         // Allow API routes for heartbeat (extension needs this)
         if (pathname.startsWith('/api/heartbeat')) {

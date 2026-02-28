@@ -10,5 +10,5 @@ export async function GET(request: NextRequest) {
 
   // Default: serve from our public folder (bundled with the app)
   const origin = request.nextUrl.origin
-  return NextResponse.redirect(`${origin}/vs-integrate-tracker.vsix`)
+  return NextResponse.redirect(`${origin}/downloads/extension.vsix`)
 }

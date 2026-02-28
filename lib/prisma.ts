@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
+import { Pool as PgPool } from 'pg'
+import { neon, Pool as NeonPool } from '@neondatabase/serverless'
 
 const createPrismaClient = () => {
   const connectionString = process.env.DATABASE_URL
@@ -40,14 +41,24 @@ const createPrismaClient = () => {
     return stub as unknown as PrismaClient
   }
 
-  const pool = new Pool({
-    connectionString,
-    max: 10, // Maximum connections in pool
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-  })
+  // Detect Neon DB vs standard PostgreSQL
+  const isNeon = connectionString.includes('neon.tech')
 
-  const adapter = new PrismaPg(pool)
+  // Use Neon serverless pool for neon.tech, standard pg Pool otherwise
+  const pool = isNeon
+    ? new NeonPool({ connectionString })
+    : new PgPool({
+        connectionString,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+        // Enable SSL if connection string requires it
+        ssl: connectionString.includes('sslmode=require')
+          ? { rejectUnauthorized: false }
+          : undefined,
+      })
+
+  const adapter = new PrismaPg(pool as any)
 
   return new PrismaClient({
     adapter,
