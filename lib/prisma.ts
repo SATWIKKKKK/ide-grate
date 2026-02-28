@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool as PgPool } from 'pg'
-import { neon, Pool as NeonPool } from '@neondatabase/serverless'
+import { Pool } from 'pg'
 
 const createPrismaClient = () => {
   const connectionString = process.env.DATABASE_URL
@@ -9,8 +8,6 @@ const createPrismaClient = () => {
   if (!connectionString) {
     console.warn('⚠️ DATABASE_URL not set - database features disabled')
 
-    // Lightweight stub that mimics PrismaClient model methods used in the app.
-    // Methods return reasonable demo values so routes can run without a DB.
     const methodHandler: ProxyHandler<any> = {
       get(_, prop: string) {
         return async (..._args: any[]) => {
@@ -25,6 +22,8 @@ const createPrismaClient = () => {
             case 'update':
             case 'upsert':
               return _args[0]?.data ?? {}
+            case 'count':
+              return 0
             default:
               return null
           }
@@ -41,24 +40,19 @@ const createPrismaClient = () => {
     return stub as unknown as PrismaClient
   }
 
-  // Detect Neon DB vs standard PostgreSQL
-  const isNeon = connectionString.includes('neon.tech')
+  // Standard pg Pool works with both Neon and any PostgreSQL host.
+  // Neon supports standard PostgreSQL wire protocol — no special driver needed.
+  const needsSsl = connectionString.includes('sslmode=require') || connectionString.includes('neon.tech')
 
-  // Use Neon serverless pool for neon.tech, standard pg Pool otherwise
-  const pool = isNeon
-    ? new NeonPool({ connectionString })
-    : new PgPool({
-        connectionString,
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
-        // Enable SSL if connection string requires it
-        ssl: connectionString.includes('sslmode=require')
-          ? { rejectUnauthorized: false }
-          : undefined,
-      })
+  const pool = new Pool({
+    connectionString,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
+  })
 
-  const adapter = new PrismaPg(pool as any)
+  const adapter = new PrismaPg(pool)
 
   return new PrismaClient({
     adapter,
