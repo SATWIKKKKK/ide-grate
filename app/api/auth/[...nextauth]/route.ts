@@ -11,7 +11,8 @@ import crypto from "crypto"
 // Check which OAuth credentials are configured
 const hasGitHub = process.env.GITHUB_ID && process.env.GITHUB_SECRET
 const hasGoogle = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-const hasMicrosoft = process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET && process.env.AZURE_AD_TENANT_ID
+// Microsoft only needs client ID + secret; tenant defaults to 'common' for personal + org accounts
+const hasMicrosoft = process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET
 const hasOAuthProviders = hasGitHub || hasGoogle || hasMicrosoft
 
 // Build providers array dynamically based on available credentials
@@ -40,7 +41,13 @@ if (hasMicrosoft) {
     AzureADProvider({
       clientId: process.env.AZURE_AD_CLIENT_ID!,
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-      tenantId: process.env.AZURE_AD_TENANT_ID!,
+      // Use 'common' to allow both personal Microsoft accounts and org accounts
+      tenantId: process.env.AZURE_AD_TENANT_ID || "common",
+      authorization: {
+        params: {
+          scope: "openid profile email User.Read",
+        },
+      },
     })
   )
 }
@@ -136,10 +143,14 @@ export const authOptions: AuthOptions = {
       }
     },
     async redirect({ url, baseUrl }) {
-      // Redirect to hero page after sign in
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      if (url.startsWith(baseUrl)) return url
-      return baseUrl
+      // If there's an explicit callback URL (e.g., from middleware), respect it
+      if (url.startsWith("/") && url !== "/") return `${baseUrl}${url}`
+      if (url.startsWith(baseUrl) && url !== baseUrl && url !== `${baseUrl}/`) return url
+
+      // Default: redirect to /onboarding for new users, /dashboard for returning ones
+      // The client-side onboarding page handles the actual check
+      // We always send to /dashboard and let the dashboard redirect if needed
+      return `${baseUrl}/dashboard`
     },
   },
   pages: {

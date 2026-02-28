@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
       language, 
       project, 
       file,
-      isIdle = false 
+      isIdle = false,
+      type, // 'connection_test' for initial connection verification
     } = body
 
     // Validate API key
@@ -25,7 +26,6 @@ export async function POST(request: NextRequest) {
     // Find user by API key
     const user = await prisma.user.findFirst({
       where: { 
-        // @ts-ignore - We'll add apiKey field to User model
         apiKey: apiKey 
       },
     })
@@ -35,6 +35,28 @@ export async function POST(request: NextRequest) {
         { error: "Invalid API key" },
         { status: 401 }
       )
+    }
+
+    // Connection test: validate key and return without creating activity
+    if (type === 'connection_test') {
+      // Update lastActiveDate in UserStats so the frontend can detect connectivity
+      await prisma.userStats.upsert({
+        where: { userId: user.id },
+        update: { lastActiveDate: new Date() },
+        create: {
+          userId: user.id,
+          totalHours: 0,
+          totalSessions: 0,
+          longestStreak: 0,
+          currentStreak: 0,
+          lastActiveDate: new Date(),
+        },
+      })
+      return NextResponse.json({ 
+        success: true, 
+        message: "Connection verified",
+        userId: user.id,
+      })
     }
 
     const now = new Date(timestamp || Date.now())
@@ -184,7 +206,6 @@ export async function GET(request: NextRequest) {
   }
 
   const user = await prisma.user.findFirst({
-    // @ts-ignore
     where: { apiKey },
   })
 

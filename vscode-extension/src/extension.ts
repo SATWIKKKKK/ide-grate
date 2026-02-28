@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
+import * as crypto from 'crypto';
+import * as os from 'os';
 
 let heartbeatInterval: NodeJS.Timeout | undefined;
 let lastActivityTime: number = Date.now();
@@ -14,6 +16,44 @@ export function activate(context: vscode.ExtensionContext) {
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarItem.command = 'vs-integrate.showStatus';
     context.subscriptions.push(statusBarItem);
+
+    // Register URI handler for deep-link authentication
+    context.subscriptions.push(
+        vscode.window.registerUriHandler({
+            handleUri(uri: vscode.Uri) {
+                if (uri.path === '/auth') {
+                    const params = new URLSearchParams(uri.query);
+                    const apiKey = params.get('key');
+                    const endpoint = params.get('endpoint');
+                    if (apiKey) {
+                        vscode.workspace.getConfiguration('vsIntegrate').update(
+                            'apiKey', apiKey, vscode.ConfigurationTarget.Global
+                        ).then(() => {
+                            if (endpoint) {
+                                vscode.workspace.getConfiguration('vsIntegrate').update(
+                                    'apiEndpoint', endpoint, vscode.ConfigurationTarget.Global
+                                );
+                            }
+                            vscode.window.showInformationMessage(
+                                '✅ VS Integrate connected! Your coding activity will now be tracked.'
+                            );
+                            startTracking();
+                            // Send a connection test heartbeat immediately
+                            sendConnectionTest().then(() => {
+                                vscode.window.showInformationMessage(
+                                    '✅ Connection verified — you\'re all set!'
+                                );
+                            }).catch(() => {
+                                vscode.window.showWarningMessage(
+                                    '⚠️ API key saved, but connection test failed. Check your endpoint.'
+                                );
+                            });
+                        });
+                    }
+                }
+            }
+        })
+    );
 
     // Register commands
     context.subscriptions.push(
@@ -43,6 +83,10 @@ function getConfig() {
         heartbeatInterval: config.get<number>('heartbeatInterval') || 30,
         idleTimeout: config.get<number>('idleTimeout') || 120
     };
+}
+
+function hashProjectPath(projectPath: string): string {
+    return crypto.createHash('sha256').update(projectPath).digest('hex').substring(0, 16);
 }
 
 function startTracking() {
@@ -79,7 +123,7 @@ function onActivity() {
     }
 }
 
-async function sendHeartbeat() {
+async function sendHeartbeat(): Promise<void> {
     const config = getConfig();
     
     if (!config.apiKey) {
@@ -88,6 +132,11 @@ async function sendHeartbeat() {
 
     const editor = vscode.window.activeTextEditor;
     const isIdle = (Date.now() - lastActivityTime) > (config.idleTimeout * 1000);
+    
+    // Hash the workspace folder path for privacy
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const projectPath = workspaceFolders?.[0]?.uri.fsPath || '';
+    const projectHash = projectPath ? hashProjectPath(projectPath) : undefined;
 
     const payload = {
         apiKey: config.apiKey,
@@ -95,6 +144,8 @@ async function sendHeartbeat() {
         language: editor?.document.languageId || 'unknown',
         file: editor?.document.fileName ? getFileName(editor.document.fileName) : null,
         project: vscode.workspace.name || 'unknown',
+        projectHash: projectHash,
+        platform: os.platform(),
         isIdle: isIdle
     };
 
@@ -104,6 +155,31 @@ async function sendHeartbeat() {
     } catch (error) {
         console.error('Failed to send heartbeat:', error);
         updateStatusBar('Error');
+        throw error;
+    }
+}
+
+async function sendConnectionTest(): Promise<void> {
+    const config = getConfig();
+    
+    if (!config.apiKey) {
+        return;
+    }
+
+    const payload = {
+        apiKey: config.apiKey,
+        timestamp: Date.now(),
+        type: 'connection_test',
+        platform: os.platform(),
+    };
+
+    try {
+        await postData(config.apiEndpoint, payload);
+        updateStatusBar('Tracking');
+    } catch (error) {
+        console.error('Connection test failed:', error);
+        updateStatusBar('Error');
+        throw error;
     }
 }
 

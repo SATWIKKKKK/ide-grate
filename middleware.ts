@@ -26,12 +26,27 @@ export default withAuth(
           return true
         }
         
+        // Allow public profile pages
+        if (pathname.startsWith('/u/')) {
+          return true
+        }
+        
+        // Allow public API routes (profile, widget, download, auth debug)
+        if (pathname.startsWith('/api/profile/') || pathname.startsWith('/api/widget/')) {
+          return true
+        }
+
+        // Allow download endpoint (VSIX download)
+        if (pathname.startsWith('/api/download/')) {
+          return true
+        }
+        
         // Allow API routes for heartbeat (extension needs this)
         if (pathname.startsWith('/api/heartbeat')) {
           return true
         }
         
-        // Allow NextAuth API routes
+        // Allow NextAuth API routes (includes /api/auth/debug)
         if (pathname.startsWith('/api/auth')) {
           return true
         }

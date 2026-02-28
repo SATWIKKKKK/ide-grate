@@ -43,12 +43,27 @@ model User {
   email         String?    @unique
   emailVerified DateTime?
   image         String?
+  username      String?    @unique  // Public profile username
+  bio           String?
   apiKey        String?    @unique  // API key for VS Code extension
+  // Privacy settings
+  profilePublic    Boolean @default(false)
+  showHours        Boolean @default(true)
+  showLanguages    Boolean @default(true)
+  showStreak       Boolean @default(true)
+  showHeatmap      Boolean @default(true)
+  showProjects     Boolean @default(false) // opt-in to show real project names
+  // Notification preferences
+  dailyDigest      Boolean @default(false)
+  streakReminder   Boolean @default(true)
+  // Relations
   accounts      Account[]
   sessions      Session[]
   activities    Activity[]
   stats         UserStats?
   dailyContributions DailyContribution[]
+  achievements  UserAchievement[]
+  goals         UserGoal[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -63,21 +78,25 @@ model VerificationToken {
 
 // Application Models
 model Activity {
-  id         String   @id @default(cuid())
-  userId     String
-  startTime  DateTime
-  endTime    DateTime
-  duration   Int      // in seconds
-  language   String?
-  fileType   String?
-  extensions String[] // Array of extensions used
-  idleTime   Int      @default(0) // in seconds
-  createdAt  DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  startTime    DateTime
+  endTime      DateTime
+  duration     Int      // in seconds
+  language     String?
+  fileType     String?
+  extensions   String[] // Array of extensions used
+  idleTime     Int      @default(0) // in seconds
+  projectHash  String?  // SHA256 of project path for privacy
+  projectName  String?  // only stored if user opted in
+  platform     String?  // darwin | win32 | linux
+  createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([startTime])
+  @@index([userId, startTime])
 }
 
 model UserStats {
@@ -91,6 +110,7 @@ model UserStats {
   topLanguages    Json     @default("[]") // Array of {language: string, hours: number}
   weeklyActivity  Json     @default("{}") // {dayOfWeek: hours}
   monthlyData     Json     @default("{}") // {month: hours}
+  productivityScore Int    @default(0)    // 0-100 daily score
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -104,6 +124,7 @@ model DailyContribution {
   hours     Float    @default(0)
   sessions  Int      @default(0)
   languages Json     @default("[]") // Array of languages used that day
+  projects  Json     @default("[]") // Array of project hashes
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -111,4 +132,32 @@ model DailyContribution {
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+  @@index([userId, date])
+}
+
+// Achievements system
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+// Goal tracking
+model UserGoal {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // 'daily_hours' | 'weekly_hours' | 'streak_days'
+  target    Float
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
