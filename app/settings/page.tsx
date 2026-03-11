@@ -47,6 +47,8 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('')
   const [exportLoading, setExportLoading] = useState(false)
   const [deleteDataLoading, setDeleteDataLoading] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleteStep, setDeleteStep] = useState(1)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -296,6 +298,13 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-400 mt-1">Use this key to connect VS Code extension to your account</p>
             </div>
             <div className="p-6 space-y-4">
+              <div className="bg-blue-900/15 border border-blue-800/30 rounded-lg p-3 text-xs text-blue-300 space-y-1">
+                <p className="font-medium text-blue-200">How the API key works:</p>
+                <p>• Your API key authenticates the VS Code extension with your account</p>
+                <p>• The extension sends heartbeats every 30 seconds while you code</p>
+                <p>• Only time and language data is sent — never code content</p>
+                <p>• Revoking the key instantly disconnects the extension</p>
+              </div>
               {apiKey ? (
                 <>
                   <div className="flex items-center gap-2">
@@ -341,10 +350,10 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3"><Code2 className="w-5 h-5 text-gray-400" /><span className="text-gray-300">VS Code Extension Setup</span></div>
                 <ChevronRight className="w-5 h-5 text-gray-500" />
               </Link>
-              <a href="https://github.com/SATWIKKKKK/ide-grate" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 hover:bg-gray-800 transition-colors">
+              <div className="flex items-center justify-between p-4 opacity-40 cursor-not-allowed">
                 <div className="flex items-center gap-3"><ExternalLink className="w-5 h-5 text-gray-400" /><span className="text-gray-300">View on GitHub</span></div>
-                <ChevronRight className="w-5 h-5 text-gray-500" />
-              </a>
+                <span className="text-xs text-gray-600">Coming soon</span>
+              </div>
             </div>
           </motion.div>
 
@@ -410,7 +419,7 @@ export default function SettingsPage() {
         )}
       </AnimatePresence>
 
-      {/* Delete Data Confirmation */}
+      {/* Delete Data Confirmation - 2-Step Verification */}
       <AnimatePresence>
         {showDataDeleteConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -419,15 +428,36 @@ export default function SettingsPage() {
                 <div className="w-12 h-12 rounded-full bg-red-600/20 flex items-center justify-center mx-auto mb-4">
                   <AlertTriangle className="w-6 h-6 text-red-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-center mb-2">Delete All Data?</h3>
-                <p className="text-gray-400 text-center text-sm mb-6">This will permanently delete all your activity data, achievements, goals, and stats. Your account will remain but all tracking data will be gone. This cannot be undone.</p>
-                <div className="flex gap-3">
-                  <button onClick={() => setShowDataDeleteConfirm(false)} className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300">Cancel</button>
-                  <button onClick={deleteData} disabled={deleteDataLoading} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors flex items-center justify-center gap-2">
-                    {deleteDataLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Delete Everything
-                  </button>
-                </div>
+                {deleteStep === 1 ? (
+                  <>
+                    <h3 className="text-lg font-semibold text-center mb-2 text-white">Delete All Data?</h3>
+                    <p className="text-gray-400 text-center text-sm mb-6">This will permanently delete all your activity data, achievements, goals, and stats. Your account will remain but all tracking data will be gone. <span className="text-red-400 font-medium">This cannot be undone.</span></p>
+                    <div className="flex gap-3">
+                      <button onClick={() => { setShowDataDeleteConfirm(false); setDeleteStep(1); setDeleteConfirmText(''); }} className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300">Cancel</button>
+                      <button onClick={() => setDeleteStep(2)} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">I understand, continue</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-semibold text-center mb-2 text-white">Final Confirmation</h3>
+                    <p className="text-gray-400 text-center text-sm mb-4">To confirm, type <span className="text-red-400 font-mono font-bold">DELETE</span> below:</p>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={e => setDeleteConfirmText(e.target.value)}
+                      placeholder="Type DELETE to confirm"
+                      className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm font-mono text-center mb-4 placeholder-gray-600 focus:border-red-500 focus:outline-none"
+                      autoFocus
+                    />
+                    <div className="flex gap-3">
+                      <button onClick={() => { setShowDataDeleteConfirm(false); setDeleteStep(1); setDeleteConfirmText(''); }} className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300">Cancel</button>
+                      <button onClick={deleteData} disabled={deleteDataLoading || deleteConfirmText !== 'DELETE'} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors flex items-center justify-center gap-2">
+                        {deleteDataLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        Delete Everything
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </div>

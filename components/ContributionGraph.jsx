@@ -115,12 +115,12 @@ export default function ContributionGraph() {
   const contributions = contributionData ? getContributionGrid() : [];
   
   const getColor = (level) => {
-    if (level === 0) return 'bg-gray-800';
-    if (level === 1) return 'bg-blue-900';
-    if (level === 2) return 'bg-blue-700';
-    if (level === 3) return 'bg-blue-500';
-    if (level === 4) return 'bg-blue-400';
-    return 'bg-blue-300';
+    if (level === 0) return 'bg-[#1e2530]';
+    if (level === 1) return 'bg-blue-300';
+    if (level === 2) return 'bg-blue-500';
+    if (level === 3) return 'bg-blue-700';
+    if (level === 4) return 'bg-blue-900';
+    return 'bg-blue-950';
   };
 
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -172,7 +172,7 @@ export default function ContributionGraph() {
       <div className="flex items-center gap-3 mt-6 text-xs text-gray-500">
         <span>Less</span>
         <div className="flex gap-1">
-          <div className="w-3 h-3 bg-gray-800 rounded-sm" />
+          <div className="w-3 h-3 bg-[#1e2530] rounded-sm" />
           <div className="w-3 h-3 bg-blue-300 rounded-sm" />
           <div className="w-3 h-3 bg-blue-500 rounded-sm" />
           <div className="w-3 h-3 bg-blue-700 rounded-sm" />

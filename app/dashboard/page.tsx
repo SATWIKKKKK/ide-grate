@@ -8,7 +8,7 @@ import {
   Code2, TrendingUp, Clock, Calendar as CalendarIcon, Activity, Key, Copy,
   RefreshCw, Check, X, ExternalLink, CheckCircle2, AlertCircle, Loader2,
   ArrowRight, Info, Timer, BarChart3, Gauge, CalendarDays, Search,
-  Trophy, Target, Flame, Star, Share2
+  Trophy, Target, Flame, Star, Share2, Unplug, Plug
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -77,6 +77,10 @@ export default function Dashboard() {
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [goalType, setGoalType] = useState('daily_hours')
   const [goalTarget, setGoalTarget] = useState('')
+  const [showProductivityPopup, setShowProductivityPopup] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown')
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
 
   const currentUser = session?.user
 
@@ -268,6 +272,46 @@ export default function Dashboard() {
     window.location.href = `vscode://vsintegrate.vs-integrate-tracker/auth?key=${encodeURIComponent(apiKey)}&endpoint=${encodeURIComponent(endpoint)}`
   }
 
+  // Check connection status on load
+  useEffect(() => {
+    if (!session?.user) return
+    const checkConnection = async () => {
+      try {
+        const res = await fetch('/api/connection-status')
+        if (res.ok) {
+          const data = await res.json()
+          setConnectionStatus(data.hasApiKey ? (data.connected || data.hasActivity ? 'connected' : 'disconnected') : 'disconnected')
+        }
+      } catch { setConnectionStatus('disconnected') }
+    }
+    checkConnection()
+  }, [session])
+
+  const disconnectExtension = async () => {
+    setDisconnecting(true)
+    try {
+      await fetch('/api/apikey', { method: 'DELETE' })
+      setApiKey(null)
+      setConnectionStatus('disconnected')
+      setShowDisconnectConfirm(false)
+    } catch { /* ignore */ }
+    setDisconnecting(false)
+  }
+
+  const reconnectExtension = async () => {
+    try {
+      // If user had a key before, generate a new one and open VS Code
+      const res = await fetch('/api/apikey', { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        setApiKey(data.apiKey)
+        const endpoint = `${window.location.origin}/api/heartbeat`
+        window.location.href = `vscode://vsintegrate.vs-integrate-tracker/auth?key=${encodeURIComponent(data.apiKey)}&endpoint=${encodeURIComponent(endpoint)}`
+        setConnectionStatus('connected')
+      }
+    } catch { /* ignore */ }
+  }
+
   // Radar chart data
   const radarData = useMemo(() => {
     const dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -326,18 +370,28 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                Welcome back, {currentUser?.name?.split(' ')[0] || 'Developer'}!
+                Welcome back, <span className="bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent">{currentUser?.name?.split(' ')[0] || 'Developer'}</span>!
               </h1>
               <p className="text-gray-400 mt-1 text-sm sm:text-base">
                 Here&apos;s your coding activity overview
               </p>
+              {/* Mobile productivity score */}
+              {hasActivity && (
+                <button onClick={() => setShowProductivityPopup(true)} className="sm:hidden mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-sm">
+                  <Gauge className="w-4 h-4 text-blue-400" />
+                  <span className="text-gray-400">Score:</span>
+                  <span className="font-bold text-white">{stats!.productivityScore}</span>
+                </button>
+              )}
             </div>
             {/* Productivity Score */}
             {hasActivity && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="hidden sm:flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-xl p-4"
+                onClick={() => setShowProductivityPopup(true)}
+                className="hidden sm:flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-xl p-4 cursor-pointer hover:border-gray-700 transition-colors"
+                title="Click to see how to improve your score"
               >
                 <div className="relative w-16 h-16">
                   <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
@@ -469,36 +523,39 @@ export default function Dashboard() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="flex items-center gap-2.5 mb-3">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                testStatus === 'success' ? 'bg-green-600' : testStatus === 'error' ? 'bg-red-600' : 'bg-blue-600'
+                connectionStatus === 'connected' ? 'bg-green-600' : connectionStatus === 'disconnected' ? 'bg-red-600/80' : 'bg-gray-700'
               }`}>
-                {testStatus === 'success' ? <CheckCircle2 className="w-4 h-4 text-white" /> :
-                 testStatus === 'error' ? <AlertCircle className="w-4 h-4 text-white" /> :
-                 <Gauge className="w-4 h-4 text-white" />}
+                {connectionStatus === 'connected' ? <Plug className="w-4 h-4 text-white" /> :
+                 connectionStatus === 'disconnected' ? <Unplug className="w-4 h-4 text-white" /> :
+                 <Loader2 className="w-4 h-4 text-white animate-spin" />}
               </div>
               <div>
                 <h3 className="font-medium text-white text-sm">Connection</h3>
-                <p className="text-xs text-gray-500">
-                  {testStatus === 'success' ? 'Connected' : testStatus === 'error' ? 'Not Connected' : 'Test your setup'}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-400 animate-pulse' : connectionStatus === 'disconnected' ? 'bg-red-400' : 'bg-gray-500'}`} />
+                  <p className="text-xs text-gray-500">
+                    {connectionStatus === 'connected' ? 'Extension active' : connectionStatus === 'disconnected' ? 'Not connected' : 'Checking...'}
+                  </p>
+                </div>
               </div>
             </div>
-            <button onClick={testConnection} disabled={testStatus === 'testing'}
-              className={`w-full px-4 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium ${
-                testStatus === 'success' ? 'bg-green-600/20 text-green-400 border border-green-600/30' :
-                testStatus === 'error' ? 'bg-red-600/20 text-red-400 border border-red-600/30' :
-                'bg-blue-600 hover:bg-blue-500 text-white'
-              }`}
-            >
-              {testStatus === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}
-              {testStatus === 'success' && <CheckCircle2 className="w-4 h-4" />}
-              {testStatus === 'error' && <AlertCircle className="w-4 h-4" />}
-              {testStatus === 'idle' && <Gauge className="w-4 h-4" />}
-              {testStatus === 'testing' ? 'Testing...' : testStatus === 'success' ? 'Connected!' : testStatus === 'error' ? 'Check Setup' : 'Test Connection'}
-            </button>
-            {testMessage && (
-              <p className={`mt-2 text-xs ${testStatus === 'success' ? 'text-green-400' : testStatus === 'error' ? 'text-red-400' : 'text-gray-500'}`}>
-                {testMessage}
-              </p>
+            {connectionStatus === 'connected' ? (
+              <button onClick={() => setShowDisconnectConfirm(true)}
+                className="w-full px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 border border-red-600/30 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium text-red-400">
+                <Unplug className="w-4 h-4" />
+                Disconnect
+              </button>
+            ) : connectionStatus === 'disconnected' ? (
+              <button onClick={apiKey ? openInVSCode : reconnectExtension}
+                className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium text-white">
+                <Plug className="w-4 h-4" />
+                {apiKey ? 'Open in VS Code' : 'Reconnect'}
+              </button>
+            ) : (
+              <div className="w-full px-4 py-2.5 bg-gray-800 rounded-lg flex items-center justify-center gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Checking status...
+              </div>
             )}
           </motion.div>
 
@@ -550,12 +607,41 @@ export default function Dashboard() {
             <span className="text-xs text-gray-500">{achievements.filter(a => a.unlocked).length}/{achievements.length} unlocked</span>
           </div>
           <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-            {(achievements.length > 0 ? achievements : ACHIEVEMENTS.map(a => ({ ...a, unlocked: false, unlockedAt: null }))).map((a) => (
-              <div key={a.id} className={`relative group flex flex-col items-center p-2 rounded-lg transition-all ${a.unlocked ? 'bg-gray-800' : 'bg-gray-800/30 opacity-40 grayscale'}`} title={`${a.title}: ${a.description}${a.unlocked ? ' ✓' : ''}`}>
-                <span className="text-2xl">{a.icon}</span>
-                <span className="text-[10px] text-gray-500 mt-1 truncate w-full text-center">{a.title}</span>
-              </div>
-            ))}
+            {(achievements.length > 0 ? achievements : ACHIEVEMENTS.map(a => ({ ...a, unlocked: false, unlockedAt: null }))).map((a) => {
+              const achievementDef = ACHIEVEMENTS.find(def => def.id === a.id)
+              return (
+                <div key={a.id} className={`relative group flex flex-col items-center p-2 rounded-lg transition-all cursor-pointer ${a.unlocked ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-800/30 opacity-40 grayscale hover:opacity-60'}`}>
+                  <span className="text-2xl">{a.icon}</span>
+                  <span className="text-[10px] text-gray-500 mt-1 truncate w-full text-center">{a.title}</span>
+                  {/* Hover popup */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-gray-800 border border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-30 pointer-events-none">
+                    <p className="text-xs font-semibold text-white mb-1">{a.title}</p>
+                    <p className="text-[11px] text-gray-400 mb-1.5">{a.description}</p>
+                    {achievementDef && (
+                      <p className="text-[10px] text-blue-400 font-medium">
+                        {a.id === 'first_session' && '→ Log at least 1 coding session'}
+                        {a.id === 'week_streak' && '→ Maintain a 7-day coding streak'}
+                        {a.id === 'month_streak' && '→ Maintain a 30-day coding streak'}
+                        {a.id === 'hundred_hours' && '→ Accumulate 100 hours of coding'}
+                        {a.id === 'polyglot' && '→ Code in 5 or more languages'}
+                        {a.id === 'early_bird' && '→ Start a session before 7:00 AM'}
+                        {a.id === 'night_owl' && '→ Code after midnight'}
+                        {a.id === 'marathon' && '→ Code 6+ hours in a single day'}
+                        {a.id === 'ten_days' && '→ Be active for at least 10 days'}
+                        {a.id === 'thousand_hours' && '→ Accumulate 1000 hours of coding'}
+                      </p>
+                    )}
+                    {a.unlocked && a.unlockedAt && (
+                      <p className="text-[10px] text-green-400 mt-1">✓ Unlocked {new Date(a.unlockedAt).toLocaleDateString()}</p>
+                    )}
+                    {!a.unlocked && (
+                      <p className="text-[10px] text-gray-500 mt-1">🔒 Not yet unlocked</p>
+                    )}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </motion.div>
 
@@ -595,23 +681,25 @@ export default function Dashboard() {
               Activity Lookup
             </h2>
             <p className="text-sm text-gray-400 mb-4">Select a date range to view your VS Code activity</p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="flex flex-col gap-3 mb-4">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white">
-                    <CalendarIcon className="mr-2 h-4 w-4 text-gray-500" />
+                  <Button variant="outline" className="w-full justify-start text-left font-normal bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white overflow-hidden">
+                    <CalendarIcon className="mr-2 h-4 w-4 text-gray-500 shrink-0" />
+                    <span className="truncate">
                     {dateRange?.from ? (
                       dateRange.to ? (
                         <span>{format(dateRange.from, 'MMM d, yyyy')} – {format(dateRange.to, 'MMM d, yyyy')}</span>
                       ) : format(dateRange.from, 'MMM d, yyyy')
                     ) : <span className="text-gray-500">Pick a date range</span>}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-gray-900 border-gray-700" align="start">
                   <Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={1} disabled={{ after: new Date() }} />
                 </PopoverContent>
               </Popover>
-              <Button onClick={fetchDateActivities} disabled={!dateRange?.from || dateLoading} className="bg-blue-600 hover:bg-blue-500 text-white shrink-0">
+              <Button onClick={fetchDateActivities} disabled={!dateRange?.from || dateLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white">
                 {dateLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Search className="w-4 h-4 mr-2" />}
                 Search
               </Button>
@@ -811,6 +899,78 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Productivity Score Popup */}
+      <AnimatePresence>
+        {showProductivityPopup && stats && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowProductivityPopup(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2"><Gauge className="w-5 h-5 text-blue-400" />Productivity Score</h3>
+                  <button onClick={() => setShowProductivityPopup(false)} className="p-2 hover:bg-gray-800 rounded-lg"><X className="w-4 h-4 text-gray-400" /></button>
+                </div>
+                <div className="flex justify-center mb-5">
+                  <div className="relative w-24 h-24">
+                    <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#1f2937" strokeWidth="3" />
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={stats.productivityScore >= 70 ? '#22c55e' : stats.productivityScore >= 40 ? '#eab308' : '#ef4444'} strokeWidth="3" strokeDasharray={`${stats.productivityScore}, 100`} strokeLinecap="round" />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white">{stats.productivityScore}</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-gray-300">Score Breakdown</h4>
+                  {[
+                    { label: 'Hours Today', weight: '30%', tip: `Code for up to 4 hours today (currently ${stats.hoursToday?.toFixed(1) || 0}h)`, value: Math.min((stats.hoursToday || 0) / 4, 1) },
+                    { label: 'Streak Bonus', weight: '20%', tip: `Maintain a coding streak (${stats.currentStreak || 0} days, max 30)`, value: Math.min((stats.currentStreak || 0) / 30, 1) },
+                    { label: 'Consistency', weight: '25%', tip: 'Code every day of the week (active days / 7)', value: Math.min((stats.activeDays || 0) / 7, 1) },
+                    { label: 'Focus', weight: '25%', tip: 'Longer average sessions (target: 60 min per session)', value: stats.totalSessions ? Math.min(((stats.totalHours * 60) / stats.totalSessions) / 60, 1) : 0 },
+                  ].map(factor => (
+                    <div key={factor.label} className="bg-gray-800 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-white">{factor.label} <span className="text-gray-500">({factor.weight})</span></span>
+                        <span className="text-xs text-blue-400">{Math.round(factor.value * 100)}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${factor.value * 100}%` }} />
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">{factor.tip}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+                  <p className="text-xs text-blue-300"><strong>Tip:</strong> To increase your score, code consistently every day, maintain longer focused sessions, and keep your streak going!</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Disconnect Confirmation */}
+      <AnimatePresence>
+        {showDisconnectConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
+              <div className="p-6">
+                <div className="w-12 h-12 rounded-full bg-red-600/20 flex items-center justify-center mx-auto mb-4">
+                  <Unplug className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-center mb-2 text-white">Disconnect Extension?</h3>
+                <p className="text-gray-400 text-center text-sm mb-6">This will revoke your API key and disconnect the VS Code extension. Your existing data will be preserved. You can reconnect anytime.</p>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowDisconnectConfirm(false)} className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300">Cancel</button>
+                  <button onClick={disconnectExtension} disabled={disconnecting} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors flex items-center justify-center gap-2">
+                    {disconnecting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -838,12 +998,13 @@ function ContributionGraph({ contributions }: { contributions: Record<string, nu
   const startDayOfWeek = startDate.getDay()
   startDate.setDate(startDate.getDate() - startDayOfWeek)
 
+  // Light blue → Deep blue gradient based on hours
   const getColor = (hours: number): string => {
     if (!hours || hours === 0) return '#1e2530'
-    if (hours < 1) return '#0e4429'
-    if (hours < 2) return '#006d32'
-    if (hours < 4) return '#26a641'
-    return '#39d353'
+    if (hours < 1) return '#93c5fd'   // light blue (0-59min)
+    if (hours < 3) return '#3b82f6'   // mid blue (1-3hr)
+    if (hours < 6) return '#1d4ed8'   // deep blue (3-6hr)
+    return '#1e3a8a'                   // deepest blue (6hr+)
   }
 
   const months: { label: string; col: number }[] = []
@@ -855,7 +1016,6 @@ function ContributionGraph({ contributions }: { contributions: Record<string, nu
     for (let day = 0; day < 7; day++) {
       const dateStr = currentDate.toISOString().split('T')[0]
       const hours = contributions[dateStr] || 0
-      // Track month labels
       if (day === 0) {
         const monthName = currentDate.toLocaleString('default', { month: 'short' })
         if (months.length === 0 || months[months.length - 1].label !== monthName) {
@@ -877,7 +1037,6 @@ function ContributionGraph({ contributions }: { contributions: Record<string, nu
 
   return (
     <div>
-      {/* Month labels */}
       <div className="flex gap-0.5 sm:gap-1 mb-1 ml-8">
         {months.map((m, i) => (
           <span key={i} className="text-[10px] text-gray-500" style={{ marginLeft: i === 0 ? 0 : `${(months[i].col - (months[i-1]?.col || 0) - 1) * 13}px` }}>
@@ -890,7 +1049,7 @@ function ContributionGraph({ contributions }: { contributions: Record<string, nu
       </div>
       <div className="flex items-center justify-end gap-1.5 mt-3 text-xs text-gray-500">
         <span>Less</span>
-        {['#1e2530', '#0e4429', '#006d32', '#26a641', '#39d353'].map((color) => (
+        {['#1e2530', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'].map((color) => (
           <div key={color} className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm" style={{ backgroundColor: color }} />
         ))}
         <span>More</span>
