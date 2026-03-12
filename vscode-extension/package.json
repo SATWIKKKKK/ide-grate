@@ -40,8 +40,8 @@
         },
         "vsIntegrate.apiEndpoint": {
           "type": "string",
-          "default": "http://localhost:3000/api/heartbeat",
-          "description": "API endpoint for heartbeat data (change for production)"
+          "default": "http://localhost:3001/api/heartbeat",
+          "description": "API endpoint for heartbeat data (change for production or deployed URL)"
         },
         "vsIntegrate.heartbeatInterval": {
           "type": "number",

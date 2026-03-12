@@ -85,7 +85,7 @@ function getConfig() {
     const config = vscode.workspace.getConfiguration('vsIntegrate');
     return {
         apiKey: config.get<string>('apiKey') || '',
-        apiEndpoint: config.get<string>('apiEndpoint') || 'http://localhost:3000/api/heartbeat',
+        apiEndpoint: config.get<string>('apiEndpoint') || 'http://localhost:3001/api/heartbeat',
         heartbeatInterval: config.get<number>('heartbeatInterval') || 30,
         idleTimeout: config.get<number>('idleTimeout') || 120
     };

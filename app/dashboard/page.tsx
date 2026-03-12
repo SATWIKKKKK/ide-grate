@@ -335,11 +335,11 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+          className="mb-8 flex flex-row items-center justify-between gap-4 flex-wrap"
         >
           <div className="flex items-center gap-4">
             {session.user?.image && (
-              <img src={session.user.image} alt="" className="w-12 h-12 rounded-full ring-2 ring-blue-500/30" />
+              <img src={session.user.image} alt="" className="w-12 h-12 rounded-full ring-2 ring-blue-500/30 mt-2" />
             )}
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">
@@ -352,7 +352,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Connection status */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
               connectionStatus.connected
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
