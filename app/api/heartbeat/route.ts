@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
             fileType: file ? file.split('.').pop() : null,
             extensions: [],
             idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
+            projectHash: body.projectHash || null,
+            projectName: body.project || null,
           },
         })
         
@@ -141,6 +143,8 @@ export async function POST(request: NextRequest) {
           fileType: file ? file.split('.').pop() : null,
           extensions: [],
           idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
+          projectHash: body.projectHash || null,
+          projectName: body.project || null,
         },
       })
       
@@ -156,10 +160,26 @@ export async function POST(request: NextRequest) {
     // Update daily hours (only count non-idle time)
     if (!isIdle) {
       const hoursToAdd = activityDuration / 3600
+
+      // Update hours and add language to today's languages list
+      const existingLangs = (dailyContribution.languages as string[]) || []
+      const updatedLangs = language && !existingLangs.includes(language)
+        ? [...existingLangs, language]
+        : existingLangs
+
+      // Track project hash
+      const projectHash = body.projectHash
+      const existingProjects = (dailyContribution.projects as string[]) || []
+      const updatedProjects = projectHash && !existingProjects.includes(projectHash)
+        ? [...existingProjects, projectHash]
+        : existingProjects
+
       await prisma.dailyContribution.update({
         where: { id: dailyContribution.id },
         data: {
           hours: { increment: hoursToAdd },
+          languages: updatedLangs,
+          projects: updatedProjects,
         },
       })
 

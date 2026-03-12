@@ -150,14 +150,18 @@ model UserAchievement {
 
 // Goal tracking
 model UserGoal {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String   // 'daily_hours' | 'weekly_hours' | 'streak_days'
-  target    Float
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  userId     String
+  type       String    // 'daily_hours' | 'weekly_hours' | 'streak_days'
+  target     Float
+  targetDate DateTime? @db.Date  // specific date for the goal (for date-wise goals)
+  isActive   Boolean   @default(true)
+  achieved   Boolean   @default(false)
+  emailSent  Boolean   @default(false) // whether achievement email was sent
+  createdAt  DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, targetDate])
 }
