@@ -1,7 +1,6 @@
 import NextAuth, { type AuthOptions } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
-import AzureADProvider from "next-auth/providers/azure-ad"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import type { Adapter } from "next-auth/adapters"
@@ -11,9 +10,7 @@ import crypto from "crypto"
 // Check which OAuth credentials are configured
 const hasGitHub = process.env.GITHUB_ID && process.env.GITHUB_SECRET
 const hasGoogle = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-// Microsoft only needs client ID + secret; tenant defaults to 'common' for personal + org accounts
-const hasMicrosoft = process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET
-const hasOAuthProviders = hasGitHub || hasGoogle || hasMicrosoft
+const hasOAuthProviders = hasGitHub || hasGoogle
 
 // Build providers array dynamically based on available credentials
 const providers: any[] = []
@@ -32,22 +29,6 @@ if (hasGoogle) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    })
-  )
-}
-
-if (hasMicrosoft) {
-  providers.push(
-    AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID!,
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-      // Use 'common' to allow both personal Microsoft accounts and org accounts
-      tenantId: process.env.AZURE_AD_TENANT_ID || "common",
-      authorization: {
-        params: {
-          scope: "openid profile email User.Read",
-        },
-      },
     })
   )
 }

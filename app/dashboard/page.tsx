@@ -15,6 +15,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip as ReTooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
+  BarChart, Bar,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -89,11 +91,13 @@ function getLangColor(lang: string): string {
 }
 
 function formatHours(h: number): string {
-  if (h < 0.1) return '0m'
-  if (h < 1) return `${Math.round(h * 60)}m`
+  if (h < 0.1) return '0 minutes'
+  if (h < 1) return `${Math.round(h * 60)} minutes`
   const hrs = Math.floor(h)
   const mins = Math.round((h - hrs) * 60)
-  return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`
+  if (mins > 0 && hrs > 0) return `${hrs} hours ${mins} minutes`
+  if (hrs > 0) return `${hrs} hours`
+  return `${mins} minutes`
 }
 
 function formatDate(dateStr: string): string {
@@ -269,6 +273,42 @@ export default function DashboardPage() {
     }))
   ), [stats])
 
+  // Daily hours bar chart (last 14 days)
+  const dailyBarData = useMemo(() => {
+    const days = []
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().split('T')[0]
+      const c = contributions[dateStr]
+      days.push({
+        date: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+        hours: parseFloat((c?.hours || 0).toFixed(2)),
+        sessions: c?.sessions || 0,
+      })
+    }
+    return days
+  }, [contributions])
+
+  // Productivity radar data
+  const radarData = useMemo(() => {
+    if (!stats) return []
+    const hoursScore = Math.min((stats.hoursToday / 4) * 100, 100)
+    const streakScore = Math.min((stats.currentStreak / 30) * 100, 100)
+    const langScore = Math.min((stats.uniqueLanguages / 5) * 100, 100)
+    const consistencyScore = Math.min(((stats.weeklyBreakdown?.filter(h => h > 0).length || 0) / 7) * 100, 100)
+    const sessionScore = Math.min((stats.totalSessions / 50) * 100, 100)
+    const projectScore = Math.min(((stats.projects?.length || 0) / 3) * 100, 100)
+    return [
+      { subject: 'Focus', value: hoursScore },
+      { subject: 'Streak', value: streakScore },
+      { subject: 'Languages', value: langScore },
+      { subject: 'Consistency', value: consistencyScore },
+      { subject: 'Sessions', value: sessionScore },
+      { subject: 'Projects', value: projectScore },
+    ]
+  }, [stats])
+
   // ─── Loading state ─────────────────────────────────────────────────────────
   if (status === 'loading' || (loading && !stats)) {
     return (
@@ -290,7 +330,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-12">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -303,7 +343,7 @@ export default function DashboardPage() {
             )}
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">
-                Welcome back, <span className="bg-linear-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
+                Welcome back, <span className="bg-linear-to-r from-cyan-400 via-blue-500 to-violet-500 bg-clip-text text-transparent">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
               </h1>
               <p className="text-gray-500 text-sm mt-0.5">
                 {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today` : 'Start coding to see your stats'}
@@ -758,6 +798,86 @@ export default function DashboardPage() {
               <div className="text-center py-10 text-gray-600">
                 <Globe2 className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">No language data yet</p>
+              </div>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Daily Hours Bar Chart + Productivity Radar */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Daily Hours (14 days) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-gray-900/80 border border-gray-800 rounded-xl p-5"
+          >
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-cyan-400" />
+              Daily Hours (Last 14 Days)
+            </h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={dailyBarData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: '#4b5563', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#1f2937' }}
+                  interval={1}
+                />
+                <YAxis
+                  tick={{ fill: '#4b5563', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={v => `${v}h`}
+                />
+                <ReTooltip
+                  contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#e5e7eb', fontSize: '12px' }}
+                  formatter={(v: number) => [`${v}h`, 'Hours']}
+                  labelStyle={{ color: '#9ca3af' }}
+                />
+                <Bar dataKey="hours" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
+
+          {/* Productivity Radar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            className="bg-gray-900/80 border border-gray-800 rounded-xl p-5"
+          >
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-400" />
+              Productivity Breakdown
+            </h2>
+            {radarData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                  <PolarGrid stroke="#1f2937" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                  <PolarRadiusAxis
+                    angle={30}
+                    domain={[0, 100]}
+                    tick={false}
+                    axisLine={false}
+                  />
+                  <Radar
+                    name="Score"
+                    dataKey="value"
+                    stroke="#8b5cf6"
+                    fill="#8b5cf6"
+                    fillOpacity={0.25}
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-10 text-gray-600">
+                <Zap className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">No data yet</p>
               </div>
             )}
           </motion.div>

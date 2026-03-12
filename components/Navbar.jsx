@@ -42,7 +42,7 @@ export default function Navbar() {
                 alt="vs-integrate"
                 width={300}
                 height={300}
-                className="h-16 w-auto object-contain -my-3"
+                className="h-24 w-auto object-contain -my-6"
                 priority
               />
             </motion.div>

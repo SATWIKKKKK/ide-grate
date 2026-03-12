@@ -23,16 +23,6 @@ function GoogleIcon({ className }: { className?: string }) {
   )
 }
 
-function MicrosoftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
-      <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
-      <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
-      <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
-      <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
-    </svg>
-  )
-}
 
 function LoginContent() {
   const [providers, setProviders] = useState<any>(null)
@@ -74,8 +64,6 @@ function LoginContent() {
   const providerIcons: Record<string, any> = {
     github: Github,
     google: GoogleIcon,
-    'azure-ad': MicrosoftIcon,
-    microsoft: MicrosoftIcon,
   }
 
   return (
@@ -198,19 +186,7 @@ function LoginContent() {
                     </Button>
                   )
                 })}
-                {!oauthProviders.some((p: any) => p.id === 'azure-ad' || p.id === 'microsoft') && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleSignIn('azure-ad')}
-                    disabled={isLoading !== null}
-                    className="w-12 h-12 bg-gray-800 hover:bg-gray-700 border-gray-700 text-white"
-                    title="Sign in with Microsoft"
-                  >
-                    <MicrosoftIcon className="w-5 h-5" />
-                  </Button>
-                )}
-              </div>
+          </div>
             )}
           </CardContent>
 
