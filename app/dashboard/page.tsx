@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Clock, Flame, Zap, Code2, Trophy, Target, Calendar, Copy, Check,
   TrendingUp, BarChart3, Globe2, FolderGit2, ChevronDown, Plus, X,
-  Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info
+  Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info, Timer, WifiOff
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -90,6 +90,14 @@ function getLangColor(lang: string): string {
   return LANGUAGE_COLORS[lang.toLowerCase()] || '#6366f1'
 }
 
+function formatTimer(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 function formatHours(h: number): string {
   if (h < 0.1) return '0 minutes'
   if (h < 1) return `${Math.round(h * 60)} minutes`
@@ -117,8 +125,8 @@ export default function DashboardPage() {
   const [goals, setGoals] = useState<GoalData[]>([])
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<{
-    connected: boolean; hasApiKey: boolean; hasActivity: boolean
-  }>({ connected: false, hasApiKey: false, hasActivity: false })
+    connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null
+  }>({ connected: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
 
   // UI state
   const [loading, setLoading] = useState(true)
@@ -133,8 +141,12 @@ export default function DashboardPage() {
   const [hoveredDay, setHoveredDay] = useState<{ date: string; hours: number; sessions: number; x: number; y: number } | null>(null)
 
   const [connectionToast, setConnectionToast] = useState<{ show: boolean; message: string; type: 'success' | 'warning' | 'info' } | null>(null)
+  const [timerFilter, setTimerFilter] = useState<'7d' | '1m' | '3m'>('7d')
+  const [liveSeconds, setLiveSeconds] = useState(0)
   const hasFetched = useRef(false)
   const prevConnected = useRef<boolean | null>(null)
+  const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const sessionStartRef = useRef<Date | null>(null)
 
   // ─── Data fetching with caching ────────────────────────────────────────────
   const fetchAllData = useCallback(async () => {
@@ -146,7 +158,7 @@ export default function DashboardPage() {
       cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', `/api/contributions?days=${contributionDays}`),
       cachedFetch<{ goals: GoalData[] }>('goals', '/api/goals'),
       cachedFetch<{ apiKey: string | null }>('apikey', '/api/apikey'),
-      cachedFetch<{ connected: boolean; hasApiKey: boolean; hasActivity: boolean }>('connection', '/api/connection-status'),
+      cachedFetch<{ connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null }>('connection', '/api/connection-status'),
     ])
 
     if (statsData) setStats(statsData)
@@ -180,9 +192,36 @@ export default function DashboardPage() {
         }
       } catch { /* ignore */ }
     }
-    const interval = setInterval(poll, 30000)
+    const interval = setInterval(poll, 15000)
     return () => clearInterval(interval)
   }, [session])
+
+  // Live VS Code session timer
+  useEffect(() => {
+    if (connectionStatus.connected) {
+      if (!sessionStartRef.current) {
+        sessionStartRef.current = new Date()
+        setLiveSeconds(0)
+      }
+      liveTimerRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - sessionStartRef.current!.getTime()) / 1000)
+        setLiveSeconds(elapsed)
+      }, 1000)
+    } else {
+      if (liveTimerRef.current) {
+        clearInterval(liveTimerRef.current)
+        liveTimerRef.current = null
+      }
+      sessionStartRef.current = null
+      setLiveSeconds(0)
+    }
+    return () => {
+      if (liveTimerRef.current) {
+        clearInterval(liveTimerRef.current)
+        liveTimerRef.current = null
+      }
+    }
+  }, [connectionStatus.connected])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -337,6 +376,22 @@ export default function DashboardPage() {
     ]
   }, [stats])
 
+  // Period VS Code hours for timer section
+  const periodHours = useMemo(() => {
+    const now = new Date()
+    const sumDays = (days: number) => {
+      let total = 0
+      for (let i = 0; i < days; i++) {
+        const d = new Date(now)
+        d.setDate(now.getDate() - i)
+        const key = d.toISOString().split('T')[0]
+        total += contributions[key]?.hours || 0
+      }
+      return total
+    }
+    return { '7d': sumDays(7), '1m': sumDays(30), '3m': sumDays(90) }
+  }, [contributions])
+
   // ─── Loading state ─────────────────────────────────────────────────────────
   if (status === 'loading' || (loading && !stats)) {
     return (
@@ -399,17 +454,28 @@ export default function DashboardPage() {
 
           {/* Connection status */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
-            <div className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium ${
-              connectionStatus.connected
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                : connectionStatus.hasApiKey
-                  ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700'
-            }`}>
+            <div
+              className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
+                connectionStatus.connected
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  : connectionStatus.hasApiKey
+                    ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                    : 'bg-gray-800 text-gray-400 border border-gray-700'
+              }`}
+              title={
+                connectionStatus.connected
+                  ? 'VS Code is actively sending heartbeats'
+                  : connectionStatus.hasApiKey
+                    ? connectionStatus.lastActivityAt
+                      ? `Last active: ${new Date(connectionStatus.lastActivityAt).toLocaleString()}`
+                      : 'API key is set — open VS Code to start tracking'
+                    : 'No API key yet — go to Settings'
+              }
+            >
               <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                 connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : connectionStatus.hasApiKey ? 'bg-yellow-400' : 'bg-gray-600'
               }`} />
-              {connectionStatus.connected ? 'VS Code Connected' : connectionStatus.hasApiKey ? 'VS Code Idle' : 'Not Connected'}
+              {connectionStatus.connected ? 'VS Code Connected' : connectionStatus.hasApiKey ? 'API Key Ready' : 'Not Connected'}
             </div>
             <Link href="/settings" className="text-[11px] sm:text-xs text-gray-500 hover:text-gray-300 transition-colors">
               Settings
@@ -471,6 +537,100 @@ export default function DashboardPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* VS Code Live Timer */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <div className={`rounded-xl p-5 border transition-all ${
+            connectionStatus.connected
+              ? 'bg-emerald-950/30 border-emerald-500/25'
+              : 'bg-gray-900/80 border-gray-800'
+          }`}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              {/* Timer display */}
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                  connectionStatus.connected ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' : 'bg-gray-800'
+                }`}>
+                  {connectionStatus.connected
+                    ? <Timer className="w-6 h-6 text-emerald-400" />
+                    : <WifiOff className="w-6 h-6 text-gray-600" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Current Session</span>
+                    {connectionStatus.connected && (
+                      <span className="flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-medium">
+                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                        LIVE
+                      </span>
+                    )}
+                  </div>
+                  <p className={`text-4xl font-mono font-bold tracking-tight tabular-nums ${
+                    connectionStatus.connected ? 'text-emerald-400' : 'text-gray-700'
+                  }`}>
+                    {connectionStatus.connected ? formatTimer(liveSeconds) : '--:--'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {connectionStatus.connected
+                      ? 'VS Code is open — session timer running'
+                      : connectionStatus.hasApiKey
+                        ? 'Open VS Code to start session timer'
+                        : 'Set up API key to start tracking'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Period filter */}
+              <div className="flex items-center bg-gray-800/80 rounded-xl p-1 gap-0.5 shrink-0">
+                {([
+                  { key: '7d' as const, label: '7 Days' },
+                  { key: '1m' as const, label: '1 Month' },
+                  { key: '3m' as const, label: '3 Months' },
+                ]).map(f => (
+                  <button
+                    key={f.key}
+                    onClick={() => setTimerFilter(f.key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      timerFilter === f.key
+                        ? 'bg-blue-500/20 text-blue-400 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Period summary cards */}
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center border border-gray-800">
+                <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
+                  {timerFilter === '7d' ? 'Last 7 Days' : timerFilter === '1m' ? 'Last 30 Days' : 'Last 90 Days'}
+                </p>
+                <p className="text-lg sm:text-xl font-bold text-white">{formatHours(periodHours[timerFilter])}</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">total in VS Code</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center border border-gray-800">
+                <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Daily Avg</p>
+                <p className="text-lg sm:text-xl font-bold text-blue-400">
+                  {formatHours(periodHours[timerFilter] / (timerFilter === '7d' ? 7 : timerFilter === '1m' ? 30 : 90))}
+                </p>
+                <p className="text-[10px] text-gray-600 mt-0.5">per day</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 text-center border border-gray-800">
+                <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Today</p>
+                <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatHours(stats?.hoursToday || 0)}</p>
+                <p className="text-[10px] text-gray-600 mt-0.5">coded today</p>
+              </div>
+            </div>
           </div>
         </motion.div>
 

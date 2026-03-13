@@ -121,8 +121,13 @@ function SignUpContent() {
           <CardHeader className="text-center">
             <CardTitle className="text-xl text-white">Create Your Account</CardTitle>
             <CardDescription className="text-gray-400">
-              Start tracking your coding activity today
+              Track your VS Code time, streaks & language stats
             </CardDescription>
+            <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
+              {['⏱ Live Timer', '🔥 Streaks', '📊 Stats'].map(f => (
+                <span key={f} className="text-[11px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full border border-gray-700">{f}</span>
+              ))}
+            </div>
           </CardHeader>
 
           <CardContent>
@@ -154,7 +159,12 @@ function SignUpContent() {
                   id="email"
                   type="email"
                   value={devEmail}
-                  onChange={(e) => setDevEmail(e.target.value)}
+                  onChange={(e) => {
+                    setDevEmail(e.target.value)
+                    if (!devName && e.target.value.includes('@')) {
+                      setDevName(e.target.value.split('@')[0].replace(/[^a-zA-Z0-9 ]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
+                    }
+                  }}
                   placeholder="you@example.com"
                   required
                   className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30"
@@ -249,39 +259,37 @@ function SignUpContent() {
 
             {/* OAuth Buttons */}
             {oauthProviders.length > 0 && (
-              <div className="flex items-center justify-center gap-3">
+              <div className="space-y-3">
                 {oauthProviders.map((provider: any) => {
                   const Icon = providerIcons[provider.id] || Code2
+                  const bgColors: Record<string, string> = {
+                    github: 'bg-gray-800 hover:bg-gray-700 border-gray-700',
+                    google: 'bg-white hover:bg-gray-100 border-gray-300',
+                  }
+                  const textColors: Record<string, string> = {
+                    github: 'text-white',
+                    google: 'text-gray-800',
+                  }
                   return (
                     <Button
                       key={provider.id}
                       variant="outline"
-                      size="icon"
                       onClick={() => handleSignIn(provider.id)}
                       disabled={isLoading !== null}
-                      className="w-12 h-12 bg-gray-800 hover:bg-gray-700 border-gray-700 text-white"
+                      className={`w-full h-11 ${bgColors[provider.id] || 'bg-gray-800 hover:bg-gray-700 border-gray-700'} ${textColors[provider.id] || 'text-white'} font-medium flex items-center justify-center gap-3`}
                       title={`Sign up with ${provider.name}`}
                     >
                       {isLoading === provider.id ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                       ) : (
-                        <Icon className="w-5 h-5" />
+                        <>
+                          <Icon className="w-5 h-5" />
+                          Continue with {provider.name}
+                        </>
                       )}
                     </Button>
                   )
                 })}
-                {!oauthProviders.some((p: any) => p.id === 'azure-ad' || p.id === 'microsoft') && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleSignIn('azure-ad')}
-                    disabled={isLoading !== null}
-                    className="w-12 h-12 bg-gray-800 hover:bg-gray-700 border-gray-700 text-white"
-                    title="Sign up with Microsoft"
-                  >
-                    <MicrosoftIcon className="w-5 h-5" />
-                  </Button>
-                )}
               </div>
             )}
           </CardContent>

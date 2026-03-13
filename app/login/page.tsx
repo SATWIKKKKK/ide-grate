@@ -87,6 +87,11 @@ function LoginContent() {
             <CardDescription className="text-gray-400">
               Sign in to continue tracking your coding activity
             </CardDescription>
+            <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
+              {['⏱ Live Timer', '🔥 Streaks', '📊 Stats'].map(f => (
+                <span key={f} className="text-[11px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full border border-gray-700">{f}</span>
+              ))}
+            </div>
           </CardHeader>
 
           <CardContent>

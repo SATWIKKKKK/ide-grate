@@ -53,7 +53,7 @@ export default function SettingsPage() {
   const [copied, setCopied] = useState(false)
   const [showKey, setShowKey] = useState(false)
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false)
-  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error' | 'ready'>('idle')
 
   // Settings
   const [settings, setSettings] = useState<UserSettings>({
@@ -135,7 +135,7 @@ export default function SettingsPage() {
     }
   }, [session, fetchAll])
 
-  // Auto-poll connection status every 30s
+  // Auto-poll connection status every 15s
   useEffect(() => {
     if (!session?.user) return
     const poll = async () => {
@@ -144,7 +144,7 @@ export default function SettingsPage() {
         if (res.ok) setConnection(await res.json())
       } catch { /* ignore */ }
     }
-    const interval = setInterval(poll, 30000)
+    const interval = setInterval(poll, 15000)
     return () => clearInterval(interval)
   }, [session])
 
@@ -222,7 +222,7 @@ export default function SettingsPage() {
       if (res.ok) {
         const d = await res.json()
         setConnection(d)
-        setTestStatus(d.connected ? 'success' : 'error')
+        setTestStatus(d.connected ? 'success' : d.hasApiKey ? 'ready' : 'error')
       } else setTestStatus('error')
     } catch { setTestStatus('error') }
     setTimeout(() => setTestStatus('idle'), 4000)
@@ -444,13 +444,21 @@ export default function SettingsPage() {
                       {connection?.connected
                         ? 'VS Code Connected & Tracking'
                         : connection?.hasApiKey
-                          ? 'API Key Set — Open VS Code to start'
+                          ? 'API Key Ready — Open VS Code to start tracking'
                           : 'Not Connected'}
                     </p>
-                    {connection?.lastActivityAt && (
+                    {connection?.connected && (
+                      <p className="text-xs text-gray-500 mt-0.5">Heartbeats received in the last 5 minutes</p>
+                    )}
+                    {!connection?.connected && connection?.hasApiKey && (
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Last heartbeat: {new Date(connection.lastActivityAt).toLocaleString()}
+                        {connection?.lastActivityAt
+                          ? `Last active: ${new Date(connection.lastActivityAt).toLocaleString()}`
+                          : 'No heartbeats yet — install the VS Code extension'}
                       </p>
+                    )}
+                    {!connection?.connected && !connection?.hasApiKey && (
+                      <p className="text-xs text-gray-500 mt-0.5">Generate an API key below to get started</p>
                     )}
                   </div>
                 </div>
@@ -461,8 +469,13 @@ export default function SettingsPage() {
                 >
                   {testStatus === 'testing' && <Loader2 className="w-3 h-3 animate-spin" />}
                   {testStatus === 'success' && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
+                  {testStatus === 'ready' && <CheckCircle2 className="w-3 h-3 text-yellow-400" />}
                   {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
-                  {testStatus === 'idle' ? 'Refresh Status' : testStatus === 'testing' ? 'Checking…' : testStatus === 'success' ? 'Active!' : 'Inactive'}
+                  {testStatus === 'idle' ? 'Refresh Status'
+                    : testStatus === 'testing' ? 'Checking…'
+                    : testStatus === 'success' ? 'Active!'
+                    : testStatus === 'ready' ? 'Ready'
+                    : 'No Key'}
                 </button>
               </div>
 

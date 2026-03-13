@@ -157,6 +157,21 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Always update lastActiveDate so connection-status detects connectivity
+    // even when the user is idle (VS Code is still open and sending heartbeats)
+    await prisma.userStats.upsert({
+      where: { userId: user.id },
+      update: { lastActiveDate: now },
+      create: {
+        userId: user.id,
+        totalHours: 0,
+        totalSessions: 0,
+        longestStreak: 0,
+        currentStreak: 0,
+        lastActiveDate: now,
+      },
+    })
+
     // Update daily hours (only count non-idle time)
     if (!isIdle) {
       const hoursToAdd = activityDuration / 3600
@@ -183,21 +198,10 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Update user stats
-      await prisma.userStats.upsert({
+      // Increment total hours (lastActiveDate already updated above)
+      await prisma.userStats.update({
         where: { userId: user.id },
-        update: {
-          totalHours: { increment: hoursToAdd },
-          lastActiveDate: now,
-        },
-        create: {
-          userId: user.id,
-          totalHours: hoursToAdd,
-          totalSessions: 1,
-          lastActiveDate: now,
-          longestStreak: 1,
-          currentStreak: 1,
-        },
+        data: { totalHours: { increment: hoursToAdd } },
       })
     }
 
