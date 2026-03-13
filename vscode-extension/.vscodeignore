@@ -7,3 +7,4 @@ node_modules/**
 tsconfig.json
 *.ts
 !out/**/*.js
+!icon.png

@@ -72,8 +72,8 @@ if (!hasOAuthProviders || process.env.ENABLE_DEV_LOGIN === "true") {
   )
 }
 
-// Use adapter only for OAuth providers (not credentials)
-const useAdapter = (hasOAuthProviders) && !process.env.ENABLE_DEV_LOGIN
+// Use adapter for OAuth providers
+const useAdapter = hasOAuthProviders
 
 export const authOptions: AuthOptions = {
   // Only use adapter when we have real OAuth providers

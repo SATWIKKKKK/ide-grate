@@ -1,14 +1,38 @@
 {
   "name": "vs-integrate-tracker",
   "displayName": "VS Integrate - Coding Activity Tracker",
-  "description": "Track your coding activity and visualize it with beautiful contribution graphs on vs-integrate",
+  "description": "Track your coding activity and visualize it with beautiful contribution graphs on vs-integrate. Monitor coding hours, languages, streaks, and productivity.",
   "version": "0.1.0",
   "publisher": "vsintegrate",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SATWIKKKKK/ide-grate"
+  },
+  "bugs": {
+    "url": "https://github.com/SATWIKKKKK/ide-grate/issues"
+  },
+  "homepage": "https://github.com/SATWIKKKKK/ide-grate#readme",
+  "keywords": [
+    "coding-tracker",
+    "time-tracker",
+    "productivity",
+    "coding-activity",
+    "contribution-graph",
+    "wakatime",
+    "coding-stats",
+    "developer-tools"
+  ],
+  "galleryBanner": {
+    "color": "#0a0a0a",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization"
   ],
   "activationEvents": [
     "onStartupFinished",

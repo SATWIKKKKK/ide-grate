@@ -135,6 +135,19 @@ export default function SettingsPage() {
     }
   }, [session, fetchAll])
 
+  // Auto-poll connection status every 30s
+  useEffect(() => {
+    if (!session?.user) return
+    const poll = async () => {
+      try {
+        const res = await fetch('/api/connection-status')
+        if (res.ok) setConnection(await res.json())
+      } catch { /* ignore */ }
+    }
+    const interval = setInterval(poll, 30000)
+    return () => clearInterval(interval)
+  }, [session])
+
   // ── Save helpers ────────────────────────────────────────────────────────────
   const saveSettings = async (updates: Partial<UserSettings>) => {
     setSaving(true)

@@ -153,6 +153,14 @@ export async function GET(request: NextRequest) {
       }
       projectTotals[key].seconds += a.duration
     })
+
+    // Get project repo URL mappings from UserStats.monthlyData
+    const userStats = await prisma.userStats.findUnique({
+      where: { userId: sessionUser.id },
+      select: { monthlyData: true },
+    })
+    const projectRepos = ((userStats?.monthlyData as Record<string, unknown>)?.projectRepos as Record<string, string>) || {}
+
     const projects = Object.values(projectTotals)
       .sort((a, b) => b.seconds - a.seconds)
       .slice(0, 10)
@@ -161,6 +169,7 @@ export async function GET(request: NextRequest) {
         name: p.name,
         hours: parseFloat((p.seconds / 3600).toFixed(1)),
         percentage: Math.round((p.seconds / totalSeconds) * 100),
+        repoUrl: projectRepos[p.hash] || null,
       }))
 
     return NextResponse.json({

@@ -3,6 +3,7 @@ import * as https from 'https';
 import * as http from 'http';
 import * as crypto from 'crypto';
 import * as os from 'os';
+import { execSync } from 'child_process';
 
 let heartbeatInterval: NodeJS.Timeout | undefined;
 let lastActivityTime: number = Date.now();
@@ -144,6 +145,21 @@ async function sendHeartbeat(): Promise<void> {
     const projectPath = workspaceFolders?.[0]?.uri.fsPath || '';
     const projectHash = projectPath ? hashProjectPath(projectPath) : undefined;
 
+    // Try to get GitHub repo URL
+    let repoUrl: string | undefined;
+    if (projectPath) {
+        try {
+            const remote = execSync('git config --get remote.origin.url', { cwd: projectPath, timeout: 3000 }).toString().trim();
+            if (remote) {
+                // Normalize SSH/HTTPS URLs to a clean HTTPS URL
+                repoUrl = remote
+                    .replace(/^git@github\.com:/, 'https://github.com/')
+                    .replace(/^git@([^:]+):/, 'https://$1/')
+                    .replace(/\.git$/, '');
+            }
+        } catch { /* not a git repo or no remote */ }
+    }
+
     const payload = {
         apiKey: config.apiKey,
         timestamp: Date.now(),
@@ -151,6 +167,7 @@ async function sendHeartbeat(): Promise<void> {
         file: editor?.document.fileName ? getFileName(editor.document.fileName) : null,
         project: vscode.workspace.name || 'unknown',
         projectHash: projectHash,
+        repoUrl: repoUrl,
         platform: os.platform(),
         isIdle: isIdle
     };
@@ -161,7 +178,6 @@ async function sendHeartbeat(): Promise<void> {
     } catch (error) {
         console.error('Failed to send heartbeat:', error);
         updateStatusBar('Error');
-        throw error;
     }
 }
 

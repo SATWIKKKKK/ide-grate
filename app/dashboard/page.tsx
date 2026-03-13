@@ -33,7 +33,7 @@ interface StatsData {
   productivityScore: number
   topLanguages: { language: string; hours: number; percentage: number }[]
   weeklyBreakdown: number[]
-  projects: { hash: string; name: string | null; hours: number; percentage: number }[]
+  projects: { hash: string; name: string | null; hours: number; percentage: number; repoUrl?: string | null }[]
 }
 
 interface ContributionDay {
@@ -132,7 +132,9 @@ export default function DashboardPage() {
   const [goalSaving, setGoalSaving] = useState(false)
   const [hoveredDay, setHoveredDay] = useState<{ date: string; hours: number; sessions: number; x: number; y: number } | null>(null)
 
+  const [connectionToast, setConnectionToast] = useState<{ show: boolean; message: string; type: 'success' | 'warning' | 'info' } | null>(null)
   const hasFetched = useRef(false)
+  const prevConnected = useRef<boolean | null>(null)
 
   // ─── Data fetching with caching ────────────────────────────────────────────
   const fetchAllData = useCallback(async () => {
@@ -155,6 +157,32 @@ export default function DashboardPage() {
 
     setLoading(false)
   }, [session, contributionDays])
+
+  // Poll connection status every 30s (bypasses cache)
+  useEffect(() => {
+    if (!session?.user) return
+    const poll = async () => {
+      try {
+        const res = await fetch('/api/connection-status')
+        if (res.ok) {
+          const data = await res.json()
+          setConnectionStatus(data)
+          // Show toast on status change
+          if (prevConnected.current !== null && prevConnected.current !== data.connected) {
+            setConnectionToast({
+              show: true,
+              message: data.connected ? '✅ VS Code is now connected and tracking!' : '⚠️ VS Code connection lost — extension may be idle',
+              type: data.connected ? 'success' : 'warning',
+            })
+            setTimeout(() => setConnectionToast(null), 5000)
+          }
+          prevConnected.current = data.connected
+        }
+      } catch { /* ignore */ }
+    }
+    const interval = setInterval(poll, 30000)
+    return () => clearInterval(interval)
+  }, [session])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -236,7 +264,7 @@ export default function DashboardPage() {
         const hours = c?.hours || 0
         const sessions = c?.sessions || 0
         let level = 0
-        if (hours > 0) level = 1
+        if (hours >= 0.01) level = 1
         if (hours >= 1) level = 2
         if (hours >= 3) level = 3
         if (hours >= 5) level = 4
@@ -330,42 +358,60 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
 
+      {/* Connection status toast */}
+      <AnimatePresence>
+        {connectionToast?.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -40 }}
+            className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-lg backdrop-blur-md text-sm font-medium ${
+              connectionToast.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+            }`}
+          >
+            {connectionToast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-12">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-row items-center justify-between gap-4 flex-wrap"
+          className="mb-8 flex flex-row items-center justify-between gap-3 sm:gap-4"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 md:mt-16">
             {session.user?.image && (
-              <img src={session.user.image} alt="" className="w-12 h-12 rounded-full ring-2 ring-blue-500/30 mt-2" />
+              <img src={session.user.image} alt="" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full ring-2 ring-blue-500/30 mt-1 shrink-0" />
             )}
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">
-                Welcome back, <span className="bg-linear-to-r from-cyan-400 via-blue-500 to-violet-500 bg-clip-text text-transparent">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold whitespace-nowrap truncate">
+                Welcome back, <span className="bg-linear-to-r bg-amber-400 bg-clip-text text-transparent">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
               </h1>
-              <p className="text-gray-500 text-sm mt-0.5">
+              <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
                 {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today` : 'Start coding to see your stats'}
               </p>
             </div>
           </div>
 
           {/* Connection status */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
+            <div className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium ${
               connectionStatus.connected
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                 : connectionStatus.hasApiKey
                   ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                   : 'bg-gray-800 text-gray-400 border border-gray-700'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${
+              <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                 connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : connectionStatus.hasApiKey ? 'bg-yellow-400' : 'bg-gray-600'
               }`} />
               {connectionStatus.connected ? 'VS Code Connected' : connectionStatus.hasApiKey ? 'VS Code Idle' : 'Not Connected'}
             </div>
-            <Link href="/settings" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+            <Link href="/settings" className="text-[11px] sm:text-xs text-gray-500 hover:text-gray-300 transition-colors">
               Settings
             </Link>
           </div>
@@ -629,9 +675,23 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-gray-200 truncate">
-                          {project.name || `Project ${project.hash.slice(0, 8)}`}
-                        </span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {project.repoUrl ? (
+                            <a
+                              href={project.repoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-400 hover:text-blue-300 truncate transition-colors flex items-center gap-1"
+                            >
+                              {project.name || `Project ${project.hash.slice(0, 8)}`}
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                            </a>
+                          ) : (
+                            <span className="text-sm text-gray-200 truncate">
+                              {project.name || `Project ${project.hash.slice(0, 8)}`}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs text-gray-500 shrink-0 ml-2">{formatHours(project.hours)}</span>
                       </div>
                       <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -837,7 +897,7 @@ export default function DashboardPage() {
                   formatter={(v: number) => [`${v}h`, 'Hours']}
                   labelStyle={{ color: '#9ca3af' }}
                 />
-                <Bar dataKey="hours" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>
@@ -1026,6 +1086,42 @@ export default function DashboardPage() {
             </div>
           )}
         </motion.div>
+
+        {/* Rewards & Achievements */}
+        {goals.filter(g => g.achieved).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.52 }}
+            className="bg-gray-900/80 border border-gray-800 rounded-xl p-5 mb-8"
+          >
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              Rewards
+              <span className="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full ml-auto">
+                {goals.filter(g => g.achieved).length} earned
+              </span>
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {goals.filter(g => g.achieved).map((goal) => {
+                const badge = goal.type === 'daily_hours'
+                  ? { icon: '⏱️', label: `${goal.target}h Day`, color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30' }
+                  : goal.type === 'weekly_hours'
+                    ? { icon: '📅', label: `${goal.target}h Week`, color: 'from-violet-500/20 to-violet-600/10 border-violet-500/30' }
+                    : { icon: '🔥', label: `${goal.target}d Streak`, color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30' }
+                return (
+                  <div key={goal.id} className={`bg-gradient-to-br ${badge.color} border rounded-xl p-3 text-center`}>
+                    <span className="text-2xl">{badge.icon}</span>
+                    <p className="text-xs font-medium text-gray-200 mt-1.5">{badge.label}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      {goal.targetDate ? formatDate(goal.targetDate) : 'Recurring'}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Productivity Score Circle */}
         <motion.div

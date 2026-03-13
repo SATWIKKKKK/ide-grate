@@ -165,23 +165,33 @@ function LoginContent() {
 
             {/* OAuth Buttons */}
             {oauthProviders.length > 0 && (
-              <div className="flex items-center justify-center gap-3">
+              <div className="space-y-3">
                 {oauthProviders.map((provider: any) => {
                   const Icon = providerIcons[provider.id] || Code2
+                  const bgColors: Record<string, string> = {
+                    github: 'bg-gray-800 hover:bg-gray-700 border-gray-700',
+                    google: 'bg-white hover:bg-gray-100 border-gray-300',
+                  }
+                  const textColors: Record<string, string> = {
+                    github: 'text-white',
+                    google: 'text-gray-800',
+                  }
                   return (
                     <Button
                       key={provider.id}
                       variant="outline"
-                      size="icon"
                       onClick={() => handleSignIn(provider.id)}
                       disabled={isLoading !== null}
-                      className="w-12 h-12 bg-gray-800 hover:bg-gray-700 border-gray-700 text-white"
+                      className={`w-full h-11 ${bgColors[provider.id] || 'bg-gray-800 hover:bg-gray-700 border-gray-700'} ${textColors[provider.id] || 'text-white'} font-medium flex items-center justify-center gap-3`}
                       title={`Sign in with ${provider.name}`}
                     >
                       {isLoading === provider.id ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                       ) : (
-                        <Icon className="w-5 h-5" />
+                        <>
+                          <Icon className="w-5 h-5" />
+                          Continue with {provider.name}
+                        </>
                       )}
                     </Button>
                   )

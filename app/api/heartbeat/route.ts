@@ -201,6 +201,25 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Store project hash → repoUrl mapping if provided
+    if (body.repoUrl && body.projectHash) {
+      try {
+        const userStats = await prisma.userStats.findUnique({
+          where: { userId: user.id },
+          select: { monthlyData: true },
+        })
+        const monthlyData = (userStats?.monthlyData as Record<string, unknown>) || {}
+        const projectRepos = (monthlyData.projectRepos as Record<string, string>) || {}
+        if (!projectRepos[body.projectHash] || projectRepos[body.projectHash] !== body.repoUrl) {
+          projectRepos[body.projectHash] = body.repoUrl
+          await prisma.userStats.update({
+            where: { userId: user.id },
+            data: { monthlyData: { ...monthlyData, projectRepos } },
+          })
+        }
+      } catch { /* non-critical */ }
+    }
+
     return NextResponse.json({ 
       success: true,
       message: "Heartbeat recorded" 
