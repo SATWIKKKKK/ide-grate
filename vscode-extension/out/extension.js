@@ -40,10 +40,26 @@ const https = __importStar(require("https"));
 const http = __importStar(require("http"));
 const crypto = __importStar(require("crypto"));
 const os = __importStar(require("os"));
+const child_process_1 = require("child_process");
 let heartbeatInterval;
 let lastActivityTime = Date.now();
 let statusBarItem;
 let isTracking = false;
+let hasShownDisconnectedNotice = false;
+const DEFAULT_API_ENDPOINT = 'http://localhost:3001/api/heartbeat';
+function normalizeApiEndpoint(input) {
+    const trimmed = input.trim().replace(/\/+$/, '');
+    if (!trimmed) {
+        return DEFAULT_API_ENDPOINT;
+    }
+    if (trimmed.endsWith('/api/heartbeat')) {
+        return trimmed;
+    }
+    if (trimmed.endsWith('/dashboard')) {
+        return `${trimmed.slice(0, -'/dashboard'.length)}/api/heartbeat`;
+    }
+    return `${trimmed}/api/heartbeat`;
+}
 function activate(context) {
     console.log('VS Integrate extension is now active');
     // Create status bar item
@@ -93,7 +109,7 @@ function getConfig() {
     const config = vscode.workspace.getConfiguration('vsIntegrate');
     return {
         apiKey: config.get('apiKey') || '',
-        apiEndpoint: config.get('apiEndpoint') || 'http://localhost:3000/api/heartbeat',
+        apiEndpoint: normalizeApiEndpoint(config.get('apiEndpoint') || DEFAULT_API_ENDPOINT),
         heartbeatInterval: config.get('heartbeatInterval') || 30,
         idleTimeout: config.get('idleTimeout') || 120
     };
@@ -107,6 +123,7 @@ function startTracking() {
         updateStatusBar('No API Key');
         return;
     }
+    hasShownDisconnectedNotice = false;
     isTracking = true;
     updateStatusBar('Tracking');
     // Clear any existing interval
@@ -138,6 +155,21 @@ async function sendHeartbeat() {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     const projectPath = workspaceFolders?.[0]?.uri.fsPath || '';
     const projectHash = projectPath ? hashProjectPath(projectPath) : undefined;
+    // Try to get GitHub repo URL
+    let repoUrl;
+    if (projectPath) {
+        try {
+            const remote = (0, child_process_1.execSync)('git config --get remote.origin.url', { cwd: projectPath, timeout: 3000 }).toString().trim();
+            if (remote) {
+                // Normalize SSH/HTTPS URLs to a clean HTTPS URL
+                repoUrl = remote
+                    .replace(/^git@github\.com:/, 'https://github.com/')
+                    .replace(/^git@([^:]+):/, 'https://$1/')
+                    .replace(/\.git$/, '');
+            }
+        }
+        catch { /* not a git repo or no remote */ }
+    }
     const payload = {
         apiKey: config.apiKey,
         timestamp: Date.now(),
@@ -145,6 +177,7 @@ async function sendHeartbeat() {
         file: editor?.document.fileName ? getFileName(editor.document.fileName) : null,
         project: vscode.workspace.name || 'unknown',
         projectHash: projectHash,
+        repoUrl: repoUrl,
         platform: os.platform(),
         isIdle: isIdle
     };
@@ -153,9 +186,12 @@ async function sendHeartbeat() {
         updateStatusBar(isIdle ? 'Idle' : 'Active');
     }
     catch (error) {
+        if (error.statusCode === 401) {
+            await handleManualDisconnect();
+            return;
+        }
         console.error('Failed to send heartbeat:', error);
         updateStatusBar('Error');
-        throw error;
     }
 }
 async function sendConnectionTest() {
@@ -174,6 +210,10 @@ async function sendConnectionTest() {
         updateStatusBar('Tracking');
     }
     catch (error) {
+        if (error.statusCode === 401) {
+            await handleManualDisconnect();
+            return;
+        }
         console.error('Connection test failed:', error);
         updateStatusBar('Error');
         throw error;
@@ -203,7 +243,10 @@ function postData(urlString, data) {
                     resolve(JSON.parse(body || '{}'));
                 }
                 else {
-                    reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+                    const httpError = new Error(`HTTP ${res.statusCode}: ${body}`);
+                    httpError.statusCode = res.statusCode;
+                    httpError.responseBody = body;
+                    reject(httpError);
                 }
             });
         });
@@ -223,6 +266,10 @@ function updateStatusBar(status) {
         statusBarItem.text = '$(debug-disconnect) VS Integrate: No API Key';
         statusBarItem.tooltip = 'Click to set your API key';
     }
+    else if (status === 'Disconnected') {
+        statusBarItem.text = '$(debug-disconnect) VS Integrate: Disconnected';
+        statusBarItem.tooltip = 'API key has been disconnected. Reconnect to resume tracking.';
+    }
     else if (status === 'Error') {
         statusBarItem.text = '$(alert) VS Integrate: Connection Error';
         statusBarItem.tooltip = 'Failed to connect to server. Check your API endpoint.';
@@ -237,6 +284,25 @@ function updateStatusBar(status) {
     }
     statusBarItem.show();
 }
+async function handleManualDisconnect() {
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = undefined;
+    }
+    isTracking = false;
+    updateStatusBar('Disconnected');
+    if (hasShownDisconnectedNotice) {
+        return;
+    }
+    hasShownDisconnectedNotice = true;
+    const selection = await vscode.window.showWarningMessage('API key has been disconnected, please reconnect for VS Code tracking.', 'Reconnect Now', 'Open Dashboard');
+    if (selection === 'Reconnect Now') {
+        await setApiKey();
+    }
+    else if (selection === 'Open Dashboard') {
+        openDashboard();
+    }
+}
 async function setApiKey() {
     const apiKey = await vscode.window.showInputBox({
         prompt: 'Enter your VS Integrate API Key',
@@ -246,7 +312,18 @@ async function setApiKey() {
     });
     if (apiKey) {
         const config = vscode.workspace.getConfiguration('vsIntegrate');
+        const currentEndpoint = normalizeApiEndpoint(config.get('apiEndpoint') || DEFAULT_API_ENDPOINT);
+        const endpointInput = await vscode.window.showInputBox({
+            prompt: 'Enter your VS Integrate site URL or heartbeat endpoint',
+            placeHolder: 'https://your-site.com or http://localhost:3001/api/heartbeat',
+            value: currentEndpoint,
+            ignoreFocusOut: true,
+        });
+        if (endpointInput === undefined) {
+            return;
+        }
         await config.update('apiKey', apiKey, vscode.ConfigurationTarget.Global);
+        await config.update('apiEndpoint', normalizeApiEndpoint(endpointInput), vscode.ConfigurationTarget.Global);
         vscode.window.showInformationMessage('API Key saved! Tracking will start now.');
         startTracking();
     }

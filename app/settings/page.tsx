@@ -41,6 +41,7 @@ interface ConnectionStatus {
   hasApiKey: boolean
   hasActivity: boolean
   lastActivityAt: string | null
+  totalSessions?: number
 }
 
 export default function SettingsPage() {
@@ -215,6 +216,31 @@ export default function SettingsPage() {
     }
   }
 
+  const connectVsCode = async () => {
+    setApiKeyLoading(true)
+    try {
+      let key = apiKey
+      if (!key) {
+        const res = await fetch('/api/apikey', { method: 'POST' })
+        if (!res.ok) throw new Error('Failed to generate API key')
+        const data = await res.json()
+        key = data.apiKey
+        setApiKey(key)
+        setShowKey(true)
+      }
+
+      if (!key) throw new Error('API key was not generated')
+
+      const endpoint = `${window.location.origin}/api/heartbeat`
+      const deepLink = `vscode://vsintegrate.vs-integrate-tracker/auth?key=${encodeURIComponent(key)}&endpoint=${encodeURIComponent(endpoint)}`
+      window.location.href = deepLink
+    } catch (error) {
+      console.error('Failed to connect VS Code:', error)
+    } finally {
+      setApiKeyLoading(false)
+    }
+  }
+
   const testConnection = async () => {
     setTestStatus('testing')
     try {
@@ -297,7 +323,7 @@ export default function SettingsPage() {
             {session.user?.image ? (
               <img src={session.user.image} alt="" className="w-14 h-14 rounded-full ring-2 ring-emerald-500/30 shrink-0" />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold shrink-0">
+              <div className="w-14 h-14 rounded-full bg-linear-to-br from-emerald-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold shrink-0">
                 {session.user?.name?.[0] || session.user?.email?.[0] || '?'}
               </div>
             )}
@@ -481,6 +507,17 @@ export default function SettingsPage() {
                 </button>
               </div>
 
+              {apiKey && !connection?.connected && (
+                <button
+                  onClick={connectVsCode}
+                  disabled={apiKeyLoading}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm transition-all shadow-sm hover:shadow-emerald-500/20 hover:shadow-md flex items-center justify-center gap-2"
+                >
+                  {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Code2 className="w-4 h-4" />}
+                  Connect VS Code Automatically
+                </button>
+              )}
+
               {/* API Key display */}
               {apiKey ? (
                 <div className="space-y-3">
@@ -527,10 +564,10 @@ export default function SettingsPage() {
                 </p>
                 {[
                   'Install the VS Integrate extension from VS Code Marketplace',
-                  'Come back here, generate or copy your API key above',
-                  'In VS Code: Ctrl+Shift+P → "VS Integrate: Set API Key" → paste',
-                  'Status bar shows tracking status — nothing else required',
-                  'Connection persists permanently until you revoke the key',
+                  'Use “Connect VS Code Automatically” above so the app sends both your API key and the correct site endpoint',
+                  'If you configure it manually, set both the API key and the heartbeat endpoint for this site',
+                  'Status bar shows tracking state, and the site flips to Connected after heartbeats arrive',
+                  'Your contribution graph updates as tracked heartbeats accumulate into daily contributions',
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-2.5">
                     <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>

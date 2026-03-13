@@ -28,38 +28,39 @@ export async function GET(request: NextRequest) {
 
     // Check for recent activity (within last 5 minutes = actively connected)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-    const recentActivity = await prisma.activity.findFirst({
-      where: {
-        userId: sessionUser.id,
-        endTime: { gte: fiveMinutesAgo },
-      },
-      orderBy: { endTime: "desc" },
-      select: { endTime: true },
-    })
-
-    // Check UserStats (also updated by connection_test heartbeats)
-    const stats = await prisma.userStats.findUnique({
-      where: { userId: sessionUser.id },
-      select: { totalSessions: true, totalHours: true, lastActiveDate: true },
-    })
+    const [recentActivity, latestActivity, totalSessions, stats] = await Promise.all([
+      prisma.activity.findFirst({
+        where: {
+          userId: sessionUser.id,
+          endTime: { gte: fiveMinutesAgo },
+        },
+        orderBy: { endTime: "desc" },
+        select: { endTime: true },
+      }),
+      prisma.activity.findFirst({
+        where: { userId: sessionUser.id },
+        orderBy: { endTime: "desc" },
+        select: { endTime: true },
+      }),
+      prisma.activity.count({
+        where: { userId: sessionUser.id },
+      }),
+      prisma.userStats.findUnique({
+        where: { userId: sessionUser.id },
+        select: { totalHours: true, lastActiveDate: true },
+      }),
+    ])
 
     // connection_test heartbeats only update UserStats.lastActiveDate, not Activity records
     // so we also check lastActiveDate to detect fresh connections
     const recentConnectionTest = stats?.lastActiveDate && stats.lastActiveDate >= fiveMinutesAgo
 
-    // Check for any activity ever
-    const anyActivity = recentActivity || await prisma.activity.findFirst({
-      where: { userId: sessionUser.id },
-      orderBy: { endTime: "desc" },
-      select: { endTime: true },
-    })
-
     return NextResponse.json({
       connected: !!recentActivity || !!recentConnectionTest,
       hasApiKey: true,
-      hasActivity: !!anyActivity || !!recentConnectionTest,
-      lastActivityAt: anyActivity?.endTime || stats?.lastActiveDate || null,
-      totalSessions: stats?.totalSessions || 0,
+      hasActivity: totalSessions > 0 || !!recentConnectionTest,
+      lastActivityAt: latestActivity?.endTime || stats?.lastActiveDate || null,
+      totalSessions,
       totalHours: stats?.totalHours || 0,
     })
   } catch (error) {

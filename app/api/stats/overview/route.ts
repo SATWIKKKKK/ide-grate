@@ -164,13 +164,16 @@ export async function GET(request: NextRequest) {
     const projects = Object.values(projectTotals)
       .sort((a, b) => b.seconds - a.seconds)
       .slice(0, 10)
-      .map(p => ({
-        hash: p.hash,
-        name: p.name,
-        hours: parseFloat((p.seconds / 3600).toFixed(1)),
-        percentage: Math.round((p.seconds / totalSeconds) * 100),
-        repoUrl: projectRepos[p.hash] || null,
-      }))
+      .map(p => {
+        const repoUrl = projectRepos[p.hash] || null
+        return {
+          hash: p.hash,
+          name: deriveProjectName(p.name, repoUrl, p.hash),
+          hours: parseFloat((p.seconds / 3600).toFixed(1)),
+          percentage: Math.round((p.seconds / Math.max(totalSeconds, 1)) * 100),
+          repoUrl,
+        }
+      })
 
     return NextResponse.json({
       totalHours: parseFloat(totalHours.toFixed(1)),
@@ -220,4 +223,17 @@ function calculateProductivityScore(
     focusScore: Math.min(avgSessionMinutes / 60, 1) * 25,
   }
   return Math.round(Object.values(factors).reduce((s, v) => s + v, 0))
+}
+
+function deriveProjectName(projectName: string | null, repoUrl: string | null, hash: string): string {
+  const cleaned = (projectName || '').trim()
+  if (cleaned && cleaned.toLowerCase() !== 'unknown') return cleaned
+
+  if (repoUrl) {
+    const repoParts = repoUrl.replace(/\/+$/, '').split('/')
+    const repoName = repoParts[repoParts.length - 1]
+    if (repoName) return decodeURIComponent(repoName)
+  }
+
+  return `Project ${hash.slice(0, 8)}`
 }

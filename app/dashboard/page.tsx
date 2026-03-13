@@ -98,13 +98,21 @@ function formatTimer(seconds: number): string {
 }
 
 function formatHours(h: number): string {
-  if (h < 0.1) return '0 minutes'
-  if (h < 1) return `${Math.round(h * 60)} minutes`
+  if (h <= 0) return '0 minutes'
+  if (h < 1) return `${Math.max(1, Math.round(h * 60))} minutes`
   const hrs = Math.floor(h)
   const mins = Math.round((h - hrs) * 60)
   if (mins > 0 && hrs > 0) return `${hrs} hours ${mins} minutes`
   if (hrs > 0) return `${hrs} hours`
   return `${mins} minutes`
+}
+
+function getContributionLevel(hours: number): number {
+  if (hours <= 0) return 0
+  if (hours < 0.25) return 1
+  if (hours < 1) return 2
+  if (hours < 3) return 3
+  return 4
 }
 
 function formatDate(dateStr: string): string {
@@ -117,6 +125,8 @@ function formatDate(dateStr: string): string {
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const contributionApiUrl = '/api/contributions?days=365'
+  const liveTimerStorageKey = `vsintegrate-live-start-${session?.user?.id || 'anonymous'}`
 
   // Data
   const [stats, setStats] = useState<StatsData | null>(null)
@@ -126,9 +136,11 @@ export default function DashboardPage() {
   const [connectionStatus, setConnectionStatus] = useState<{
     connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null
   }>({ connected: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
+  const [connectionReady, setConnectionReady] = useState(false)
 
   // UI state
   const [loading, setLoading] = useState(true)
+  const [disconnecting, setDisconnecting] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [copiedKey, setCopiedKey] = useState(false)
   const [contributionDays, setContributionDays] = useState(365)
@@ -154,7 +166,7 @@ export default function DashboardPage() {
 
     const [statsData, contribData, goalsData, keyData, connData] = await Promise.all([
       cachedFetch<StatsData>('stats', '/api/stats/overview'),
-      cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', `/api/contributions?days=${contributionDays}`),
+      cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', contributionApiUrl),
       cachedFetch<{ goals: GoalData[] }>('goals', '/api/goals'),
       cachedFetch<{ apiKey: string | null }>('apikey', '/api/apikey'),
       cachedFetch<{ connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null }>('connection', '/api/connection-status'),
@@ -164,10 +176,13 @@ export default function DashboardPage() {
     if (contribData?.contributions) setContributions(contribData.contributions)
     if (goalsData?.goals) setGoals(goalsData.goals)
     if (keyData) setApiKey(keyData.apiKey)
-    if (connData) setConnectionStatus(connData)
+    if (connData) {
+      setConnectionStatus(connData)
+      setConnectionReady(true)
+    }
 
     setLoading(false)
-  }, [session, contributionDays])
+  }, [session, contributionApiUrl])
 
   // Poll connection status every 15s + refresh stats every ~60s when connected
   useEffect(() => {
@@ -179,11 +194,16 @@ export default function DashboardPage() {
         if (res.ok) {
           const data = await res.json()
           setConnectionStatus(data)
+          setConnectionReady(true)
           // Show toast on status change
           if (prevConnected.current !== null && prevConnected.current !== data.connected) {
             setConnectionToast({
               show: true,
-              message: data.connected ? '✅ VS Code is now connected and tracking!' : '⚠️ VS Code connection lost — extension may be idle',
+              message: data.connected
+                ? 'VS Code is now connected and tracking!'
+                : data.hasApiKey
+                  ? '🔴 VS Code disconnected — reconnect to continue tracking'
+                  : '🔴 API key disconnected — reconnect VS Code tracking',
               type: data.connected ? 'success' : 'warning',
             })
             setTimeout(() => setConnectionToast(null), 5000)
@@ -197,7 +217,7 @@ export default function DashboardPage() {
             invalidateCache('contributions')
             const [freshStats, freshContrib] = await Promise.all([
               cachedFetch<StatsData>('stats', '/api/stats/overview'),
-              cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', `/api/contributions?days=${contributionDays}`),
+              cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', contributionApiUrl),
             ])
             if (freshStats) setStats(freshStats)
             if (freshContrib?.contributions) setContributions(freshContrib.contributions)
@@ -207,15 +227,33 @@ export default function DashboardPage() {
     }
     const interval = setInterval(poll, 15000)
     return () => clearInterval(interval)
-  }, [session, contributionDays])
+  }, [session, contributionApiUrl])
 
   // Live VS Code session timer
   useEffect(() => {
+    if (!connectionReady) return
+
     if (connectionStatus.connected) {
       if (!sessionStartRef.current) {
-        sessionStartRef.current = new Date()
-        setLiveSeconds(0)
+        const savedStart = typeof window !== 'undefined' ? localStorage.getItem(liveTimerStorageKey) : null
+        let start = savedStart ? new Date(savedStart) : null
+
+        if (!start || Number.isNaN(start.getTime())) {
+          const fallback = connectionStatus.lastActivityAt ? new Date(connectionStatus.lastActivityAt) : new Date()
+          start = Number.isNaN(fallback.getTime()) ? new Date() : fallback
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(liveTimerStorageKey, start.toISOString())
+          }
+        }
+
+        sessionStartRef.current = start
+        setLiveSeconds(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)))
       }
+
+      if (liveTimerRef.current) {
+        clearInterval(liveTimerRef.current)
+      }
+
       liveTimerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - sessionStartRef.current!.getTime()) / 1000)
         setLiveSeconds(elapsed)
@@ -225,8 +263,15 @@ export default function DashboardPage() {
         clearInterval(liveTimerRef.current)
         liveTimerRef.current = null
       }
-      sessionStartRef.current = null
-      setLiveSeconds(0)
+
+      // Reset only on manual disconnect (API key revoked).
+      if (!connectionStatus.hasApiKey) {
+        sessionStartRef.current = null
+        setLiveSeconds(0)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(liveTimerStorageKey)
+        }
+      }
     }
     return () => {
       if (liveTimerRef.current) {
@@ -234,7 +279,7 @@ export default function DashboardPage() {
         liveTimerRef.current = null
       }
     }
-  }, [connectionStatus.connected])
+  }, [connectionReady, connectionStatus.connected, connectionStatus.hasApiKey, connectionStatus.lastActivityAt, liveTimerStorageKey])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -247,14 +292,36 @@ export default function DashboardPage() {
     }
   }, [session, fetchAllData])
 
-  // Re-fetch contributions when filter changes (invalidate that cache key)
-  useEffect(() => {
-    if (hasFetched.current) {
-      invalidateCache('contributions')
-      cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', `/api/contributions?days=${contributionDays}`)
-        .then(d => { if (d?.contributions) setContributions(d.contributions) })
+  const disconnectTracking = async () => {
+    setDisconnecting(true)
+    try {
+      const res = await fetch('/api/apikey', { method: 'DELETE' })
+      if (res.ok) {
+        setApiKey(null)
+        setConnectionStatus({ connected: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
+        setConnectionReady(true)
+        sessionStartRef.current = null
+        setLiveSeconds(0)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(liveTimerStorageKey)
+        }
+        setConnectionToast({
+          show: true,
+          message: ' Tracking disconnected. Reconnect API key in VS Code to resume tracking.',
+          type: 'warning',
+        })
+        setTimeout(() => setConnectionToast(null), 5000)
+      }
+    } catch {
+      setConnectionToast({
+        show: true,
+        message: 'Failed to disconnect. Please try again.',
+        type: 'warning',
+      })
+      setTimeout(() => setConnectionToast(null), 4000)
     }
-  }, [contributionDays])
+    setDisconnecting(false)
+  }
 
   // ─── Goal handlers ─────────────────────────────────────────────────────────
   const createGoal = async () => {
@@ -315,11 +382,7 @@ export default function DashboardPage() {
         const c = contributions[dateStr]
         const hours = c?.hours || 0
         const sessions = c?.sessions || 0
-        let level = 0
-        if (hours >= 0.01) level = 1
-        if (hours >= 1) level = 2
-        if (hours >= 3) level = 3
-        if (hours >= 5) level = 4
+        const level = typeof c?.level === 'number' ? c.level : getContributionLevel(hours)
         week.push({ date: dateStr, hours, sessions, level })
       }
       weeks.push(week)
@@ -436,7 +499,7 @@ export default function DashboardPage() {
             className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-lg backdrop-blur-md text-sm font-medium ${
               connectionToast.type === 'success'
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                : 'bg-red-500/10 border-red-500/30 text-red-400'
             }`}
           >
             {connectionToast.message}
@@ -471,21 +534,30 @@ export default function DashboardPage() {
               className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
                 connectionStatus.connected
                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700'
+                  : 'bg-red-500/10 text-red-400 border border-red-500/30'
               }`}
               title={
                 connectionStatus.connected
                   ? 'VS Code is actively sending heartbeats'
                   : connectionStatus.hasApiKey
-                    ? 'API key set — open VS Code to connect'
+                    ? 'VS Code disconnected — reconnect to continue tracking'
                     : 'No API key yet — go to Settings'
               }
             >
               <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'
+                connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
               }`} />
-              {connectionStatus.connected ? 'Connected' : 'Not Connected'}
+              {connectionStatus.connected ? 'Connected' : 'Disconnected'}
             </div>
+            {apiKey && (
+              <button
+                onClick={disconnectTracking}
+                disabled={disconnecting}
+                className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-60"
+              >
+                {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+              </button>
+            )}
             <Link href="/settings" className="text-[11px] sm:text-xs text-gray-500 hover:text-gray-300 transition-colors">
               Settings
             </Link>
@@ -558,7 +630,7 @@ export default function DashboardPage() {
         >
           <div className={`rounded-xl border transition-all overflow-hidden ${
             connectionStatus.connected
-              ? 'bg-gradient-to-br from-emerald-950/40 to-emerald-900/20 border-emerald-500/30'
+              ? 'bg-linear-to-br from-emerald-950/40 to-emerald-900/20 border-emerald-500/30'
               : 'bg-gray-900/80 border-gray-800'
           }`}>
             {/* Connected banner */}
@@ -608,8 +680,8 @@ export default function DashboardPage() {
                       {connectionStatus.connected
                         ? <span className="text-emerald-400/70">Every second is being tracked</span>
                         : connectionStatus.hasApiKey
-                          ? <span className="text-gray-500">Open VS Code with extension to start timer</span>
-                          : <span className="text-gray-500">Generate API key below, then connect VS Code</span>}
+                          ? <span className="text-red-400/80">Disconnected. Reconnect VS Code to resume tracking.</span>
+                          : <span className="text-red-400/80">Generate API key and reconnect to start VS Code tracking.</span>}
                     </p>
                   </div>
                 </div>
@@ -1308,7 +1380,7 @@ export default function DashboardPage() {
                     ? { icon: '📅', label: `${goal.target}h Week`, color: 'from-violet-500/20 to-violet-600/10 border-violet-500/30' }
                     : { icon: '🔥', label: `${goal.target}d Streak`, color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30' }
                 return (
-                  <div key={goal.id} className={`bg-gradient-to-br ${badge.color} border rounded-xl p-3 text-center`}>
+                  <div key={goal.id} className={`bg-linear-to-br ${badge.color} border rounded-xl p-3 text-center`}>
                     <span className="text-2xl">{badge.icon}</span>
                     <p className="text-xs font-medium text-gray-200 mt-1.5">{badge.label}</p>
                     <p className="text-[10px] text-gray-500 mt-0.5">

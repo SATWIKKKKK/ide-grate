@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
 
     const now = new Date(timestamp || Date.now())
     const today = new Date(now.toISOString().split('T')[0])
+    let startedNewSession = false
 
     // Get or create today's contribution record
     const dailyContribution = await prisma.dailyContribution.upsert({
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
         activityDuration = HEARTBEAT_INTERVAL
       } else {
         // Start new session
+        startedNewSession = true
         await prisma.activity.create({
           data: {
             userId: user.id,
@@ -120,6 +122,7 @@ export async function POST(request: NextRequest) {
             idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
             projectHash: body.projectHash || null,
             projectName: body.project || null,
+            platform: body.platform || null,
           },
         })
         
@@ -133,6 +136,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // First activity ever - create new session
+      startedNewSession = true
       await prisma.activity.create({
         data: {
           userId: user.id,
@@ -145,6 +149,7 @@ export async function POST(request: NextRequest) {
           idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
           projectHash: body.projectHash || null,
           projectName: body.project || null,
+          platform: body.platform || null,
         },
       })
       
@@ -161,11 +166,14 @@ export async function POST(request: NextRequest) {
     // even when the user is idle (VS Code is still open and sending heartbeats)
     await prisma.userStats.upsert({
       where: { userId: user.id },
-      update: { lastActiveDate: now },
+      update: {
+        lastActiveDate: now,
+        ...(startedNewSession ? { totalSessions: { increment: 1 } } : {}),
+      },
       create: {
         userId: user.id,
         totalHours: 0,
-        totalSessions: 0,
+        totalSessions: startedNewSession ? 1 : 0,
         longestStreak: 0,
         currentStreak: 0,
         lastActiveDate: now,

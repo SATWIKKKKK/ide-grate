@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
 }
 
 function getContributionLevel(hours: number): number {
-  if (hours < 0.01) return 0
-  if (hours < 1) return 1
-  if (hours < 3) return 2
-  if (hours < 5) return 3
+  if (hours <= 0) return 0
+  if (hours < 0.25) return 1
+  if (hours < 1) return 2
+  if (hours < 3) return 3
   return 4
 }
