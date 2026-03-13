@@ -430,25 +430,23 @@ export default function SettingsPage() {
               {/* Live connection badge */}
               <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border ${
                 connection?.connected
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : connection?.hasApiKey
-                    ? 'bg-yellow-500/5 border-yellow-500/20'
-                    : 'bg-gray-800/40 border-gray-700'
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-gray-800/40 border-gray-700'
               }`}>
                 <div className="flex items-center gap-3">
                   {connection?.connected
                     ? <Wifi className="w-5 h-5 text-emerald-400 shrink-0" />
                     : <WifiOff className="w-5 h-5 text-gray-500 shrink-0" />}
                   <div>
-                    <p className={`text-sm font-medium ${connection?.connected ? 'text-emerald-400' : connection?.hasApiKey ? 'text-yellow-400' : 'text-gray-400'}`}>
+                    <p className={`text-sm font-medium ${connection?.connected ? 'text-emerald-400' : 'text-gray-400'}`}>
                       {connection?.connected
                         ? 'VS Code Connected & Tracking'
                         : connection?.hasApiKey
-                          ? 'API Key Ready — Open VS Code to start tracking'
+                          ? 'Not Connected — Open VS Code to start tracking'
                           : 'Not Connected'}
                     </p>
                     {connection?.connected && (
-                      <p className="text-xs text-gray-500 mt-0.5">Heartbeats received in the last 5 minutes</p>
+                      <p className="text-xs text-emerald-400/70 mt-0.5">Heartbeats received — every second is being tracked</p>
                     )}
                     {!connection?.connected && connection?.hasApiKey && (
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -465,16 +463,20 @@ export default function SettingsPage() {
                 <button
                   onClick={testConnection}
                   disabled={testStatus === 'testing'}
-                  className="shrink-0 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 rounded-lg text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5"
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5 ${
+                    connection?.connected
+                      ? 'bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/20 text-emerald-400 hover:text-emerald-300'
+                      : 'bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-blue-400 hover:text-blue-300'
+                  }`}
                 >
                   {testStatus === 'testing' && <Loader2 className="w-3 h-3 animate-spin" />}
                   {testStatus === 'success' && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
-                  {testStatus === 'ready' && <CheckCircle2 className="w-3 h-3 text-yellow-400" />}
+                  {testStatus === 'ready' && <CheckCircle2 className="w-3 h-3 text-blue-400" />}
                   {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
                   {testStatus === 'idle' ? 'Refresh Status'
                     : testStatus === 'testing' ? 'Checking…'
-                    : testStatus === 'success' ? 'Active!'
-                    : testStatus === 'ready' ? 'Ready'
+                    : testStatus === 'success' ? 'Connected!'
+                    : testStatus === 'ready' ? 'Key Valid'
                     : 'No Key'}
                 </button>
               </div>

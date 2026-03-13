@@ -94,8 +94,7 @@ function formatTimer(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 function formatHours(h: number): string {
@@ -170,9 +169,10 @@ export default function DashboardPage() {
     setLoading(false)
   }, [session, contributionDays])
 
-  // Poll connection status every 30s (bypasses cache)
+  // Poll connection status every 15s + refresh stats every ~60s when connected
   useEffect(() => {
     if (!session?.user) return
+    let pollCount = 0
     const poll = async () => {
       try {
         const res = await fetch('/api/connection-status')
@@ -189,12 +189,25 @@ export default function DashboardPage() {
             setTimeout(() => setConnectionToast(null), 5000)
           }
           prevConnected.current = data.connected
+
+          // Every 4th poll (~60s), refresh stats + contributions when connected
+          pollCount++
+          if (pollCount % 4 === 0 && data.connected) {
+            invalidateCache('stats')
+            invalidateCache('contributions')
+            const [freshStats, freshContrib] = await Promise.all([
+              cachedFetch<StatsData>('stats', '/api/stats/overview'),
+              cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', `/api/contributions?days=${contributionDays}`),
+            ])
+            if (freshStats) setStats(freshStats)
+            if (freshContrib?.contributions) setContributions(freshContrib.contributions)
+          }
         }
       } catch { /* ignore */ }
     }
     const interval = setInterval(poll, 15000)
     return () => clearInterval(interval)
-  }, [session])
+  }, [session, contributionDays])
 
   // Live VS Code session timer
   useEffect(() => {
@@ -457,25 +470,21 @@ export default function DashboardPage() {
             <div
               className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
                 connectionStatus.connected
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                  : connectionStatus.hasApiKey
-                    ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                    : 'bg-gray-800 text-gray-400 border border-gray-700'
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-gray-800 text-gray-400 border border-gray-700'
               }`}
               title={
                 connectionStatus.connected
                   ? 'VS Code is actively sending heartbeats'
                   : connectionStatus.hasApiKey
-                    ? connectionStatus.lastActivityAt
-                      ? `Last active: ${new Date(connectionStatus.lastActivityAt).toLocaleString()}`
-                      : 'API key is set — open VS Code to start tracking'
+                    ? 'API key set — open VS Code to connect'
                     : 'No API key yet — go to Settings'
               }
             >
               <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : connectionStatus.hasApiKey ? 'bg-yellow-400' : 'bg-gray-600'
+                connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'
               }`} />
-              {connectionStatus.connected ? 'VS Code Connected' : connectionStatus.hasApiKey ? 'API Key Ready' : 'Not Connected'}
+              {connectionStatus.connected ? 'Connected' : 'Not Connected'}
             </div>
             <Link href="/settings" className="text-[11px] sm:text-xs text-gray-500 hover:text-gray-300 transition-colors">
               Settings
@@ -547,88 +556,117 @@ export default function DashboardPage() {
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
-          <div className={`rounded-xl p-5 border transition-all ${
+          <div className={`rounded-xl border transition-all overflow-hidden ${
             connectionStatus.connected
-              ? 'bg-emerald-950/30 border-emerald-500/25'
+              ? 'bg-gradient-to-br from-emerald-950/40 to-emerald-900/20 border-emerald-500/30'
               : 'bg-gray-900/80 border-gray-800'
           }`}>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-              {/* Timer display */}
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                  connectionStatus.connected ? 'bg-emerald-500/15 ring-1 ring-emerald-500/30' : 'bg-gray-800'
-                }`}>
-                  {connectionStatus.connected
-                    ? <Timer className="w-6 h-6 text-emerald-400" />
-                    : <WifiOff className="w-6 h-6 text-gray-600" />}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Current Session</span>
-                    {connectionStatus.connected && (
-                      <span className="flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-medium">
-                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                        LIVE
-                      </span>
-                    )}
-                  </div>
-                  <p className={`text-4xl font-mono font-bold tracking-tight tabular-nums ${
-                    connectionStatus.connected ? 'text-emerald-400' : 'text-gray-700'
+            {/* Connected banner */}
+            {connectionStatus.connected && (
+              <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-5 py-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-xs text-emerald-400 font-medium">
+                  Connected since {sessionStartRef.current ? sessionStartRef.current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'now'}
+                  {sessionStartRef.current && (
+                    <span className="text-emerald-500/60 ml-1">
+                      — {sessionStartRef.current.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+
+            <div className="p-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                {/* Timer display */}
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
+                    connectionStatus.connected
+                      ? 'bg-emerald-500/20 ring-2 ring-emerald-500/30'
+                      : 'bg-gray-800'
                   }`}>
-                    {connectionStatus.connected ? formatTimer(liveSeconds) : '--:--'}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
                     {connectionStatus.connected
-                      ? 'VS Code is open — session timer running'
-                      : connectionStatus.hasApiKey
-                        ? 'Open VS Code to start session timer'
-                        : 'Set up API key to start tracking'}
-                  </p>
+                      ? <Timer className="w-7 h-7 text-emerald-400" />
+                      : <WifiOff className="w-7 h-7 text-gray-600" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Current Session</span>
+                      {connectionStatus.connected && (
+                        <span className="flex items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/25 font-semibold">
+                          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                          LIVE
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-5xl font-mono font-bold tracking-tight tabular-nums ${
+                      connectionStatus.connected ? 'text-emerald-400' : 'text-gray-700'
+                    }`}>
+                      {connectionStatus.connected ? formatTimer(liveSeconds) : '0:00:00'}
+                    </p>
+                    <p className="text-xs mt-1">
+                      {connectionStatus.connected
+                        ? <span className="text-emerald-400/70">Every second is being tracked</span>
+                        : connectionStatus.hasApiKey
+                          ? <span className="text-gray-500">Open VS Code with extension to start timer</span>
+                          : <span className="text-gray-500">Generate API key below, then connect VS Code</span>}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Period filter */}
+                <div className="flex items-center bg-gray-800/80 rounded-xl p-1 gap-0.5 shrink-0">
+                  {([
+                    { key: '7d' as const, label: '7 Days' },
+                    { key: '1m' as const, label: '1 Month' },
+                    { key: '3m' as const, label: '3 Months' },
+                  ]).map(f => (
+                    <button
+                      key={f.key}
+                      onClick={() => setTimerFilter(f.key)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        timerFilter === f.key
+                          ? connectionStatus.connected
+                            ? 'bg-emerald-500/20 text-emerald-400 shadow-sm'
+                            : 'bg-blue-500/20 text-blue-400 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Period filter */}
-              <div className="flex items-center bg-gray-800/80 rounded-xl p-1 gap-0.5 shrink-0">
-                {([
-                  { key: '7d' as const, label: '7 Days' },
-                  { key: '1m' as const, label: '1 Month' },
-                  { key: '3m' as const, label: '3 Months' },
-                ]).map(f => (
-                  <button
-                    key={f.key}
-                    onClick={() => setTimerFilter(f.key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      timerFilter === f.key
-                        ? 'bg-blue-500/20 text-blue-400 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-300'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Period summary cards */}
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="bg-gray-800/50 rounded-lg p-3 text-center border border-gray-800">
-                <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
-                  {timerFilter === '7d' ? 'Last 7 Days' : timerFilter === '1m' ? 'Last 30 Days' : 'Last 90 Days'}
-                </p>
-                <p className="text-lg sm:text-xl font-bold text-white">{formatHours(periodHours[timerFilter])}</p>
-                <p className="text-[10px] text-gray-600 mt-0.5">total in VS Code</p>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-3 text-center border border-gray-800">
-                <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Daily Avg</p>
-                <p className="text-lg sm:text-xl font-bold text-blue-400">
-                  {formatHours(periodHours[timerFilter] / (timerFilter === '7d' ? 7 : timerFilter === '1m' ? 30 : 90))}
-                </p>
-                <p className="text-[10px] text-gray-600 mt-0.5">per day</p>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-3 text-center border border-gray-800">
-                <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Today</p>
-                <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatHours(stats?.hoursToday || 0)}</p>
-                <p className="text-[10px] text-gray-600 mt-0.5">coded today</p>
+              {/* Period summary cards */}
+              <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+                <div className={`rounded-lg p-3 text-center border ${
+                  connectionStatus.connected ? 'bg-emerald-900/20 border-emerald-500/15' : 'bg-gray-800/50 border-gray-800'
+                }`}>
+                  <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
+                    {timerFilter === '7d' ? 'Last 7 Days' : timerFilter === '1m' ? 'Last 30 Days' : 'Last 90 Days'}
+                  </p>
+                  <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-emerald-300' : 'text-white'}`}>
+                    {formatHours(periodHours[timerFilter])}
+                  </p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">total in VS Code</p>
+                </div>
+                <div className={`rounded-lg p-3 text-center border ${
+                  connectionStatus.connected ? 'bg-emerald-900/20 border-emerald-500/15' : 'bg-gray-800/50 border-gray-800'
+                }`}>
+                  <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Daily Avg</p>
+                  <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-blue-400' : 'text-blue-400'}`}>
+                    {formatHours(periodHours[timerFilter] / (timerFilter === '7d' ? 7 : timerFilter === '1m' ? 30 : 90))}
+                  </p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">per day</p>
+                </div>
+                <div className={`rounded-lg p-3 text-center border ${
+                  connectionStatus.connected ? 'bg-emerald-900/20 border-emerald-500/15' : 'bg-gray-800/50 border-gray-800'
+                }`}>
+                  <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Today</p>
+                  <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatHours(stats?.hoursToday || 0)}</p>
+                  <p className="text-[10px] text-gray-600 mt-0.5">coded today</p>
+                </div>
               </div>
             </div>
           </div>

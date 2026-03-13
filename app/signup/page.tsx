@@ -1,9 +1,9 @@
 'use client'
 
 import { Suspense } from 'react'
-import { signIn, getProviders } from 'next-auth/react'
-import { useEffect, useState } from 'react'
-import { Github, Code2, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { signIn } from 'next-auth/react'
+import { useState } from 'react'
+import { Github, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -23,19 +23,7 @@ function GoogleIcon({ className }: { className?: string }) {
   )
 }
 
-function MicrosoftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
-      <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
-      <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
-      <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
-      <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
-    </svg>
-  )
-}
-
 function SignUpContent() {
-  const [providers, setProviders] = useState<any>(null)
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [devEmail, setDevEmail] = useState('')
   const [devName, setDevName] = useState('')
@@ -48,10 +36,6 @@ function SignUpContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
   const callbackUrl = searchParams.get('callbackUrl') || '/'
-
-  useEffect(() => {
-    getProviders().then(setProviders)
-  }, [])
 
   const handleSignIn = async (providerId: string) => {
     setIsLoading(providerId)
@@ -87,17 +71,6 @@ function SignUpContent() {
       name: devName,
       callbackUrl,
     })
-  }
-
-  const oauthProviders = providers
-    ? Object.values(providers).filter((p: any) => p.id !== 'dev-login')
-    : []
-
-  const providerIcons: Record<string, any> = {
-    github: Github,
-    google: GoogleIcon,
-    'azure-ad': MicrosoftIcon,
-    microsoft: MicrosoftIcon,
   }
 
   const isFormValid = devEmail && devName && devPassword.length >= 8 && confirmPassword === devPassword
@@ -246,52 +219,40 @@ function SignUpContent() {
             </form>
 
             {/* OAuth Divider */}
-            {oauthProviders.length > 0 && (
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-700" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-gray-900 text-gray-500">or continue with</span>
-                </div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700" />
               </div>
-            )}
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-gray-900 text-gray-500">or continue with</span>
+              </div>
+            </div>
 
-            {/* OAuth Buttons */}
-            {oauthProviders.length > 0 && (
-              <div className="space-y-3">
-                {oauthProviders.map((provider: any) => {
-                  const Icon = providerIcons[provider.id] || Code2
-                  const bgColors: Record<string, string> = {
-                    github: 'bg-gray-800 hover:bg-gray-700 border-gray-700',
-                    google: 'bg-white hover:bg-gray-100 border-gray-300',
-                  }
-                  const textColors: Record<string, string> = {
-                    github: 'text-white',
-                    google: 'text-gray-800',
-                  }
-                  return (
-                    <Button
-                      key={provider.id}
-                      variant="outline"
-                      onClick={() => handleSignIn(provider.id)}
-                      disabled={isLoading !== null}
-                      className={`w-full h-11 ${bgColors[provider.id] || 'bg-gray-800 hover:bg-gray-700 border-gray-700'} ${textColors[provider.id] || 'text-white'} font-medium flex items-center justify-center gap-3`}
-                      title={`Sign up with ${provider.name}`}
-                    >
-                      {isLoading === provider.id ? (
-                        <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Icon className="w-5 h-5" />
-                          Continue with {provider.name}
-                        </>
-                      )}
-                    </Button>
-                  )
-                })}
-              </div>
-            )}
+            {/* OAuth Buttons — always visible */}
+            <div className="space-y-3">
+              {[
+                { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-gray-700 border-gray-700', text: 'text-white' },
+                { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-gray-100 border-gray-300', text: 'text-gray-800' },
+              ].map(({ id, name, Icon, bg, text }) => (
+                <Button
+                  key={id}
+                  variant="outline"
+                  onClick={() => handleSignIn(id)}
+                  disabled={isLoading !== null}
+                  className={`w-full h-12 ${bg} ${text} font-medium flex items-center justify-center gap-3 text-sm`}
+                  title={`Sign up with ${name}`}
+                >
+                  {isLoading === id ? (
+                    <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Icon className="w-5 h-5" />
+                      Continue with {name}
+                    </>
+                  )}
+                </Button>
+              ))}
+            </div>
           </CardContent>
 
           <CardFooter className="justify-center">

@@ -3,7 +3,7 @@
 import { Suspense } from 'react'
 import { signIn, getProviders } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { Github, Code2, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Github, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -54,17 +54,15 @@ function LoginContent() {
     })
   }
 
-  const oauthProviders = providers
-    ? Object.values(providers).filter((p: any) => p.id !== 'dev-login')
-    : []
   const hasDevLogin = providers
     ? Object.values(providers).some((p: any) => p.id === 'dev-login')
     : false
 
-  const providerIcons: Record<string, any> = {
-    github: Github,
-    google: GoogleIcon,
-  }
+  // Always show GitHub + Google buttons
+  const oauthButtons = [
+    { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-gray-700 border-gray-700', text: 'text-white' },
+    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-gray-100 border-gray-300', text: 'text-gray-800' },
+  ]
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -103,105 +101,92 @@ function LoginContent() {
               </div>
             )}
 
-            {hasDevLogin && (
-              <form onSubmit={handleDevLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-300">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={devEmail}
-                    onChange={(e) => setDevEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    required
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-300">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={devPassword}
-                      onChange={(e) => setDevPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
+            {/* OAuth Buttons — always visible */}
+            <div className="space-y-3">
+              {oauthButtons.map(({ id, name, Icon, bg, text }) => (
                 <Button
-                  type="submit"
-                  disabled={isLoading !== null || !devEmail}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
+                  key={id}
+                  variant="outline"
+                  onClick={() => handleSignIn(id)}
+                  disabled={isLoading !== null}
+                  className={`w-full h-12 ${bg} ${text} font-medium flex items-center justify-center gap-3 text-sm`}
+                  title={`Sign in with ${name}`}
                 >
-                  {isLoading === 'dev-login' ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {isLoading === id ? (
+                    <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   ) : (
                     <>
-                      Sign In
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                      <Icon className="w-5 h-5" />
+                      Continue with {name}
                     </>
                   )}
                 </Button>
-              </form>
-            )}
+              ))}
+            </div>
 
-            {/* OAuth Divider */}
-            {oauthProviders.length > 0 && (
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-700" />
+            {hasDevLogin && (
+              <>
+                {/* Divider */}
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-700" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-gray-900 text-gray-500">or sign in with email</span>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-gray-900 text-gray-500">or continue with</span>
-                </div>
-              </div>
-            )}
 
-            {/* OAuth Buttons */}
-            {oauthProviders.length > 0 && (
-              <div className="space-y-3">
-                {oauthProviders.map((provider: any) => {
-                  const Icon = providerIcons[provider.id] || Code2
-                  const bgColors: Record<string, string> = {
-                    github: 'bg-gray-800 hover:bg-gray-700 border-gray-700',
-                    google: 'bg-white hover:bg-gray-100 border-gray-300',
-                  }
-                  const textColors: Record<string, string> = {
-                    github: 'text-white',
-                    google: 'text-gray-800',
-                  }
-                  return (
-                    <Button
-                      key={provider.id}
-                      variant="outline"
-                      onClick={() => handleSignIn(provider.id)}
-                      disabled={isLoading !== null}
-                      className={`w-full h-11 ${bgColors[provider.id] || 'bg-gray-800 hover:bg-gray-700 border-gray-700'} ${textColors[provider.id] || 'text-white'} font-medium flex items-center justify-center gap-3`}
-                      title={`Sign in with ${provider.name}`}
-                    >
-                      {isLoading === provider.id ? (
-                        <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Icon className="w-5 h-5" />
-                          Continue with {provider.name}
-                        </>
-                      )}
-                    </Button>
-                  )
-                })}
-          </div>
+                <form onSubmit={handleDevLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-300">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={devEmail}
+                      onChange={(e) => setDevEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-gray-300">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={devPassword}
+                        onChange={(e) => setDevPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading !== null || !devEmail}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
+                  >
+                    {isLoading === 'dev-login' ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        Sign In
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </>
             )}
           </CardContent>
 
