@@ -46,6 +46,9 @@ let lastActivityTime = Date.now();
 let statusBarItem;
 let isTracking = false;
 let hasShownDisconnectedNotice = false;
+let languageTimeMap = {};
+let lastLanguageSwitchAt = Date.now();
+let lastLanguageId = 'unknown';
 const DEFAULT_API_ENDPOINT = 'http://localhost:3001/api/heartbeat';
 function normalizeApiEndpoint(input) {
     const trimmed = input.trim().replace(/\/+$/, '');
@@ -62,6 +65,8 @@ function normalizeApiEndpoint(input) {
 }
 function activate(context) {
     console.log('VS Integrate extension is now active');
+    lastLanguageId = getCurrentLanguageId();
+    lastLanguageSwitchAt = Date.now();
     // Create status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarItem.command = 'vs-integrate.showStatus';
@@ -125,6 +130,8 @@ function startTracking() {
     }
     hasShownDisconnectedNotice = false;
     isTracking = true;
+    lastLanguageId = getCurrentLanguageId();
+    lastLanguageSwitchAt = Date.now();
     updateStatusBar('Tracking');
     // Clear any existing interval
     if (heartbeatInterval) {
@@ -138,6 +145,7 @@ function startTracking() {
     }, config.heartbeatInterval * 1000);
 }
 function onActivity() {
+    trackLanguageTime();
     lastActivityTime = Date.now();
     // Start tracking if not already
     if (!isTracking) {
@@ -151,6 +159,13 @@ async function sendHeartbeat() {
     }
     const editor = vscode.window.activeTextEditor;
     const isIdle = (Date.now() - lastActivityTime) > (config.idleTimeout * 1000);
+    if (!isIdle) {
+        trackLanguageTime();
+    }
+    else {
+        lastLanguageId = getCurrentLanguageId();
+        lastLanguageSwitchAt = Date.now();
+    }
     // Hash the workspace folder path for privacy
     const workspaceFolders = vscode.workspace.workspaceFolders;
     const projectPath = workspaceFolders?.[0]?.uri.fsPath || '';
@@ -174,6 +189,7 @@ async function sendHeartbeat() {
         apiKey: config.apiKey,
         timestamp: Date.now(),
         language: editor?.document.languageId || 'unknown',
+        languageBreakdown: { ...languageTimeMap },
         file: editor?.document.fileName ? getFileName(editor.document.fileName) : null,
         project: vscode.workspace.name || 'unknown',
         projectHash: projectHash,
@@ -193,6 +209,18 @@ async function sendHeartbeat() {
         console.error('Failed to send heartbeat:', error);
         updateStatusBar('Error');
     }
+}
+function getCurrentLanguageId() {
+    return vscode.window.activeTextEditor?.document.languageId || 'unknown';
+}
+function trackLanguageTime() {
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - lastLanguageSwitchAt) / 1000);
+    if (elapsedSeconds > 0 && lastLanguageId && lastLanguageId !== 'unknown') {
+        languageTimeMap[lastLanguageId] = (languageTimeMap[lastLanguageId] || 0) + elapsedSeconds;
+    }
+    lastLanguageId = getCurrentLanguageId();
+    lastLanguageSwitchAt = now;
 }
 async function sendConnectionTest() {
     const config = getConfig();

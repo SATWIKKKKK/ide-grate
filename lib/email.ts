@@ -62,3 +62,42 @@ export async function sendGoalAchievedEmail(
     html,
   })
 }
+
+export async function sendAchievementUnlockedEmail(
+  to: string,
+  achievementTitle: string,
+  achievementDescription: string,
+  achievementIcon: string,
+  userName: string | null
+) {
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #e5e5e5; border-radius: 12px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #1d4ed8, #2563eb); padding: 28px; text-align: center;">
+        <h1 style="margin: 0; font-size: 26px; color: white;">${achievementIcon} Achievement Unlocked!</h1>
+      </div>
+      <div style="padding: 28px;">
+        <p style="font-size: 18px; margin-bottom: 8px;">Hey ${userName || "there"},</p>
+        <p style="color: #a3a3a3; font-size: 16px; line-height: 1.6; margin-top: 0;">
+          Great work. You just unlocked a new coding achievement.
+        </p>
+        <div style="background: #0f172a; border: 1px solid #2563eb33; border-radius: 10px; padding: 20px; margin: 24px 0; text-align: center;">
+          <p style="font-size: 13px; color: #94a3b8; margin: 0 0 8px;">Unlocked Badge</p>
+          <p style="font-size: 30px; margin: 0 0 8px;">${achievementIcon}</p>
+          <p style="font-size: 20px; font-weight: 700; color: #93c5fd; margin: 0 0 8px;">${achievementTitle}</p>
+          <p style="font-size: 14px; color: #cbd5e1; margin: 0;">${achievementDescription}</p>
+        </div>
+        <p style="color: #737373; font-size: 14px;">Keep shipping code. Your next badge is waiting.</p>
+      </div>
+      <div style="padding: 16px 28px; background: #111; text-align: center; border-top: 1px solid #222;">
+        <p style="color: #555; font-size: 12px; margin: 0;">VS Integrate — Track your coding journey</p>
+      </div>
+    </div>
+  `
+
+  await transporter.sendMail({
+    from: `"VS Integrate" <${process.env.SMTP_USER}>`,
+    to,
+    subject: `${achievementIcon} Achievement Unlocked: ${achievementTitle}`,
+    html,
+  })
+}

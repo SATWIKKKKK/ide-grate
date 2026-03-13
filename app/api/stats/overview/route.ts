@@ -29,6 +29,16 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    const userStats = await prisma.userStats.findUnique({
+      where: { userId: sessionUser.id },
+      select: {
+        totalHours: true,
+        totalSessions: true,
+        topLanguages: true,
+        monthlyData: true,
+      },
+    })
+
     // Get daily contributions
     const contributions = await prisma.dailyContribution.findMany({
       where: {
@@ -39,7 +49,9 @@ export async function GET(request: NextRequest) {
 
     // Basic stats
     const totalSeconds = activities.reduce((s, a) => s + a.duration, 0)
-    const totalHours = totalSeconds / 3600
+    const fallbackTotalHours = totalSeconds / 3600
+    const totalHours = userStats?.totalHours ?? fallbackTotalHours
+    const totalSessions = userStats?.totalSessions ?? activities.length
     const activeDays = new Set(contributions.filter(c => c.hours > 0).map(c => new Date(c.date).toISOString().split('T')[0])).size
     const avgDailyHours = activeDays > 0 ? totalHours / activeDays : 0
 
@@ -83,20 +95,19 @@ export async function GET(request: NextRequest) {
       longestStreak = Math.max(longestStreak, streak)
     }
 
-    // Top languages
-    const languageTotals: Record<string, number> = {}
-    activities.forEach(a => {
-      if (a.language && a.language !== 'unknown') {
-        languageTotals[a.language] = (languageTotals[a.language] || 0) + a.duration
-      }
-    })
+    // Top languages (prefer persisted per-language totals from heartbeat aggregation)
+    const persistedLanguageTotals = parseLanguageTotals(userStats?.topLanguages)
+    const languageTotals: Record<string, number> = Object.keys(persistedLanguageTotals).length > 0
+      ? persistedLanguageTotals
+      : aggregateLanguagesFromActivities(activities)
+
     const totalLangSeconds = Object.values(languageTotals).reduce((s, v) => s + v, 0) || 1
     const topLanguages = Object.entries(languageTotals)
       .sort(([, a], [, b]) => b - a)
-      .slice(0, 8)
+      .slice(0, 6)
       .map(([lang, secs]) => ({
         language: lang,
-        hours: parseFloat((secs / 3600).toFixed(1)),
+        hours: parseFloat((secs / 3600).toFixed(2)),
         percentage: Math.round((secs / totalLangSeconds) * 100),
       }))
 
@@ -105,25 +116,26 @@ export async function GET(request: NextRequest) {
 
     // Weekly activity (hours per day of week)
     const weeklyBreakdown = Array(7).fill(0)
-    const last7DaysStart = new Date(now.getTime() - 7 * 86400000)
-    activities
-      .filter(a => new Date(a.startTime) >= last7DaysStart)
-      .forEach(a => {
-        const day = new Date(a.startTime).getDay()
-        weeklyBreakdown[day] += a.duration / 3600
+    const last7DaysStart = new Date(now)
+    last7DaysStart.setDate(now.getDate() - 6)
+    last7DaysStart.setHours(0, 0, 0, 0)
+    contributions
+      .filter(c => new Date(c.date) >= last7DaysStart)
+      .forEach(c => {
+        const day = new Date(c.date).getDay()
+        weeklyBreakdown[day] += c.hours
       })
 
     // Active days this week
-    const activeDaysThisWeek = activities
-      .filter(a => new Date(a.startTime) >= weekStart)
-      .map(a => new Date(a.startTime).toISOString().split('T')[0])
+    const activeDaysThisWeek = contributions
+      .filter(c => new Date(c.date) >= weekStart && c.hours > 0)
+      .map(c => new Date(c.date).toISOString().split('T')[0])
     const uniqueActiveDaysThisWeek = new Set(activeDaysThisWeek).size
 
     // Today's hours
-    const todayStart = new Date(now)
-    todayStart.setHours(0, 0, 0, 0)
-    const todayActivities = activities.filter(a => new Date(a.startTime) >= todayStart)
-    const hoursToday = todayActivities.reduce((s, a) => s + a.duration, 0) / 3600
+    const todayKey = now.toISOString().split('T')[0]
+    const todayContribution = contributions.find(c => new Date(c.date).toISOString().split('T')[0] === todayKey)
+    const hoursToday = todayContribution?.hours || 0
 
     // Max day hours
     const dayHours: Record<string, number> = {}
@@ -155,10 +167,6 @@ export async function GET(request: NextRequest) {
     })
 
     // Get project repo URL mappings from UserStats.monthlyData
-    const userStats = await prisma.userStats.findUnique({
-      where: { userId: sessionUser.id },
-      select: { monthlyData: true },
-    })
     const projectRepos = ((userStats?.monthlyData as Record<string, unknown>)?.projectRepos as Record<string, string>) || {}
 
     const projects = Object.values(projectTotals)
@@ -181,7 +189,7 @@ export async function GET(request: NextRequest) {
       avgDailyHours: parseFloat(avgDailyHours.toFixed(1)),
       currentStreak,
       longestStreak,
-      totalSessions: activities.length,
+      totalSessions,
       uniqueLanguages,
       hoursToday: parseFloat(hoursToday.toFixed(1)),
       maxDayHours: parseFloat(maxDayHours.toFixed(1)),
@@ -193,7 +201,7 @@ export async function GET(request: NextRequest) {
       projects,
       // Achievement stats for frontend
       achievementStats: {
-        totalSessions: activities.length,
+        totalSessions,
         totalHours: parseFloat(totalHours.toFixed(1)),
         longestStreak,
         currentStreak,
@@ -208,6 +216,54 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching stats overview:", error)
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
   }
+}
+
+function parseLanguageTotals(raw: unknown): Record<string, number> {
+  if (!raw) return {}
+
+  if (Array.isArray(raw)) {
+    const fromArray: Record<string, number> = {}
+    raw.forEach((entry) => {
+      const item = entry as { language?: unknown; hours?: unknown; seconds?: unknown }
+      const language = typeof item.language === 'string' ? item.language.toLowerCase() : ''
+      if (!language || language === 'unknown') return
+
+      if (typeof item.seconds === 'number' && Number.isFinite(item.seconds) && item.seconds > 0) {
+        fromArray[language] = (fromArray[language] || 0) + item.seconds
+        return
+      }
+
+      if (typeof item.hours === 'number' && Number.isFinite(item.hours) && item.hours > 0) {
+        fromArray[language] = (fromArray[language] || 0) + item.hours * 3600
+      }
+    })
+    return fromArray
+  }
+
+  if (typeof raw === 'object') {
+    const fromObject: Record<string, number> = {}
+    Object.entries(raw as Record<string, unknown>).forEach(([language, value]) => {
+      if (!language || language.toLowerCase() === 'unknown') return
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return
+      fromObject[language.toLowerCase()] = value
+    })
+    return fromObject
+  }
+
+  return {}
+}
+
+function aggregateLanguagesFromActivities(
+  activities: Array<{ language: string | null; duration: number }>
+): Record<string, number> {
+  const languageTotals: Record<string, number> = {}
+  activities.forEach((a) => {
+    if (a.language && a.language !== 'unknown') {
+      const key = a.language.toLowerCase()
+      languageTotals[key] = (languageTotals[key] || 0) + a.duration
+    }
+  })
+  return languageTotals
 }
 
 function calculateProductivityScore(

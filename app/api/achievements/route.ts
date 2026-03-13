@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireServerUser } from "@/lib/serverAuth"
 import prisma from "@/lib/prisma"
 import { ACHIEVEMENTS } from "@/lib/achievements"
+import { sendAchievementUnlockedEmail } from "@/lib/email"
 
 // GET /api/achievements - Get user achievements
 export async function GET(request: NextRequest) {
@@ -74,6 +75,26 @@ export async function GET(request: NextRequest) {
         })),
         skipDuplicates: true,
       })
+
+      const user = await prisma.user.findUnique({
+        where: { id: sessionUser.id },
+        select: { email: true, name: true },
+      })
+
+      if (user?.email) {
+        const unlockedAchievements = ACHIEVEMENTS.filter(a => newlyUnlocked.includes(a.id))
+        await Promise.allSettled(
+          unlockedAchievements.map((achievement) =>
+            sendAchievementUnlockedEmail(
+              user.email as string,
+              achievement.title,
+              achievement.description,
+              achievement.icon,
+              user.name || null
+            )
+          )
+        )
+      }
     }
 
     // Return all achievements with unlock status

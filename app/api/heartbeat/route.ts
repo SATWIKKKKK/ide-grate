@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
       type, // 'connection_test' for initial connection verification
     } = body
 
+    const languageBreakdown = normalizeLanguageBreakdown(body.languageBreakdown)
+
     // Validate API key
     if (!apiKey) {
       return NextResponse.json(
@@ -206,11 +208,58 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Increment total hours (lastActiveDate already updated above)
+      // Increment total hours and update streak (lastActiveDate already updated above)
       await prisma.userStats.update({
         where: { userId: user.id },
         data: { totalHours: { increment: hoursToAdd } },
       })
+
+      // Persist streak calculations so they survive disconnects
+      if (startedNewSession) {
+        try {
+          const recentContribs = await prisma.dailyContribution.findMany({
+            where: { userId: user.id, hours: { gt: 0 } },
+            orderBy: { date: 'desc' },
+            take: 365,
+            select: { date: true },
+          })
+          const dates = recentContribs.map(c => new Date(c.date).toISOString().split('T')[0]).sort().reverse()
+          if (dates.length > 0) {
+            const todayStr = now.toISOString().split('T')[0]
+            const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
+            let currentStreak = 0
+            let checkDate = dates[0] === todayStr || dates[0] === yesterdayStr ? new Date(dates[0]) : null
+            if (checkDate) {
+              const dateSet = new Set(dates)
+              while (dateSet.has(checkDate.toISOString().split('T')[0])) {
+                currentStreak++
+                checkDate.setDate(checkDate.getDate() - 1)
+              }
+            }
+            let longestStreak = 1, streak = 1
+            const allDates = [...dates].reverse()
+            for (let i = 1; i < allDates.length; i++) {
+              const diffDays = (new Date(allDates[i]).getTime() - new Date(allDates[i - 1]).getTime()) / 86400000
+              streak = diffDays === 1 ? streak + 1 : 1
+              longestStreak = Math.max(longestStreak, streak)
+            }
+            await prisma.userStats.update({
+              where: { userId: user.id },
+              data: {
+                currentStreak,
+                longestStreak: Math.max(longestStreak, currentStreak),
+              },
+            })
+          }
+        } catch { /* non-critical streak update */ }
+      }
+
+      // Persist per-language cumulative totals from extension map.
+      if (Object.keys(languageBreakdown).length > 0) {
+        await updateLanguageTotalsFromSnapshot(user.id, languageBreakdown)
+      } else if (language && language !== 'unknown') {
+        await incrementSingleLanguageFallback(user.id, language, HEARTBEAT_INTERVAL)
+      }
     }
 
     // Store project hash → repoUrl mapping if provided
@@ -243,6 +292,76 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+function normalizeLanguageBreakdown(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object') return {}
+  const normalized: Record<string, number> = {}
+  Object.entries(value as Record<string, unknown>).forEach(([language, seconds]) => {
+    const key = language.toLowerCase().trim()
+    if (!key || key === 'unknown') return
+    if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return
+    normalized[key] = seconds
+  })
+  return normalized
+}
+
+async function updateLanguageTotalsFromSnapshot(userId: string, snapshot: Record<string, number>) {
+  const stats = await prisma.userStats.findUnique({
+    where: { userId },
+    select: { topLanguages: true, monthlyData: true },
+  })
+
+  const monthlyData = (stats?.monthlyData as Record<string, unknown>) || {}
+  const previousSnapshot = normalizeLanguageBreakdown(monthlyData.languageSnapshot)
+  const totals = parseLanguageTotals(stats?.topLanguages)
+
+  Object.entries(snapshot).forEach(([language, currentSeconds]) => {
+    const previousSeconds = previousSnapshot[language] || 0
+    const delta = currentSeconds - previousSeconds
+    const secondsToAdd = delta >= 0 ? delta : currentSeconds
+    if (secondsToAdd > 0) {
+      totals[language] = (totals[language] || 0) + secondsToAdd
+    }
+  })
+
+  await prisma.userStats.update({
+    where: { userId },
+    data: {
+      topLanguages: totals,
+      monthlyData: {
+        ...monthlyData,
+        languageSnapshot: snapshot,
+      },
+    },
+  })
+}
+
+async function incrementSingleLanguageFallback(userId: string, language: string, secondsToAdd: number) {
+  const stats = await prisma.userStats.findUnique({
+    where: { userId },
+    select: { topLanguages: true },
+  })
+
+  const totals = parseLanguageTotals(stats?.topLanguages)
+  const key = language.toLowerCase()
+  totals[key] = (totals[key] || 0) + secondsToAdd
+
+  await prisma.userStats.update({
+    where: { userId },
+    data: { topLanguages: totals },
+  })
+}
+
+function parseLanguageTotals(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const out: Record<string, number> = {}
+  Object.entries(raw as Record<string, unknown>).forEach(([language, seconds]) => {
+    if (typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0) {
+      out[language.toLowerCase()] = seconds
+    }
+  })
+  return out
 }
 
 // GET /api/heartbeat/status - Check if VS Code tracking is working

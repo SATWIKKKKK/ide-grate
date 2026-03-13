@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import { User, LogOut, Code2, Home, LayoutDashboard, Settings, ChevronDown, Menu, X } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import Logo from './Logo';
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -37,14 +37,7 @@ export default function Navbar() {
               whileHover={{ scale: 1.05 }}
               className="flex items-center cursor-pointer"
             >
-              <Image
-                src="/logo.png"
-                alt="vs-integrate"
-                width={300}
-                height={300}
-                className="h-24 w-auto object-contain -my-6"
-                priority
-              />
+              <Logo size="sm" />
             </motion.div>
           </Link>
         </div>

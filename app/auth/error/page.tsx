@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import Logo from '@/components/Logo'
 import { AlertTriangle } from 'lucide-react'
 
 function AuthErrorContent() {
@@ -39,13 +40,7 @@ function AuthErrorContent() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <Image
-              src="/logo.png"
-              alt="vs-integrate"
-              width={200}
-              height={200}
-              className="h-20 w-auto object-contain"
-            />
+            <Logo size="md" />
           </div>
           <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-900/30 flex items-center justify-center">
             <AlertTriangle className="w-8 h-8 text-red-400" />

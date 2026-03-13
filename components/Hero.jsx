@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Code2, ArrowRight, Key, LayoutDashboard } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import Image from 'next/image';
+import Logo from './Logo';
 import ContributionGraph from './ContributionGraph';
 
 const container = {
@@ -39,14 +39,7 @@ export default function Hero() {
           className="max-w-2xl mx-auto text-center relative z-10"
         >
           <motion.div variants={item} className="mb-6 flex justify-center">
-            <Image
-              src="/logo.png"
-              alt="vs-integrate"
-              width={300}
-              height={300}
-              className="h-28 w-auto object-contain"
-              priority
-            />
+            <Logo size="lg" />
           </motion.div>
 
           <motion.h1

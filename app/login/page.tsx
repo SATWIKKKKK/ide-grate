@@ -5,6 +5,7 @@ import { signIn, getProviders } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { Github, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
+import Logo from '@/components/Logo'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -69,14 +70,7 @@ function LoginContent() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center mb-8">
-          <Image
-            src="/logo.png"
-            alt="vs-integrate"
-            width={400}
-            height={400}
-            className="h-36 w-auto object-contain"
-            priority
-          />
+          <Logo size="xl" />
         </Link>
 
         <Card className="bg-gray-900 border-gray-800">

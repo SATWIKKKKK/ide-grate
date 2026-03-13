@@ -10,6 +10,7 @@ import {
   Wifi
 } from 'lucide-react'
 import Image from 'next/image'
+import Logo from '@/components/Logo'
 import Link from 'next/link'
 
 export default function OnboardingPage() {
@@ -126,14 +127,7 @@ export default function OnboardingPage() {
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/80 border-b border-gray-800 shrink-0">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <Image
-              src="/logo.png"
-              alt="vs-integrate"
-              width={300}
-              height={300}
-              className="h-14 w-auto object-contain -my-2"
-              priority
-            />
+            <Logo size="sm" />
           </Link>
           <button
             onClick={() => { localStorage.setItem('onboarding_skipped', 'true'); window.location.href = '/dashboard' }}

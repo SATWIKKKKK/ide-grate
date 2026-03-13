@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip as ReTooltip, ResponsiveContainer,
@@ -51,6 +52,15 @@ interface GoalData {
   percentage: number
   achieved: boolean
   createdAt: string
+}
+
+interface AchievementData {
+  id: string
+  icon: string
+  title: string
+  description: string
+  unlocked: boolean
+  unlockedAt: string | null
 }
 
 // ─── Cache ───────────────────────────────────────────────────────────────────
@@ -132,6 +142,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<StatsData | null>(null)
   const [contributions, setContributions] = useState<Record<string, ContributionDay>>({})
   const [goals, setGoals] = useState<GoalData[]>([])
+  const [achievements, setAchievements] = useState<AchievementData[]>([])
+  const [totalUnlockedAchievements, setTotalUnlockedAchievements] = useState(0)
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<{
     connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null
@@ -164,10 +176,11 @@ export default function DashboardPage() {
     if (!session?.user) return
     setLoading(true)
 
-    const [statsData, contribData, goalsData, keyData, connData] = await Promise.all([
+    const [statsData, contribData, goalsData, achievementsData, keyData, connData] = await Promise.all([
       cachedFetch<StatsData>('stats', '/api/stats/overview'),
       cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', contributionApiUrl),
       cachedFetch<{ goals: GoalData[] }>('goals', '/api/goals'),
+      cachedFetch<{ achievements: AchievementData[]; totalUnlocked: number }>('achievements', '/api/achievements'),
       cachedFetch<{ apiKey: string | null }>('apikey', '/api/apikey'),
       cachedFetch<{ connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null }>('connection', '/api/connection-status'),
     ])
@@ -175,6 +188,10 @@ export default function DashboardPage() {
     if (statsData) setStats(statsData)
     if (contribData?.contributions) setContributions(contribData.contributions)
     if (goalsData?.goals) setGoals(goalsData.goals)
+    if (achievementsData?.achievements) {
+      setAchievements(achievementsData.achievements)
+      setTotalUnlockedAchievements(achievementsData.totalUnlocked || 0)
+    }
     if (keyData) setApiKey(keyData.apiKey)
     if (connData) {
       setConnectionStatus(connData)
@@ -210,17 +227,24 @@ export default function DashboardPage() {
           }
           prevConnected.current = data.connected
 
-          // Every 4th poll (~60s), refresh stats + contributions when connected
+          // Refresh stats + contributions immediately on reconnect, or every 4th poll when connected
+          const justReconnected = prevConnected.current === false && data.connected
           pollCount++
-          if (pollCount % 4 === 0 && data.connected) {
+          if (justReconnected || (pollCount % 4 === 0 && data.connected)) {
             invalidateCache('stats')
             invalidateCache('contributions')
-            const [freshStats, freshContrib] = await Promise.all([
+            invalidateCache('achievements')
+            const [freshStats, freshContrib, freshAchievements] = await Promise.all([
               cachedFetch<StatsData>('stats', '/api/stats/overview'),
               cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', contributionApiUrl),
+              cachedFetch<{ achievements: AchievementData[]; totalUnlocked: number }>('achievements', '/api/achievements'),
             ])
             if (freshStats) setStats(freshStats)
             if (freshContrib?.contributions) setContributions(freshContrib.contributions)
+            if (freshAchievements?.achievements) {
+              setAchievements(freshAchievements.achievements)
+              setTotalUnlockedAchievements(freshAchievements.totalUnlocked || 0)
+            }
           }
         }
       } catch { /* ignore */ }
@@ -498,7 +522,7 @@ export default function DashboardPage() {
             exit={{ opacity: 0, y: -40 }}
             className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-lg backdrop-blur-md text-sm font-medium ${
               connectionToast.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
                 : 'bg-red-500/10 border-red-500/30 text-red-400'
             }`}
           >
@@ -520,7 +544,7 @@ export default function DashboardPage() {
             )}
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold whitespace-nowrap truncate">
-                Welcome back, <span className="bg-linear-to-r bg-amber-400 bg-clip-text text-transparent">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
+                Welcome back, <span className="text-emerald-400">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
               </h1>
               <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
                 {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today` : 'Start coding to see your stats'}
@@ -533,7 +557,7 @@ export default function DashboardPage() {
             <div
               className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
                 connectionStatus.connected
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                  ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
                   : 'bg-red-500/10 text-red-400 border border-red-500/30'
               }`}
               title={
@@ -545,7 +569,7 @@ export default function DashboardPage() {
               }
             >
               <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+                connectionStatus.connected ? 'bg-blue-400 animate-pulse' : 'bg-red-400'
               }`} />
               {connectionStatus.connected ? 'Connected' : 'Disconnected'}
             </div>
@@ -553,7 +577,7 @@ export default function DashboardPage() {
               <button
                 onClick={disconnectTracking}
                 disabled={disconnecting}
-                className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-60"
+                className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 active:scale-95 transition-all disabled:opacity-60"
               >
                 {disconnecting ? 'Disconnecting...' : 'Disconnect'}
               </button>
@@ -593,7 +617,7 @@ export default function DashboardPage() {
                     onClick={(e) => { e.stopPropagation(); copyApiKey() }}
                     className="p-1.5 rounded-lg hover:bg-gray-800 transition-colors"
                   >
-                    {copiedKey ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                    {copiedKey ? <Check className="w-4 h-4 text-blue-400" /> : <Copy className="w-4 h-4 text-gray-500" />}
                   </button>
                 )}
                 {showApiKey ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
@@ -630,17 +654,17 @@ export default function DashboardPage() {
         >
           <div className={`rounded-xl border transition-all overflow-hidden ${
             connectionStatus.connected
-              ? 'bg-linear-to-br from-emerald-950/40 to-emerald-900/20 border-emerald-500/30'
+              ? 'bg-linear-to-br from-blue-950/40 to-blue-900/20 border-blue-500/30'
               : 'bg-gray-900/80 border-gray-800'
           }`}>
             {/* Connected banner */}
             {connectionStatus.connected && (
-              <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-5 py-2 flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                <span className="text-xs text-emerald-400 font-medium">
+              <div className="bg-blue-500/10 border-b border-blue-500/20 px-5 py-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                <span className="text-xs text-blue-400 font-medium">
                   Connected since {sessionStartRef.current ? sessionStartRef.current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'now'}
                   {sessionStartRef.current && (
-                    <span className="text-emerald-500/60 ml-1">
+                    <span className="text-blue-500/60 ml-1">
                       — {sessionStartRef.current.toLocaleDateString([], { month: 'short', day: 'numeric' })}
                     </span>
                   )}
@@ -654,19 +678,19 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
                     connectionStatus.connected
-                      ? 'bg-emerald-500/20 ring-2 ring-emerald-500/30'
+                      ? 'bg-blue-500/20 ring-2 ring-blue-500/30'
                       : 'bg-gray-800'
                   }`}>
                     {connectionStatus.connected
-                      ? <Timer className="w-7 h-7 text-emerald-400" />
+                      ? <Timer className="w-7 h-7 text-blue-400" />
                       : <WifiOff className="w-7 h-7 text-gray-600" />}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Current Session</span>
                       {connectionStatus.connected && (
-                        <span className="flex items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/25 font-semibold">
-                          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                        <span className="flex items-center gap-1 text-[10px] bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/25 font-semibold">
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
                           LIVE
                         </span>
                       )}
@@ -678,7 +702,7 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs mt-1">
                       {connectionStatus.connected
-                        ? <span className="text-emerald-400/70">Every second is being tracked</span>
+                        ? <span className="text-blue-400/70">Every second is being tracked</span>
                         : connectionStatus.hasApiKey
                           ? <span className="text-red-400/80">Disconnected. Reconnect VS Code to resume tracking.</span>
                           : <span className="text-red-400/80">Generate API key and reconnect to start VS Code tracking.</span>}
@@ -696,12 +720,10 @@ export default function DashboardPage() {
                     <button
                       key={f.key}
                       onClick={() => setTimerFilter(f.key)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
                         timerFilter === f.key
-                          ? connectionStatus.connected
-                            ? 'bg-emerald-500/20 text-emerald-400 shadow-sm'
-                            : 'bg-blue-500/20 text-blue-400 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-300'
+                          ? 'bg-blue-500/20 text-blue-400 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
                       }`}
                     >
                       {f.label}
@@ -713,18 +735,18 @@ export default function DashboardPage() {
               {/* Period summary cards */}
               <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
                 <div className={`rounded-lg p-3 text-center border ${
-                  connectionStatus.connected ? 'bg-emerald-900/20 border-emerald-500/15' : 'bg-gray-800/50 border-gray-800'
+                  connectionStatus.connected ? 'bg-blue-900/20 border-blue-500/15' : 'bg-gray-800/50 border-gray-800'
                 }`}>
                   <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
                     {timerFilter === '7d' ? 'Last 7 Days' : timerFilter === '1m' ? 'Last 30 Days' : 'Last 90 Days'}
                   </p>
-                  <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-emerald-300' : 'text-white'}`}>
+                  <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-blue-300' : 'text-white'}`}>
                     {formatHours(periodHours[timerFilter])}
                   </p>
                   <p className="text-[10px] text-gray-600 mt-0.5">total in VS Code</p>
                 </div>
                 <div className={`rounded-lg p-3 text-center border ${
-                  connectionStatus.connected ? 'bg-emerald-900/20 border-emerald-500/15' : 'bg-gray-800/50 border-gray-800'
+                  connectionStatus.connected ? 'bg-blue-900/20 border-blue-500/15' : 'bg-gray-800/50 border-gray-800'
                 }`}>
                   <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Daily Avg</p>
                   <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-blue-400' : 'text-blue-400'}`}>
@@ -733,10 +755,10 @@ export default function DashboardPage() {
                   <p className="text-[10px] text-gray-600 mt-0.5">per day</p>
                 </div>
                 <div className={`rounded-lg p-3 text-center border ${
-                  connectionStatus.connected ? 'bg-emerald-900/20 border-emerald-500/15' : 'bg-gray-800/50 border-gray-800'
+                  connectionStatus.connected ? 'bg-blue-900/20 border-blue-500/15' : 'bg-gray-800/50 border-gray-800'
                 }`}>
                   <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Today</p>
-                  <p className="text-lg sm:text-xl font-bold text-emerald-400">{formatHours(stats?.hoursToday || 0)}</p>
+                  <p className="text-lg sm:text-xl font-bold text-blue-400">{formatHours(stats?.hoursToday || 0)}</p>
                   <p className="text-[10px] text-gray-600 mt-0.5">coded today</p>
                 </div>
               </div>
@@ -749,7 +771,7 @@ export default function DashboardPage() {
           {[
             { label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, color: 'blue', sub: `${stats?.activeDays || 0} active days` },
             { label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, color: 'orange', sub: `Best: ${stats?.longestStreak || 0}d` },
-            { label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, color: 'emerald', sub: `Score: ${stats?.productivityScore || 0}/100` },
+            { label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, color: 'blue', sub: `Score: ${stats?.productivityScore || 0}/100` },
             { label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, color: 'violet', sub: `${stats?.totalSessions || 0} sessions` },
           ].map((stat, i) => (
             <motion.div
@@ -795,10 +817,10 @@ export default function DashboardPage() {
                 <button
                   key={f.label}
                   onClick={() => setContributionDays(f.days)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all active:scale-95 ${
                     contributionDays === f.days
                       ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'bg-gray-800/50 text-gray-500 border border-gray-800 hover:text-gray-300'
+                      : 'bg-gray-800/50 text-gray-500 border border-gray-800 hover:text-gray-300 hover:border-gray-700'
                   }`}
                 >
                   {f.label}
@@ -939,7 +961,23 @@ export default function DashboardPage() {
             {stats?.projects && stats.projects.length > 0 ? (
               <div className="space-y-3">
                 {stats.projects.map((project, i) => (
-                  <div key={project.hash} className="flex items-center gap-3">
+                  <div
+                    key={project.hash}
+                    className={`flex items-center gap-3 rounded-lg p-2 -m-2 transition-colors ${project.repoUrl ? 'cursor-pointer hover:bg-blue-500/5' : ''}`}
+                    onClick={() => {
+                      if (project.repoUrl) window.open(project.repoUrl, '_blank', 'noopener,noreferrer')
+                    }}
+                    role={project.repoUrl ? 'button' : undefined}
+                    tabIndex={project.repoUrl ? 0 : -1}
+                    onKeyDown={(e) => {
+                      if (!project.repoUrl) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        window.open(project.repoUrl, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                    title={project.repoUrl ? 'Open GitHub repository' : undefined}
+                  >
                     <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
                       <FolderGit2 className="w-4 h-4 text-violet-400" />
                     </div>
@@ -994,7 +1032,7 @@ export default function DashboardPage() {
           className="bg-gray-900/80 border border-gray-800 rounded-xl p-5 mb-8"
         >
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <TrendingUp className="w-4 h-4 text-blue-400" />
             Weekly Activity
           </h2>
           <div className="flex items-end gap-2 sm:gap-4 h-40">
@@ -1227,7 +1265,7 @@ export default function DashboardPage() {
             </h2>
             <button
               onClick={() => setShowNewGoal(!showNewGoal)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium hover:bg-blue-500/20 active:scale-95 transition-all"
             >
               <Plus className="w-3 h-3" /> New Goal
             </button>
@@ -1288,7 +1326,7 @@ export default function DashboardPage() {
                     <button
                       onClick={createGoal}
                       disabled={goalSaving || !newGoalTarget}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white rounded-lg text-xs font-medium transition-all active:scale-95 flex items-center gap-1"
                     >
                       {goalSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
                       Create Goal
@@ -1306,7 +1344,7 @@ export default function DashboardPage() {
                 <div
                   key={goal.id}
                   className={`relative bg-gray-800/30 border rounded-lg p-4 transition-all ${
-                    goal.achieved ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-800'
+                    goal.achieved ? 'border-blue-500/30 bg-blue-500/5' : 'border-gray-800'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -1326,7 +1364,7 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs ${goal.achieved ? 'text-emerald-400' : 'text-gray-500'}`}>
+                      <span className={`text-xs ${goal.achieved ? 'text-blue-400' : 'text-gray-500'}`}>
                         {goal.current}/{goal.target} ({goal.percentage}%)
                       </span>
                       <button onClick={() => deleteGoal(goal.id)} className="p-1 hover:bg-gray-700 rounded transition-colors">
@@ -1339,11 +1377,11 @@ export default function DashboardPage() {
                       initial={{ width: 0 }}
                       animate={{ width: `${goal.percentage}%` }}
                       transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className={`h-full rounded-full ${goal.achieved ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                      className={`h-full rounded-full ${goal.achieved ? 'bg-blue-500' : 'bg-blue-500'}`}
                     />
                   </div>
                   {goal.achieved && (
-                    <p className="text-[10px] text-emerald-400/60 mt-1.5">Goal achieved! Check your email for confirmation.</p>
+                    <p className="text-[10px] text-blue-400/60 mt-1.5">Goal achieved! Check your email for confirmation.</p>
                   )}
                 </div>
               ))}
@@ -1357,7 +1395,65 @@ export default function DashboardPage() {
           )}
         </motion.div>
 
-        {/* Rewards & Achievements */}
+        {/* Achievements */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.52 }}
+          className="bg-gray-900/80 border border-gray-800 rounded-xl p-5 mb-8"
+        >
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-blue-400" />
+            Achievements
+            <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full ml-auto">
+              {totalUnlockedAchievements}/{achievements.length || 0} unlocked
+            </span>
+          </h2>
+
+          {achievements.length > 0 ? (
+            <TooltipProvider delayDuration={200}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {achievements.map((achievement) => (
+                  <Tooltip key={achievement.id}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`border rounded-xl p-3 text-center transition-all cursor-default ${
+                          achievement.unlocked
+                            ? 'bg-linear-to-br from-blue-500/20 to-blue-700/10 border-blue-500/30 hover:border-blue-400/50 hover:scale-105'
+                            : 'bg-gray-800/30 border-gray-700/60 hover:border-gray-600 hover:scale-105'
+                        }`}
+                      >
+                        <span className={`text-2xl ${achievement.unlocked ? '' : 'grayscale opacity-60'}`}>{achievement.icon}</span>
+                        <p className={`text-xs font-medium mt-1.5 ${achievement.unlocked ? 'text-gray-100' : 'text-gray-400'}`}>
+                          {achievement.title}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-0.5 truncate">
+                          {achievement.unlocked
+                            ? achievement.unlockedAt
+                              ? formatDate(achievement.unlockedAt)
+                              : 'Unlocked'
+                            : 'Locked'}
+                        </p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px] text-center">
+                      <p className="font-semibold text-blue-300 mb-0.5">{achievement.title}</p>
+                      <p className="text-gray-400">{achievement.unlocked ? '✅ ' : '🔒 How to earn: '}{achievement.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </TooltipProvider>
+          ) : (
+            <div className="text-center py-6 text-gray-600">
+              <Trophy className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No achievements yet</p>
+              <p className="text-xs mt-1">Keep coding to unlock your first badge</p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Rewards */}
         {goals.filter(g => g.achieved).length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1412,7 +1508,7 @@ export default function DashboardPage() {
                 <motion.circle
                   cx="60" cy="60" r="54" fill="none"
                   stroke={
-                    (stats?.productivityScore || 0) >= 75 ? '#22c55e' :
+                    (stats?.productivityScore || 0) >= 75 ? '#2563eb' :
                     (stats?.productivityScore || 0) >= 50 ? '#3b82f6' :
                     (stats?.productivityScore || 0) >= 25 ? '#f59e0b' : '#ef4444'
                   }
@@ -1432,7 +1528,7 @@ export default function DashboardPage() {
               {[
                 { label: 'Hours Today', value: `${formatHours(stats?.hoursToday || 0)} / 4h`, pct: Math.min(100, ((stats?.hoursToday || 0) / 4) * 100), color: 'bg-blue-500' },
                 { label: 'Streak Bonus', value: `${stats?.currentStreak || 0} / 30 days`, pct: Math.min(100, ((stats?.currentStreak || 0) / 30) * 100), color: 'bg-orange-500' },
-                { label: 'Consistency', value: 'This week', pct: Math.min(100, ((stats?.weeklyBreakdown?.filter(h => h > 0).length || 0) / 7) * 100), color: 'bg-emerald-500' },
+                { label: 'Consistency', value: 'This week', pct: Math.min(100, ((stats?.weeklyBreakdown?.filter(h => h > 0).length || 0) / 7) * 100), color: 'bg-blue-500' },
               ].map(item => (
                 <div key={item.label}>
                   <div className="flex justify-between text-xs mb-0.5">
