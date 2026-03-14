@@ -264,7 +264,7 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [session, contributionApiUrl])
 
-  // Live VS Code session timer
+  // Live session timer (current session elapsed time — resets on disconnect/reconnect)
   useEffect(() => {
     if (!connectionReady) return
 
@@ -285,21 +285,15 @@ export default function DashboardPage() {
         setLiveSeconds(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)))
       }
 
-      if (liveTimerRef.current) {
-        clearInterval(liveTimerRef.current)
-      }
-
+      if (liveTimerRef.current) clearInterval(liveTimerRef.current)
       liveTimerRef.current = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - sessionStartRef.current!.getTime()) / 1000)
-        setLiveSeconds(elapsed)
+        setLiveSeconds(Math.floor((Date.now() - sessionStartRef.current!.getTime()) / 1000))
       }, 1000)
     } else {
       if (liveTimerRef.current) {
         clearInterval(liveTimerRef.current)
         liveTimerRef.current = null
       }
-
-      // Reset only on manual disconnect (API key revoked).
       if (!connectionStatus.hasApiKey) {
         sessionStartRef.current = null
         setLiveSeconds(0)
@@ -710,10 +704,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Session Elapsed</span>
+                      <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Current Session</span>
                       {connectionStatus.connected && (
-                        <span className="flex items-center gap-1 text-[10px] bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/25 font-semibold">
-                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+                        <span className="flex items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/25 font-semibold">
+                          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                           LIVE
                         </span>
                       )}
@@ -725,7 +719,7 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs mt-1">
                       {connectionStatus.connected
-                        ? <span className="text-blue-400/70">Session elapsed time • Active coding time tracked separately</span>
+                        ? <span className="text-emerald-400/70">Session time • Today&apos;s total: {formatHours(stats?.hoursToday || 0)}</span>
                         : connectionStatus.hasApiKey
                           ? <span className="text-red-400/80">Disconnected. Reconnect VS Code to resume tracking.</span>
                           : <span className="text-red-400/80">Generate API key and reconnect to start VS Code tracking.</span>}
