@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Code2, Download, Check, RefreshCw,
+  Code2, Download, Check, RefreshCw, Copy,
   ArrowRight, CheckCircle2, Loader2,
   Wifi
 } from 'lucide-react'
@@ -215,28 +215,64 @@ export default function OnboardingPage() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={downloadVSIX}
-                      className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-semibold text-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Download className="w-5 h-5" />
-                      Download Extension
-                    </button>
-
-                    <div className="mt-5 space-y-3">
-                      <p className="text-sm font-medium text-gray-300">After downloading:</p>
+                    {/* CLI Install */}
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-300">Option 1: One-liner install (recommended)</p>
                       <div className="space-y-2">
+                        <div className="relative">
+                          <p className="text-[11px] text-gray-500 mb-1">macOS / Linux:</p>
+                          <pre className="bg-gray-800 border border-gray-700 rounded-lg p-3 pr-10 overflow-x-auto text-xs">
+                            <code className="text-emerald-300">{`curl -fsSL ${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix`}</code>
+                          </pre>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(`curl -fsSL ${window.location.origin}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix`)}
+                            className="absolute top-6 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+                          >
+                            <Copy className="w-3 h-3 text-gray-400" />
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <p className="text-[11px] text-gray-500 mb-1">Windows PowerShell:</p>
+                          <pre className="bg-gray-800 border border-gray-700 rounded-lg p-3 pr-10 overflow-x-auto text-xs">
+                            <code className="text-emerald-300">{`Invoke-WebRequest -Uri "${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix`}</code>
+                          </pre>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(`Invoke-WebRequest -Uri "${window.location.origin}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix`)}
+                            className="absolute top-6 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+                          >
+                            <Copy className="w-3 h-3 text-gray-400" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative flex items-center my-4">
+                      <div className="flex-1 border-t border-gray-700" />
+                      <span className="px-3 text-xs text-gray-500">or</span>
+                      <div className="flex-1 border-t border-gray-700" />
+                    </div>
+
+                    {/* Manual download */}
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-300">Option 2: Download manually</p>
+                      <button
+                        onClick={downloadVSIX}
+                        className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-gray-300 font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download .vsix File
+                      </button>
+                      <div className="space-y-1.5">
                         {[
-                          'Open VS Code on your system',
-                          'Open Extensions panel (Ctrl+Shift+X)',
+                          'Open VS Code → Extensions panel (Ctrl+Shift+X)',
                           'Click the ⋯ menu → "Install from VSIX..."',
-                          'Select the downloaded extension.vsix file',
+                          'Select the downloaded file',
                         ].map((text, i) => (
-                          <div key={i} className="flex items-start gap-3 p-2.5 bg-gray-800/50 rounded-lg">
-                            <span className="w-6 h-6 rounded-full bg-gray-700 text-gray-300 flex items-center justify-center text-xs font-bold shrink-0">
+                          <div key={i} className="flex items-start gap-2.5 p-2 bg-gray-800/50 rounded-lg">
+                            <span className="w-5 h-5 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center text-[10px] font-bold shrink-0">
                               {i + 1}
                             </span>
-                            <span className="text-sm text-gray-300">{text}</span>
+                            <span className="text-xs text-gray-400">{text}</span>
                           </div>
                         ))}
                       </div>

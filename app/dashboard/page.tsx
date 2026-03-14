@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Clock, Flame, Zap, Code2, Trophy, Target, Calendar, Copy, Check,
   TrendingUp, BarChart3, Globe2, FolderGit2, ChevronDown, Plus, X,
-  Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info, Timer, WifiOff
+  Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info, Timer, WifiOff, Terminal
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -804,6 +804,33 @@ export default function DashboardPage() {
                   <p className="text-[10px] text-gray-600 mt-0.5">coded today</p>
                 </div>
               </div>
+
+              {/* CLI Install helper when disconnected */}
+              {!connectionStatus.connected && !connectionStatus.hasApiKey && (
+                <div className="mt-4 p-4 bg-gray-800/50 border border-gray-700/40 rounded-xl" onClick={e => e.stopPropagation()}>
+                  <p className="text-xs font-semibold text-gray-300 mb-2 flex items-center gap-1.5">
+                    <Terminal className="w-3.5 h-3.5 text-blue-400" /> Quick Install
+                  </p>
+                  <p className="text-[11px] text-gray-500 mb-2">Run this in your terminal to install the VS Code extension:</p>
+                  <div className="relative">
+                    <pre className="bg-gray-900 border border-gray-700 rounded-lg p-2.5 overflow-x-auto text-[11px]">
+                      <code className="text-emerald-300/80">{`curl -fsSL ${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix`}</code>
+                    </pre>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigator.clipboard.writeText(`curl -fsSL ${window.location.origin}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix`)
+                      }}
+                      className="absolute top-1.5 right-1.5 p-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+                    >
+                      <Copy className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-600 mt-1.5">
+                    Then generate an API key above and set it in VS Code (Ctrl+Shift+P → &quot;VS Integrate: Set API Key&quot;)
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

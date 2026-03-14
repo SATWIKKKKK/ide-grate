@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -563,7 +564,7 @@ export default function SettingsPage() {
                   <Terminal className="w-3.5 h-3.5 text-blue-400" /> How to connect VS Code
                 </p>
                 {[
-                  'Install the VS Integrate extension from VS Code Marketplace',
+                  'Install the extension by running the command below in your terminal',
                   'Use “Connect VS Code Automatically” above so the app sends both your API key and the correct site endpoint',
                   'If you configure it manually, set both the API key and the heartbeat endpoint for this site',
                   'Status bar shows tracking state, and the site flips to Connected after heartbeats arrive',
@@ -574,6 +575,16 @@ export default function SettingsPage() {
                     <p className="text-xs text-gray-400 leading-relaxed">{step}</p>
                   </div>
                 ))}
+                <div className="mt-2 ml-6 space-y-1.5">
+                  <p className="text-[10px] text-gray-500 font-medium">macOS / Linux:</p>
+                  <pre className="bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-x-auto text-[11px]">
+                    <code className="text-emerald-300/80">{`curl -fsSL ${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix`}</code>
+                  </pre>
+                  <p className="text-[10px] text-gray-500 font-medium mt-2">Windows PowerShell:</p>
+                  <pre className="bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-x-auto text-[11px]">
+                    <code className="text-emerald-300/80">{`Invoke-WebRequest -Uri "${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix`}</code>
+                  </pre>
+                </div>
               </div>
             </div>
           </Section>
