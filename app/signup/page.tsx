@@ -82,8 +82,8 @@ function SignUpContent() {
       return
     }
 
-    // Redirect to dashboard on success
-    window.location.href = '/dashboard'
+    // Redirect to home on success
+    window.location.href = '/'
   }
 
   const isFormValid = devEmail && devName && devPassword.length >= 8 && confirmPassword === devPassword

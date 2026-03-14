@@ -57,7 +57,7 @@ function LoginContent() {
       return
     }
 
-    window.location.href = callbackUrl === '/' ? '/dashboard' : callbackUrl
+    window.location.href = callbackUrl === '/' ? '/' : callbackUrl
   }
 
   // Always show GitHub + Google buttons

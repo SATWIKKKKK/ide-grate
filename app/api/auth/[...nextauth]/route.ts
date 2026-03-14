@@ -164,7 +164,7 @@ export const authOptions: AuthOptions = {
       // Default: redirect to /onboarding for new users, /dashboard for returning ones
       // The client-side onboarding page handles the actual check
       // We always send to /dashboard and let the dashboard redirect if needed
-      return `${baseUrl}/dashboard`
+      return `${baseUrl}/`
     },
   },
   pages: {
