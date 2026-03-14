@@ -237,10 +237,9 @@ export default function DashboardPage() {
             })
             setTimeout(() => setConnectionToast(null), 5000)
           }
-          prevConnected.current = data.connected
-
           // Refresh stats + contributions immediately on reconnect, or every 4th poll when connected
           const justReconnected = prevConnected.current === false && data.connected
+          prevConnected.current = data.connected
           pollCount++
           if (justReconnected || (pollCount % 4 === 0 && data.connected)) {
             invalidateCache('stats')
@@ -334,7 +333,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/apikey', { method: 'DELETE' })
       if (res.ok) {
         setApiKey(null)
-        setConnectionStatus({ connected: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
+        setConnectionStatus(prev => ({ ...prev, connected: false, hasApiKey: false }))
         setConnectionReady(true)
         sessionStartRef.current = null
         setLiveSeconds(0)
@@ -584,7 +583,7 @@ export default function DashboardPage() {
             <div
               className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
                 connectionStatus.connected
-                  ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                   : 'bg-red-500/10 text-red-400 border border-red-500/30'
               }`}
               title={
@@ -592,11 +591,11 @@ export default function DashboardPage() {
                   ? 'VS Code is actively sending heartbeats'
                   : connectionStatus.hasApiKey
                     ? 'VS Code disconnected — reconnect to continue tracking'
-                    : 'No API key yet — open Setup Guide'
+                    : 'No API key yet — generate one to start tracking'
               }
             >
               <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                connectionStatus.connected ? 'bg-blue-400 animate-pulse' : 'bg-red-400'
+                connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
               }`} />
               {connectionStatus.connected ? 'Connected' : 'Disconnected'}
             </div>
@@ -609,9 +608,6 @@ export default function DashboardPage() {
                 {disconnecting ? 'Disconnecting...' : 'Disconnect'}
               </button>
             )}
-            <Link href="/onboarding" className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-all">
-              Setup Guide
-            </Link>
           </div>
         </motion.div>
 
@@ -634,7 +630,7 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="text-sm font-medium text-gray-200">API Key</h3>
                   <p className="text-xs text-gray-500">
-                    {apiKey ? 'Click to view • Used by VS Code extension to send heartbeats' : 'No key generated — open Setup Guide to create one'}
+                    {apiKey ? 'Click to view • Used by VS Code extension to send heartbeats' : 'No key generated — click to create one'}
                   </p>
                 </div>
               </div>

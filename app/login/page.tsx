@@ -60,8 +60,8 @@ function LoginContent() {
 
   // Always show GitHub + Google buttons
   const oauthButtons = [
-    { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-gray-700 border-gray-700', text: 'text-white' },
-    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-gray-100 border-gray-300', text: 'text-white' },
+    { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-white border-gray-700 hover:border-white', text: 'text-white hover:text-black' },
+    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-gray-800 hover:text-black' },
   ]
 
   return (
@@ -85,7 +85,7 @@ function LoginContent() {
             {error && (
               <div className="mb-4 p-3 bg-red-900/30 border border-red-600/30 rounded-lg text-red-400 text-sm text-center">
                 {error === 'OAuthAccountNotLinked'
-                  ? 'This email is already registered with a different provider.'
+                  ? 'Linking your account — please try signing in again.'
                   : 'An error occurred during sign in. Please try again.'}
               </div>
             )}
