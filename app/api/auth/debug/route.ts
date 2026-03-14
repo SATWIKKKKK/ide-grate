@@ -22,18 +22,6 @@ export async function GET(request: NextRequest) {
       clientId: process.env.GOOGLE_CLIENT_ID ? `${process.env.GOOGLE_CLIENT_ID.substring(0, 8)}...` : null,
       hasSecret: !!process.env.GOOGLE_CLIENT_SECRET,
     },
-    microsoft: {
-      configured: !!(process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET),
-      clientId: process.env.AZURE_AD_CLIENT_ID ? `${process.env.AZURE_AD_CLIENT_ID.substring(0, 8)}...` : null,
-      hasSecret: !!process.env.AZURE_AD_CLIENT_SECRET,
-      tenantId: process.env.AZURE_AD_TENANT_ID || "common (default)",
-    },
-    devLogin: {
-      enabled: !!(
-        (!process.env.GITHUB_ID && !process.env.GOOGLE_CLIENT_ID && !process.env.AZURE_AD_CLIENT_ID) ||
-        process.env.ENABLE_DEV_LOGIN === "true"
-      ),
-    },
   }
 
   const config = {

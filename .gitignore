@@ -19,6 +19,10 @@ yarn-error.log*
 # env files
 .env*
 
+# local scripts with secrets
+set-vercel-env.js
+test-db.js
+
 # vercel
 .vercel
 
