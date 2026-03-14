@@ -212,6 +212,9 @@ async function sendHeartbeat(): Promise<void> {
         } catch { /* not a git repo or no remote */ }
     }
 
+    const now = new Date();
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     const payload = {
         apiKey: config.apiKey,
         timestamp: Date.now(),
@@ -222,7 +225,9 @@ async function sendHeartbeat(): Promise<void> {
         projectHash: projectHash,
         repoUrl: repoUrl,
         platform: os.platform(),
-        isIdle: isIdle
+        isIdle: isIdle,
+        timezoneOffset: now.getTimezoneOffset(),
+        localDate: localDate,
     };
 
     try {
@@ -261,11 +266,13 @@ async function sendConnectionTest(): Promise<void> {
         return;
     }
 
+    const connNow = new Date();
     const payload = {
         apiKey: config.apiKey,
         timestamp: Date.now(),
         type: 'connection_test',
         platform: os.platform(),
+        timezoneOffset: connNow.getTimezoneOffset(),
     };
 
     try {

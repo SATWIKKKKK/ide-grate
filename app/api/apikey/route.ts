@@ -66,6 +66,19 @@ export async function DELETE(request: NextRequest) {
       data: { apiKey: null },
     })
 
+    // Set sessionBoundary flag so the next heartbeat creates a new session
+    try {
+      const stats = await prisma.userStats.findUnique({
+        where: { userId: sessionUser.id },
+        select: { monthlyData: true },
+      })
+      const md = (stats?.monthlyData as Record<string, unknown>) || {}
+      await prisma.userStats.update({
+        where: { userId: sessionUser.id },
+        data: { monthlyData: { ...md, sessionBoundary: true } },
+      })
+    } catch { /* non-critical */ }
+
     return NextResponse.json({
       message: "API key revoked successfully",
     })

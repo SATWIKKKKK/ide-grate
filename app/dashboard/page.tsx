@@ -35,6 +35,7 @@ interface StatsData {
   topLanguages: { language: string; hours: number; percentage: number }[]
   weeklyBreakdown: number[]
   projects: { hash: string; name: string | null; hours: number; percentage: number; repoUrl?: string | null }[]
+  todaySessions?: { startTime: string; endTime: string; duration: number }[]
 }
 
 interface ContributionDay {
@@ -141,6 +142,10 @@ function formatDate(dateStr: string): string {
   })
 }
 
+function toLocalDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -178,6 +183,7 @@ export default function DashboardPage() {
   const [liveSeconds, setLiveSeconds] = useState(0)
   const [activeStatPopup, setActiveStatPopup] = useState<string | null>(null)
   const [dailyBarFilter, setDailyBarFilter] = useState<'7d' | '14d' | '1m' | '3m' | '1y'>('14d')
+  const [showTimerPopup, setShowTimerPopup] = useState(false)
   const hasFetched = useRef(false)
   const prevConnected = useRef<boolean | null>(null)
   const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -264,21 +270,23 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [session, contributionApiUrl])
 
-  // Live session timer (current session elapsed time — resets on disconnect/reconnect)
+  // Live session timer — persists across reload/signout, resets only on manual disconnect+reconnect
   useEffect(() => {
     if (!connectionReady) return
 
     if (connectionStatus.connected) {
       if (!sessionStartRef.current) {
+        // Check localStorage for a persisted start time
         const savedStart = typeof window !== 'undefined' ? localStorage.getItem(liveTimerStorageKey) : null
         let start = savedStart ? new Date(savedStart) : null
 
         if (!start || Number.isNaN(start.getTime())) {
-          const fallback = connectionStatus.lastActivityAt ? new Date(connectionStatus.lastActivityAt) : new Date()
-          start = Number.isNaN(fallback.getTime()) ? new Date() : fallback
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(liveTimerStorageKey, start.toISOString())
-          }
+          // No saved start — begin a fresh timer from now
+          start = new Date()
+        }
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(liveTimerStorageKey, start.toISOString())
         }
 
         sessionStartRef.current = start
@@ -294,13 +302,9 @@ export default function DashboardPage() {
         clearInterval(liveTimerRef.current)
         liveTimerRef.current = null
       }
-      if (!connectionStatus.hasApiKey) {
-        sessionStartRef.current = null
-        setLiveSeconds(0)
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(liveTimerStorageKey)
-        }
-      }
+      // Don't clear sessionStartRef or localStorage here —
+      // the timer will resume when the user comes back.
+      // Only disconnectTracking() clears them.
     }
     return () => {
       if (liveTimerRef.current) {
@@ -308,7 +312,7 @@ export default function DashboardPage() {
         liveTimerRef.current = null
       }
     }
-  }, [connectionReady, connectionStatus.connected, connectionStatus.hasApiKey, connectionStatus.lastActivityAt, liveTimerStorageKey])
+  }, [connectionReady, connectionStatus.connected, liveTimerStorageKey])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -393,8 +397,11 @@ export default function DashboardPage() {
     }
   }
 
-  // Today's date key for contribution lookups
-  const todayKey = new Date().toISOString().split('T')[0]
+  // Today's date key for contribution lookups (use local date, not UTC)
+  const todayKey = (() => {
+    const n = new Date()
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+  })()
 
   // ─── Contribution grid ────────────────────────────────────────────────────
   const contributionGrid = useMemo(() => {
@@ -410,7 +417,7 @@ export default function DashboardPage() {
         const date = new Date(startOfWeek)
         date.setDate(startOfWeek.getDate() + w * 7 + d)
         if (date > today) { week.push({ date: '', hours: 0, sessions: 0, level: -1 }); continue }
-        const dateStr = date.toISOString().split('T')[0]
+        const dateStr = toLocalDateStr(date)
         const c = contributions[dateStr]
         const hours = c?.hours || 0
         const sessions = c?.sessions || 0
@@ -428,7 +435,7 @@ export default function DashboardPage() {
     for (let i = 29; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+      const dateStr = toLocalDateStr(d)
       const c = contributions[dateStr]
       const hours = c?.hours || 0
       days.push({
@@ -456,7 +463,7 @@ export default function DashboardPage() {
     for (let i = dailyBarDays - 1; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+      const dateStr = toLocalDateStr(d)
       const c = contributions[dateStr]
       const hours = c?.hours || 0
       // For longer ranges, use shorter date format
@@ -493,7 +500,7 @@ export default function DashboardPage() {
     ]
   }, [stats])
 
-  // Period VS Code hours for timer section
+  // Period VS Code hours for timer section (use local dates)
   const periodHours = useMemo(() => {
     const now = new Date()
     const sumDays = (days: number) => {
@@ -501,12 +508,28 @@ export default function DashboardPage() {
       for (let i = 0; i < days; i++) {
         const d = new Date(now)
         d.setDate(now.getDate() - i)
-        const key = d.toISOString().split('T')[0]
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         total += contributions[key]?.hours || 0
       }
       return total
     }
     return { '7d': sumDays(7), '1m': sumDays(30), '3m': sumDays(90) }
+  }, [contributions])
+
+  // Active days per period for daily average (use local dates)
+  const periodActiveDays = useMemo(() => {
+    const now = new Date()
+    const countActiveDays = (days: number) => {
+      let count = 0
+      for (let i = 0; i < days; i++) {
+        const d = new Date(now)
+        d.setDate(now.getDate() - i)
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        if ((contributions[key]?.hours || 0) > 0) count++
+      }
+      return Math.max(count, 1)
+    }
+    return { '7d': countActiveDays(7), '1m': countActiveDays(30), '3m': countActiveDays(90) }
   }, [contributions])
 
   // Period hours use server data only (accurate active-time tracking)
@@ -669,11 +692,13 @@ export default function DashboardPage() {
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
-          <div className={`rounded-xl border transition-all overflow-hidden ${
+          <div className={`rounded-xl border transition-all overflow-hidden cursor-pointer ${
             connectionStatus.connected
               ? 'bg-linear-to-br from-blue-950/40 to-blue-900/20 border-blue-500/30'
               : 'bg-gray-900/80 border-gray-800'
-          }`}>
+          }`}
+          onClick={() => setShowTimerPopup(true)}
+          >
             {/* Connected banner */}
             {connectionStatus.connected && (
               <div className="bg-blue-500/10 border-b border-blue-500/20 px-5 py-2 flex items-center gap-2">
@@ -736,7 +761,7 @@ export default function DashboardPage() {
                   ]).map(f => (
                     <button
                       key={f.key}
-                      onClick={() => setTimerFilter(f.key)}
+                      onClick={(e) => { e.stopPropagation(); setTimerFilter(f.key) }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
                         timerFilter === f.key
                           ? 'bg-blue-500/20 text-blue-400 shadow-sm'
@@ -767,7 +792,7 @@ export default function DashboardPage() {
                 }`}>
                   <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Daily Avg</p>
                   <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-blue-400' : 'text-blue-400'}`}>
-                    {formatHours(periodHoursDisplay[timerFilter] / (timerFilter === '7d' ? 7 : timerFilter === '1m' ? 30 : 90))}
+                    {formatHours(periodHoursDisplay[timerFilter] / periodActiveDays[timerFilter])}
                   </p>
                   <p className="text-[10px] text-gray-600 mt-0.5">per day</p>
                 </div>
@@ -782,6 +807,110 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* Timer Session Popup */}
+        <AnimatePresence>
+          {showTimerPopup && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setShowTimerPopup(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                        <Timer className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Session Details</h3>
+                        <p className="text-xs text-gray-500">
+                          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowTimerPopup(false)} className="p-1 hover:bg-gray-800 rounded-lg transition-colors">
+                      <X className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="grid grid-cols-3 gap-3 mb-5">
+                    <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 text-center">
+                      <p className="text-2xl font-bold text-emerald-400">{formatHours(stats?.hoursToday || 0)}</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Total Today</p>
+                    </div>
+                    <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl p-3 text-center">
+                      <p className="text-2xl font-bold text-blue-400">{stats?.todaySessions?.length || 0}</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Sessions</p>
+                    </div>
+                    <div className="bg-violet-500/5 border border-violet-500/15 rounded-xl p-3 text-center">
+                      <p className="text-2xl font-bold text-violet-400">
+                        {connectionStatus.connected ? formatTimer(liveSeconds) : '—'}
+                      </p>
+                      <p className="text-[10px] text-gray-500 mt-1">Live Timer</p>
+                    </div>
+                  </div>
+
+                  {/* Session list */}
+                  <h4 className="text-sm font-medium text-gray-400 mb-3">Today&apos;s Sessions</h4>
+                  {stats?.todaySessions && stats.todaySessions.length > 0 ? (
+                    <div className="space-y-2">
+                      {stats.todaySessions.map((session, i) => {
+                        const start = new Date(session.startTime)
+                        const end = new Date(session.endTime)
+                        const durationHrs = session.duration / 3600
+                        return (
+                          <div key={i} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-gray-800">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <span className="text-xs font-bold text-blue-400">#{i + 1}</span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                                <p className="text-[10px] text-gray-500">Session {i + 1}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-blue-400">{formatHours(durationHrs)}</p>
+                              <p className="text-[10px] text-gray-600">active time</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-600">
+                      <Timer className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p className="text-sm">No sessions recorded today</p>
+                      <p className="text-xs mt-1">Connect VS Code to start tracking</p>
+                    </div>
+                  )}
+
+                  {connectionStatus.connected && (
+                    <div className="mt-4 p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-lg flex items-center gap-2">
+                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                      <span className="text-xs text-emerald-400">Currently tracking — {formatTimer(liveSeconds)} this viewing session</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">

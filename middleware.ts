@@ -6,8 +6,8 @@ export default withAuth(
     const { pathname } = req.nextUrl
     const token = req.nextauth.token
 
-    // If user is authenticated and trying to access login/signup, redirect to dashboard
-    if (token && (pathname === '/login' || pathname === '/signup')) {
+    // If user is authenticated and trying to access login/signup or root, redirect to dashboard
+    if (token && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 

@@ -11,7 +11,25 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get("days") || "365")
 
-    const startDate = new Date()
+    // Use stored timezone offset for accurate date boundaries
+    const userStats = await prisma.userStats.findUnique({
+      where: { userId: sessionUser.id },
+      select: { monthlyData: true },
+    })
+    const storedMd = (userStats?.monthlyData as Record<string, unknown>) || {}
+    const storedTzOffset = typeof storedMd.timezoneOffset === 'number' ? storedMd.timezoneOffset : null
+
+    const nowDate = new Date()
+    let todayStr: string
+    if (storedTzOffset !== null) {
+      const localNow = new Date(nowDate.getTime() - storedTzOffset * 60000)
+      todayStr = localNow.toISOString().split('T')[0]
+    } else {
+      todayStr = nowDate.toISOString().split('T')[0]
+    }
+    const todayLocal = new Date(todayStr)
+
+    const startDate = new Date(todayLocal)
     startDate.setDate(startDate.getDate() - days)
 
     const contributions = await prisma.dailyContribution.findMany({
@@ -30,7 +48,7 @@ export async function GET(request: NextRequest) {
     const contributionMap: Record<string, { hours: number; sessions: number; level: number }> = {}
     
     // Fill with zeros first
-    for (let d = new Date(startDate); d <= new Date(); d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(startDate); d <= todayLocal; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split("T")[0]
       contributionMap[dateStr] = { hours: 0, sessions: 0, level: 0 }
     }

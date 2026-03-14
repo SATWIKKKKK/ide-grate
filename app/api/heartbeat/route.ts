@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
       file,
       isIdle = false,
       type, // 'connection_test' for initial connection verification
+      timezoneOffset,
+      localDate,
     } = body
 
     const languageBreakdown = normalizeLanguageBreakdown(body.languageBreakdown)
@@ -41,10 +43,20 @@ export async function POST(request: NextRequest) {
 
     // Connection test: validate key and return without creating activity
     if (type === 'connection_test') {
+      // Store timezone offset if provided
+      const updateData: Record<string, unknown> = { lastActiveDate: new Date() }
+      if (typeof timezoneOffset === 'number') {
+        const existingStats = await prisma.userStats.findUnique({
+          where: { userId: user.id },
+          select: { monthlyData: true },
+        })
+        const md = (existingStats?.monthlyData as Record<string, unknown>) || {}
+        updateData.monthlyData = { ...md, timezoneOffset }
+      }
       // Update lastActiveDate in UserStats so the frontend can detect connectivity
       await prisma.userStats.upsert({
         where: { userId: user.id },
-        update: { lastActiveDate: new Date() },
+        update: updateData,
         create: {
           userId: user.id,
           totalHours: 0,
@@ -52,6 +64,7 @@ export async function POST(request: NextRequest) {
           longestStreak: 0,
           currentStreak: 0,
           lastActiveDate: new Date(),
+          monthlyData: typeof timezoneOffset === 'number' ? { timezoneOffset } : {},
         },
       })
       return NextResponse.json({ 
@@ -62,8 +75,26 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date(timestamp || Date.now())
-    const today = new Date(now.toISOString().split('T')[0])
+    // Use localDate from extension if available, otherwise compute from timezoneOffset, fallback to UTC
+    let todayStr: string
+    if (typeof localDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(localDate)) {
+      todayStr = localDate
+    } else if (typeof timezoneOffset === 'number') {
+      const localTime = new Date(now.getTime() - timezoneOffset * 60000)
+      todayStr = localTime.toISOString().split('T')[0]
+    } else {
+      todayStr = now.toISOString().split('T')[0]
+    }
+    const today = new Date(todayStr)
     let startedNewSession = false
+
+    // Check if there's a sessionBoundary flag (set on manual disconnect)
+    const userStats = await prisma.userStats.findUnique({
+      where: { userId: user.id },
+      select: { monthlyData: true },
+    })
+    const monthlyData = (userStats?.monthlyData as Record<string, unknown>) || {}
+    const hasSessionBoundary = !!monthlyData.sessionBoundary
 
     // Get or create today's contribution record
     const dailyContribution = await prisma.dailyContribution.upsert({
@@ -90,27 +121,13 @@ export async function POST(request: NextRequest) {
     })
 
     const HEARTBEAT_INTERVAL = 30 // seconds - expected heartbeat interval
-    const SESSION_TIMEOUT = 120 // seconds - gap before starting new session
     
     let activityDuration = HEARTBEAT_INTERVAL // Default to one heartbeat interval
     
     if (lastActivity) {
-      const timeSinceLastActivity = (now.getTime() - lastActivity.endTime.getTime()) / 1000
-      
-      if (timeSinceLastActivity <= SESSION_TIMEOUT) {
-        // Continue existing session - update end time
-        await prisma.activity.update({
-          where: { id: lastActivity.id },
-          data: {
-            endTime: now,
-            duration: lastActivity.duration + HEARTBEAT_INTERVAL,
-            language: language || lastActivity.language,
-            idleTime: isIdle ? lastActivity.idleTime + HEARTBEAT_INTERVAL : lastActivity.idleTime,
-          },
-        })
-        activityDuration = HEARTBEAT_INTERVAL
-      } else {
-        // Start new session
+      // Only start a new session if manually disconnected (sessionBoundary flag)
+      if (hasSessionBoundary) {
+        // Manual disconnect happened — start new session
         startedNewSession = true
         await prisma.activity.create({
           data: {
@@ -135,6 +152,26 @@ export async function POST(request: NextRequest) {
             sessions: { increment: 1 },
           },
         })
+
+        // Clear the sessionBoundary flag
+        await prisma.userStats.update({
+          where: { userId: user.id },
+          data: {
+            monthlyData: { ...monthlyData, sessionBoundary: false, timezoneOffset: typeof timezoneOffset === 'number' ? timezoneOffset : monthlyData.timezoneOffset },
+          },
+        })
+      } else {
+        // Continue existing session — always extend regardless of time gap
+        await prisma.activity.update({
+          where: { id: lastActivity.id },
+          data: {
+            endTime: now,
+            duration: lastActivity.duration + HEARTBEAT_INTERVAL,
+            language: language || lastActivity.language,
+            idleTime: isIdle ? lastActivity.idleTime + HEARTBEAT_INTERVAL : lastActivity.idleTime,
+          },
+        })
+        activityDuration = HEARTBEAT_INTERVAL
       }
     } else {
       // First activity ever - create new session
@@ -166,11 +203,15 @@ export async function POST(request: NextRequest) {
 
     // Always update lastActiveDate so connection-status detects connectivity
     // even when the user is idle (VS Code is still open and sending heartbeats)
+    const upsertMonthlyData = typeof timezoneOffset === 'number'
+      ? { ...monthlyData, timezoneOffset, sessionBoundary: false }
+      : { ...monthlyData, sessionBoundary: false }
     await prisma.userStats.upsert({
       where: { userId: user.id },
       update: {
         lastActiveDate: now,
         ...(startedNewSession ? { totalSessions: { increment: 1 } } : {}),
+        monthlyData: upsertMonthlyData,
       },
       create: {
         userId: user.id,
@@ -179,6 +220,7 @@ export async function POST(request: NextRequest) {
         longestStreak: 0,
         currentStreak: 0,
         lastActiveDate: now,
+        monthlyData: typeof timezoneOffset === 'number' ? { timezoneOffset } : {},
       },
     })
 
@@ -225,8 +267,9 @@ export async function POST(request: NextRequest) {
           })
           const dates = recentContribs.map(c => new Date(c.date).toISOString().split('T')[0]).sort().reverse()
           if (dates.length > 0) {
-            const todayStr = now.toISOString().split('T')[0]
-            const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
+            const streakYesterday = new Date(todayStr)
+            streakYesterday.setDate(streakYesterday.getDate() - 1)
+            const yesterdayStr = streakYesterday.toISOString().split('T')[0]
             let currentStreak = 0
             let checkDate = dates[0] === todayStr || dates[0] === yesterdayStr ? new Date(dates[0]) : null
             if (checkDate) {

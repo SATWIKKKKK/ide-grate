@@ -50,6 +50,17 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // Determine "today" using stored timezone offset from the user's machine
+    const storedMonthlyData = (userStats?.monthlyData as Record<string, unknown>) || {}
+    const storedTzOffset = typeof storedMonthlyData.timezoneOffset === 'number' ? storedMonthlyData.timezoneOffset : null
+    let todayKey: string
+    if (storedTzOffset !== null) {
+      const localNow = new Date(now.getTime() - storedTzOffset * 60000)
+      todayKey = localNow.toISOString().split('T')[0]
+    } else {
+      todayKey = now.toISOString().split('T')[0]
+    }
+
     // Get daily contributions
     const contributions = await prisma.dailyContribution.findMany({
       where: {
@@ -76,8 +87,10 @@ export async function GET(request: NextRequest) {
     let currentStreak = 0
     let longestStreak = 0
     if (sortedDates.length > 0) {
-      const todayStr = now.toISOString().split('T')[0]
-      const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
+      const todayStr = todayKey
+      const yesterdayDate = new Date(todayKey)
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+      const yesterdayStr = yesterdayDate.toISOString().split('T')[0]
       
       // Current streak: count consecutive days back from today/yesterday
       let checkDate = sortedDates[0] === todayStr || sortedDates[0] === yesterdayStr ? new Date(sortedDates[0]) : null
@@ -143,8 +156,7 @@ export async function GET(request: NextRequest) {
       .map(c => new Date(c.date).toISOString().split('T')[0])
     const uniqueActiveDaysThisWeek = new Set(activeDaysThisWeek).size
 
-    // Today's hours
-    const todayKey = now.toISOString().split('T')[0]
+    // Today's hours (todayKey already computed above using timezone)
     const todayContribution = contributions.find(c => new Date(c.date).toISOString().split('T')[0] === todayKey)
     const hoursToday = todayContribution?.hours || 0
 
@@ -166,6 +178,19 @@ export async function GET(request: NextRequest) {
 
     // Productivity score
     const productivityScore = calculateProductivityScore(hoursToday, currentStreak, uniqueActiveDaysThisWeek, avgSessionMinutes)
+
+    // Today's session details for the timer popup
+    const todayStart = new Date(todayKey)
+    const todayEnd = new Date(todayStart)
+    todayEnd.setDate(todayEnd.getDate() + 1)
+    const todayActivities = await prisma.activity.findMany({
+      where: {
+        userId: sessionUser.id,
+        startTime: { gte: todayStart, lt: todayEnd },
+      },
+      orderBy: { startTime: 'asc' },
+      select: { startTime: true, endTime: true, duration: true },
+    })
 
     // Project breakdown
     const projectTotals: Record<string, { hash: string; name: string | null; seconds: number }> = {}
@@ -210,6 +235,11 @@ export async function GET(request: NextRequest) {
       topLanguages,
       weeklyBreakdown: weeklyBreakdown.map(h => parseFloat(h.toFixed(2))),
       projects,
+      todaySessions: todayActivities.map(a => ({
+        startTime: a.startTime.toISOString(),
+        endTime: a.endTime.toISOString(),
+        duration: a.duration,
+      })),
       // Achievement stats for frontend
       achievementStats: {
         totalSessions,
