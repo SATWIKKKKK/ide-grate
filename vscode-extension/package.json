@@ -2,7 +2,7 @@
   "name": "vs-integrate-tracker",
   "displayName": "VS Integrate - Coding Activity Tracker",
   "description": "Track your coding activity and visualize it with beautiful contribution graphs on vs-integrate. Monitor coding hours, languages, streaks, and productivity.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "vsintegrate",
   "license": "MIT",
   "repository": {
@@ -64,8 +64,8 @@
         },
         "vsIntegrate.apiEndpoint": {
           "type": "string",
-          "default": "https://vs-integrate.vercel.app/api/heartbeat",
-          "description": "API endpoint for heartbeat data. You can enter either your site URL or the full /api/heartbeat URL."
+          "default": "",
+          "description": "API endpoint for heartbeat data (e.g. https://vs-integrate.vercel.app/api/heartbeat). Leave blank to use the default endpoint. You can enter either your site URL or the full /api/heartbeat path."
         },
         "vsIntegrate.heartbeatInterval": {
           "type": "number",
