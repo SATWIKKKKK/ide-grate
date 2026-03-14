@@ -710,7 +710,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Current Session</span>
+                      <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Session Elapsed</span>
                       {connectionStatus.connected && (
                         <span className="flex items-center gap-1 text-[10px] bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/25 font-semibold">
                           <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
@@ -725,7 +725,7 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs mt-1">
                       {connectionStatus.connected
-                        ? <span className="text-blue-400/70">Every second is being tracked</span>
+                        ? <span className="text-blue-400/70">Session elapsed time • Active coding time tracked separately</span>
                         : connectionStatus.hasApiKey
                           ? <span className="text-red-400/80">Disconnected. Reconnect VS Code to resume tracking.</span>
                           : <span className="text-red-400/80">Generate API key and reconnect to start VS Code tracking.</span>}
@@ -1345,6 +1345,7 @@ export default function DashboardPage() {
                   contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#e5e7eb', fontSize: '12px' }}
                   formatter={(v: number) => [formatHoursShort(v), 'Coded']}
                   labelStyle={{ color: '#9ca3af' }}
+                  cursor={{ stroke: '#374151' }}
                 />
                 <Area
                   type="monotone"
@@ -1390,8 +1391,10 @@ export default function DashboardPage() {
                       ))}
                     </Pie>
                     <ReTooltip
-                      contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', fontSize: '11px' }}
+                      contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', fontSize: '11px', color: '#ffffff' }}
                       formatter={(v: number, _: string, p) => [`${v}h (${p.payload.percentage}%)`, p.payload.name]}
+                      itemStyle={{ color: '#ffffff' }}
+                      labelStyle={{ color: '#9ca3af' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -1470,6 +1473,7 @@ export default function DashboardPage() {
                   contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#e5e7eb', fontSize: '12px' }}
                   formatter={(v: number) => [formatHoursShort(v), 'Coded']}
                   labelStyle={{ color: '#9ca3af' }}
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                 />
                 <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
