@@ -43,6 +43,7 @@ model User {
   email         String?    @unique
   emailVerified DateTime?
   image         String?
+  password      String?    // Hashed password for email/password auth
   username      String?    @unique  // Public profile username
   bio           String?
   apiKey        String?    @unique  // API key for VS Code extension

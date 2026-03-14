@@ -1,8 +1,8 @@
 'use client'
 
 import { Suspense } from 'react'
-import { signIn, getProviders } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useState } from 'react'
 import { Github, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import Logo from '@/components/Logo'
 import { useSearchParams } from 'next/navigation'
@@ -25,43 +25,45 @@ function GoogleIcon({ className }: { className?: string }) {
 
 
 function LoginContent() {
-  const [providers, setProviders] = useState<any>(null)
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [devEmail, setDevEmail] = useState('')
   const [devPassword, setDevPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [loginError, setLoginError] = useState('')
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
   const callbackUrl = searchParams.get('callbackUrl') || '/'
-
-  useEffect(() => {
-    getProviders().then(setProviders)
-  }, [])
 
   const handleSignIn = async (providerId: string) => {
     setIsLoading(providerId)
     await signIn(providerId, { callbackUrl })
   }
 
-  const handleDevLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!devEmail) return
-    setIsLoading('dev-login')
-    await signIn('dev-login', {
+    if (!devEmail || !devPassword) return
+    setLoginError('')
+    setIsLoading('credentials')
+    
+    const result = await signIn('credentials', {
       email: devEmail,
-      name: devEmail.split('@')[0],
-      callbackUrl,
+      password: devPassword,
+      redirect: false,
     })
-  }
 
-  const hasDevLogin = providers
-    ? Object.values(providers).some((p: any) => p.id === 'dev-login')
-    : false
+    if (result?.error) {
+      setIsLoading(null)
+      setLoginError('Invalid email or password')
+      return
+    }
+
+    window.location.href = callbackUrl === '/' ? '/dashboard' : callbackUrl
+  }
 
   // Always show GitHub + Google buttons
   const oauthButtons = [
     { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-white border-gray-700 hover:border-white', text: 'text-white hover:text-black' },
-    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-gray-800 hover:text-black' },
+    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-white hover:text-black' },
   ]
 
   return (
@@ -82,11 +84,11 @@ function LoginContent() {
           </CardHeader>
 
           <CardContent>
-            {error && (
+            {(error || loginError) && (
               <div className="mb-4 p-3 bg-red-900/30 border border-red-600/30 rounded-lg text-red-400 text-sm text-center">
                 {error === 'OAuthAccountNotLinked'
                   ? 'Linking your account — please try signing in again.'
-                  : 'An error occurred during sign in. Please try again.'}
+                  : loginError || 'An error occurred during sign in. Please try again.'}
               </div>
             )}
 
@@ -113,70 +115,67 @@ function LoginContent() {
               ))}
             </div>
 
-            {hasDevLogin && (
-              <>
-                {/* Divider */}
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-700" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-gray-900 text-gray-500">or sign in with email</span>
-                  </div>
-                </div>
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-gray-900 text-gray-500">or sign in with email</span>
+              </div>
+            </div>
 
-                <form onSubmit={handleDevLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={devEmail}
-                      onChange={(e) => setDevEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30"
-                    />
-                  </div>
+            <form onSubmit={handleEmailLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-300">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={devEmail}
+                  onChange={(e) => setDevEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30"
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-gray-300">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={devPassword}
-                        onChange={(e) => setDevPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading !== null || !devEmail}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-300">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={devPassword}
+                    onChange={(e) => setDevPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
                   >
-                    {isLoading === 'dev-login' ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        Sign In
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </>
-            )}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading !== null || !devEmail || !devPassword}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
+              >
+                {isLoading === 'credentials' ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </form>
           </CardContent>
 
           <CardFooter className="justify-center">

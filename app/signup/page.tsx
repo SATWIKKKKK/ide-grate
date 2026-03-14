@@ -66,12 +66,24 @@ function SignUpContent() {
     if (!devEmail || !devName) return
     if (!validatePassword(devPassword)) return
     if (!validateConfirmPassword(devPassword, confirmPassword)) return
-    setIsLoading('dev-login')
-    await signIn('dev-login', {
+    setIsLoading('credentials')
+    
+    const result = await signIn('credentials', {
       email: devEmail,
+      password: devPassword,
       name: devName,
-      callbackUrl,
+      isSignUp: 'true',
+      redirect: false,
     })
+
+    if (result?.error) {
+      setIsLoading(null)
+      setPasswordError(result.error.includes('exists') ? 'An account with this email already exists. Please sign in.' : 'Failed to create account. Please try again.')
+      return
+    }
+
+    // Redirect to dashboard on success
+    window.location.href = '/dashboard'
   }
 
   const isFormValid = devEmail && devName && devPassword.length >= 8 && confirmPassword === devPassword
@@ -90,11 +102,7 @@ function SignUpContent() {
             <CardDescription className="text-gray-400">
               Track your VS Code time, streaks & language stats
             </CardDescription>
-            <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
-              {['⏱ Live Timer', '🔥 Streaks', '📊 Stats'].map(f => (
-                <span key={f} className="text-[11px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full border border-gray-700">{f}</span>
-              ))}
-            </div>
+            
           </CardHeader>
 
           <CardContent>
@@ -201,7 +209,7 @@ function SignUpContent() {
                 disabled={isLoading !== null || !isFormValid}
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
               >
-                {isLoading === 'dev-login' ? (
+                {isLoading === 'credentials' ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
@@ -225,8 +233,8 @@ function SignUpContent() {
             {/* OAuth Buttons — always visible */}
             <div className="space-y-3">
               {[
-                { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-gray-700 border-gray-700', text: 'text-white' },
-                { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-gray-100 border-gray-300', text: 'text-gray-800' },
+                { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-white border-gray-700 hover:border-white', text: 'text-white hover:text-black' },
+                { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-gray-800 hover:text-black' },
               ].map(({ id, name, Icon, bg, text }) => (
                 <Button
                   key={id}

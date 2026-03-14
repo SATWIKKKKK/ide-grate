@@ -35,44 +35,75 @@ if (hasGoogle) {
   )
 }
 
-// Add Credentials provider for development/demo mode when no OAuth is configured
-if (!hasOAuthProviders || process.env.ENABLE_DEV_LOGIN === "true") {
-  providers.push(
-    CredentialsProvider({
-      id: "dev-login",
-      name: "Development Login",
-      credentials: {
-        email: { label: "Email", type: "email", placeholder: "dev@example.com" },
-        name: { label: "Name", type: "text", placeholder: "Developer" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email) return null
-        
-        // Find or create user
-        let user = await prisma.user.findUnique({
+// Credentials provider for email/password auth (always enabled)
+providers.push(
+  CredentialsProvider({
+    id: "credentials",
+    name: "Email",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+      name: { label: "Name", type: "text" },
+      isSignUp: { label: "Sign Up", type: "text" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email) return null
+
+      const { compare, hash } = await import("bcryptjs")
+
+      // Sign Up flow
+      if (credentials.isSignUp === "true") {
+        if (!credentials.password || credentials.password.length < 8) return null
+
+        const existing = await prisma.user.findUnique({
           where: { email: credentials.email },
         })
-        
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email: credentials.email,
-              name: credentials.name || "Developer",
-              apiKey: `vsi_${crypto.randomBytes(32).toString("hex")}`,
-            },
-          })
-        }
-        
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: null,
-        }
-      },
-    })
-  )
-}
+        if (existing) throw new Error("An account with this email already exists")
+
+        const hashedPassword = await hash(credentials.password, 12)
+        const user = await prisma.user.create({
+          data: {
+            email: credentials.email,
+            name: credentials.name || credentials.email.split("@")[0],
+            password: hashedPassword,
+            apiKey: `vsi_${crypto.randomBytes(32).toString("hex")}`,
+          },
+        })
+
+        // Create UserStats record for the new user
+        await prisma.userStats.create({
+          data: { userId: user.id },
+        }).catch(() => {}) // ignore if already exists
+
+        return { id: user.id, email: user.email, name: user.name, image: null }
+      }
+
+      // Sign In flow
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email },
+      })
+      if (!user) return null
+
+      // If user has no password (OAuth-only account), allow linking
+      if (!user.password) {
+        if (!credentials.password) return null
+        // Set password for OAuth user who wants to add email/password login
+        const hashedPassword = await hash(credentials.password, 12)
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashedPassword },
+        })
+        return { id: user.id, email: user.email, name: user.name, image: user.image }
+      }
+
+      // Verify password
+      const isValid = await compare(credentials.password, user.password)
+      if (!isValid) return null
+
+      return { id: user.id, email: user.email, name: user.name, image: user.image }
+    },
+  })
+)
 
 // Use adapter for OAuth providers
 const useAdapter = hasOAuthProviders
