@@ -49,7 +49,8 @@ let hasShownDisconnectedNotice = false;
 let languageTimeMap = {};
 let lastLanguageSwitchAt = Date.now();
 let lastLanguageId = 'unknown';
-const DEFAULT_API_ENDPOINT = 'http://localhost:3001/api/heartbeat';
+let isWindowFocused = true;
+const DEFAULT_API_ENDPOINT = 'https://vs-integrate.vercel.app/api/heartbeat';
 function normalizeApiEndpoint(input) {
     const trimmed = input.trim().replace(/\/+$/, '');
     if (!trimmed) {
@@ -106,6 +107,20 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('vs-integrate.setApiKey', setApiKey), vscode.commands.registerCommand('vs-integrate.showStatus', showStatus), vscode.commands.registerCommand('vs-integrate.openDashboard', openDashboard));
     // Track editor activity
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(onActivity), vscode.workspace.onDidChangeTextDocument(onActivity), vscode.window.onDidChangeTextEditorSelection(onActivity), vscode.workspace.onDidSaveTextDocument(onActivity));
+    // Track window focus — mark idle immediately when VS Code loses focus
+    context.subscriptions.push(vscode.window.onDidChangeWindowState((state) => {
+        isWindowFocused = state.focused;
+        if (!state.focused) {
+            // Immediately mark as idle when window loses focus
+            trackLanguageTime();
+        }
+        else {
+            // Resume activity tracking when window regains focus
+            lastActivityTime = Date.now();
+            lastLanguageSwitchAt = Date.now();
+            lastLanguageId = getCurrentLanguageId();
+        }
+    }));
     // Start tracking
     startTracking();
     updateStatusBar();
@@ -158,7 +173,7 @@ async function sendHeartbeat() {
         return;
     }
     const editor = vscode.window.activeTextEditor;
-    const isIdle = (Date.now() - lastActivityTime) > (config.idleTimeout * 1000);
+    const isIdle = !isWindowFocused || (Date.now() - lastActivityTime) > (config.idleTimeout * 1000);
     if (!isIdle) {
         trackLanguageTime();
     }

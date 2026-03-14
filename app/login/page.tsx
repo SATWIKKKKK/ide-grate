@@ -61,7 +61,7 @@ function LoginContent() {
   // Always show GitHub + Google buttons
   const oauthButtons = [
     { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-gray-700 border-gray-700', text: 'text-white' },
-    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-gray-100 border-gray-300', text: 'text-gray-800' },
+    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-gray-100 border-gray-300', text: 'text-white' },
   ]
 
   return (
@@ -78,11 +78,7 @@ function LoginContent() {
             <CardDescription className="text-gray-400">
               Sign in to continue tracking your coding activity
             </CardDescription>
-            <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
-              {['⏱ Live Timer', '🔥 Streaks', '📊 Stats'].map(f => (
-                <span key={f} className="text-[11px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full border border-gray-700">{f}</span>
-              ))}
-            </div>
+            
           </CardHeader>
 
           <CardContent>

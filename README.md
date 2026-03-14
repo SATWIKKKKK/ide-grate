@@ -200,6 +200,24 @@ To force dev login even with OAuth configured:
 ENABLE_DEV_LOGIN="true"
 ```
 
+## Nodemailer Setup (Goal Completion Emails)
+
+Use these settings so users receive goal completion emails:
+
+1. Configure SMTP in `.env`:
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+```
+
+2. For Gmail, enable 2FA and create an **App Password** (recommended) instead of using your normal password.
+3. Restart the app after updating env values.
+4. Ensure users have a valid email on their account profile; goal email jobs send to that address.
+5. Trigger a goal completion in development to verify delivery.
+
 ## Security Considerations
 
 - All API endpoints require authentication

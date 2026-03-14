@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Code2, ArrowRight, Key, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, LayoutDashboard, BookOpen } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Logo from './Logo';
@@ -52,11 +52,8 @@ export default function Hero() {
             </span>
           </motion.h1>
 
-          <motion.p
-            variants={item}
-            className="text-lg text-gray-400 mb-10 leading-relaxed"
-          >
-            Head to your dashboard, generate an API key, and connect your VS Code extension to start tracking real activity.
+          <motion.p variants={item} className="text-base sm:text-lg text-gray-400 mb-10 leading-relaxed">
+            Use the setup guide for the new step-by-step flow: install extension, connect account, verify heartbeats, and confirm tracking.
           </motion.p>
 
           <motion.div variants={item} className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -71,16 +68,16 @@ export default function Hero() {
                 <ArrowRight className="w-5 h-5" />
               </motion.button>
             </Link>
-            <Link href="/onboarding">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 text-white"
-              >
-                <Key className="w-5 h-5 text-gray-400" />
-                Setup Guide
-              </motion.button>
-            </Link>
+             <Link href="/onboarding">
+               <motion.button
+                 whileHover={{ scale: 1.05 }}
+                 whileTap={{ scale: 0.95 }}
+                 className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 text-white"
+               >
+                 <BookOpen className="w-5 h-5 text-gray-400" />
+                 Open Setup Guide
+               </motion.button>
+             </Link>
           </motion.div>
         </motion.div>
       </section>
@@ -114,7 +111,7 @@ export default function Hero() {
           </motion.p>
 
           {/* CTA Buttons */}
-          <motion.div variants={item} className="flex flex-col sm:flex-row gap-3 mb-4">
+          <motion.div variants={item} className="flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-4">
             <Link href="/signup">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)' }}
@@ -132,6 +129,16 @@ export default function Hero() {
                 className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 text-white"
               >
                 Sign In
+              </motion.button>
+            </Link>
+            <Link href="/onboarding">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 text-white"
+              >
+                <BookOpen className="w-5 h-5 text-gray-300" />
+                Setup Guide
               </motion.button>
             </Link>
           </motion.div>

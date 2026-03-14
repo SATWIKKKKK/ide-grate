@@ -13,7 +13,8 @@ let hasShownDisconnectedNotice: boolean = false;
 let languageTimeMap: Record<string, number> = {};
 let lastLanguageSwitchAt: number = Date.now();
 let lastLanguageId: string = 'unknown';
-const DEFAULT_API_ENDPOINT = 'http://localhost:3001/api/heartbeat';
+let isWindowFocused: boolean = true;
+const DEFAULT_API_ENDPOINT = 'https://vs-integrate.vercel.app/api/heartbeat';
 
 function normalizeApiEndpoint(input: string): string {
     const trimmed = input.trim().replace(/\/+$/, '');
@@ -101,6 +102,22 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidSaveTextDocument(onActivity)
     );
 
+    // Track window focus — mark idle immediately when VS Code loses focus
+    context.subscriptions.push(
+        vscode.window.onDidChangeWindowState((state) => {
+            isWindowFocused = state.focused;
+            if (!state.focused) {
+                // Immediately mark as idle when window loses focus
+                trackLanguageTime();
+            } else {
+                // Resume activity tracking when window regains focus
+                lastActivityTime = Date.now();
+                lastLanguageSwitchAt = Date.now();
+                lastLanguageId = getCurrentLanguageId();
+            }
+        })
+    );
+
     // Start tracking
     startTracking();
     updateStatusBar();
@@ -166,7 +183,7 @@ async function sendHeartbeat(): Promise<void> {
     }
 
     const editor = vscode.window.activeTextEditor;
-    const isIdle = (Date.now() - lastActivityTime) > (config.idleTimeout * 1000);
+    const isIdle = !isWindowFocused || (Date.now() - lastActivityTime) > (config.idleTimeout * 1000);
 
     if (!isIdle) {
         trackLanguageTime();

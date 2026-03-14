@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { User, LogOut, Code2, Home, LayoutDashboard, Settings, ChevronDown, Menu, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LogOut, Home, LayoutDashboard, BookOpen, ChevronDown, Menu, X, Settings } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -13,6 +13,18 @@ export default function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const pathname = usePathname();
+  const menuRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
@@ -79,9 +91,10 @@ export default function Navbar() {
 
           {/* User Menu or Sign In */}
           {session ? (
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <motion.button
                 whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all duration-300 flex items-center gap-2"
               >
@@ -93,58 +106,83 @@ export default function Navbar() {
                   </div>
                 )}
                 <span className="hidden sm:inline text-sm font-medium">{session.user.name}</span>
-                <ChevronDown className="w-4 h-4 text-gray-500" />
+                <motion.span
+                  animate={{ rotate: showUserMenu ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                </motion.span>
               </motion.button>
 
-              {showUserMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden"
-                >
-                  <div className="p-4 border-b border-gray-800">
-                    <p className="font-medium text-sm text-white">{session.user.name}</p>
-                    <p className="text-xs text-gray-400">{session.user.email}</p>
-                  </div>
-                  
-                  {/* Mobile Navigation */}
-                  <div className="md:hidden border-b border-gray-800">
-                    {filteredLinks.map((link) => {
-                      const Icon = link.icon;
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-800 transition-colors text-gray-300"
-                        >
-                          <Icon className="w-4 h-4 text-gray-500" />
-                          {link.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                  
-                  <Link
-                    href="/onboarding"
-                    onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-800 transition-colors text-gray-300"
+              <AnimatePresence>
+                {showUserMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="absolute right-0 mt-2 w-60 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl shadow-black/60 overflow-hidden"
                   >
-                    <Code2 className="w-4 h-4 text-gray-500" />
-                    Setup Guide
-                  </Link>
-                  <button
-                    onClick={() => {
-                      signOut({ callbackUrl: '/' });
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-gray-800 flex items-center gap-3 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
-                  </button>
-                </motion.div>
-              )}
+                    {/* User info */}
+                    <div className="p-4 border-b border-gray-800">
+                      <div className="flex items-center gap-3">
+                        {session.user.image ? (
+                          <img src={session.user.image} alt="" className="w-9 h-9 rounded-full ring-2 ring-blue-500/30" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold ring-2 ring-blue-500/30">
+                            {session.user.name?.[0] || '?'}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm text-white truncate">{session.user.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{session.user.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Navigation items */}
+                    <div className="py-1">
+                      {[
+                        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                        { href: '/settings', label: 'Settings', icon: Settings },
+                        { href: '/onboarding', label: 'Setup Guide', icon: BookOpen },
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setShowUserMenu(false)}
+                            className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors ${
+                              isActive
+                                ? 'bg-blue-500/10 text-blue-400'
+                                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4 opacity-70" />
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+
+                    {/* Sign out */}
+                    <div className="border-t border-gray-800 py-1">
+                      <button
+                        onClick={() => {
+                          signOut({ callbackUrl: '/' });
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-red-400 hover:bg-red-500/10 flex items-center gap-3 text-sm transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="flex items-center gap-2">
@@ -170,6 +208,30 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {showMobileMenu && (
+        <div className="md:hidden border-t border-gray-800 bg-black/95 backdrop-blur-md">
+          <div className="px-4 py-3 flex flex-col gap-1">
+            {filteredLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setShowMobileMenu(false)}
+                  className={`px-3 py-2.5 rounded-lg flex items-center gap-2 text-sm font-medium ${
+                    isActive ? 'bg-blue-600/20 text-blue-400' : 'text-gray-300 hover:bg-gray-800'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </motion.nav>
   );
 }

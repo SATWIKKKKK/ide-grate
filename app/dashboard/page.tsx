@@ -91,9 +91,10 @@ const LANGUAGE_COLORS: Record<string, string> = {
   ruby: '#CC342D', php: '#4F5D95', swift: '#FA7343', kotlin: '#A97BFF',
   html: '#e34c26', css: '#563d7c', scss: '#c6538c', vue: '#41b883',
   svelte: '#ff3e00', dart: '#00B4AB', lua: '#000080', shell: '#89e051',
-  markdown: '#083fa1', json: '#292929', yaml: '#cb171e', sql: '#e38c00',
-  graphql: '#e10098', dockerfile: '#384d54', typescriptreact: '#3178c6',
-  javascriptreact: '#f7df1e',
+  sql: '#e38c00', graphql: '#e10098', dockerfile: '#384d54',
+  typescriptreact: '#3178c6', javascriptreact: '#f7df1e',
+  r: '#198CE7', scala: '#c22d40', elixir: '#6e4a7e', haskell: '#5e5086',
+  perl: '#0298c3', objective_c: '#438eff', powershell: '#012456',
 }
 
 function getLangColor(lang: string): string {
@@ -115,6 +116,15 @@ function formatHours(h: number): string {
   if (mins > 0 && hrs > 0) return `${hrs} hours ${mins} minutes`
   if (hrs > 0) return `${hrs} hours`
   return `${mins} minutes`
+}
+
+function formatHoursShort(h: number): string {
+  if (h <= 0) return '0m'
+  const hrs = Math.floor(h)
+  const mins = Math.round((h - hrs) * 60)
+  if (hrs > 0 && mins > 0) return `${hrs}h ${mins}m`
+  if (hrs > 0) return `${hrs}h`
+  return `${mins}m`
 }
 
 function getContributionLevel(hours: number): number {
@@ -166,6 +176,8 @@ export default function DashboardPage() {
   const [connectionToast, setConnectionToast] = useState<{ show: boolean; message: string; type: 'success' | 'warning' | 'info' } | null>(null)
   const [timerFilter, setTimerFilter] = useState<'7d' | '1m' | '3m'>('7d')
   const [liveSeconds, setLiveSeconds] = useState(0)
+  const [activeStatPopup, setActiveStatPopup] = useState<string | null>(null)
+  const [dailyBarFilter, setDailyBarFilter] = useState<'7d' | '14d' | '1m' | '3m' | '1y'>('14d')
   const hasFetched = useRef(false)
   const prevConnected = useRef<boolean | null>(null)
   const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -388,6 +400,9 @@ export default function DashboardPage() {
     }
   }
 
+  // Today's date key for contribution lookups
+  const todayKey = new Date().toISOString().split('T')[0]
+
   // ─── Contribution grid ────────────────────────────────────────────────────
   const contributionGrid = useMemo(() => {
     const weeks: { date: string; hours: number; sessions: number; level: number }[][] = []
@@ -406,7 +421,7 @@ export default function DashboardPage() {
         const c = contributions[dateStr]
         const hours = c?.hours || 0
         const sessions = c?.sessions || 0
-        const level = typeof c?.level === 'number' ? c.level : getContributionLevel(hours)
+        const level = getContributionLevel(hours)
         week.push({ date: dateStr, hours, sessions, level })
       }
       weeks.push(week)
@@ -422,9 +437,10 @@ export default function DashboardPage() {
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().split('T')[0]
       const c = contributions[dateStr]
+      const hours = c?.hours || 0
       days.push({
         date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        hours: parseFloat((c?.hours || 0).toFixed(2)),
+        hours: parseFloat(hours.toFixed(2)),
       })
     }
     return days
@@ -440,22 +456,30 @@ export default function DashboardPage() {
     }))
   ), [stats])
 
-  // Daily hours bar chart (last 14 days)
+  // Daily hours bar chart (dynamic period)
+  const dailyBarDays = dailyBarFilter === '7d' ? 7 : dailyBarFilter === '14d' ? 14 : dailyBarFilter === '1m' ? 30 : dailyBarFilter === '3m' ? 90 : 365
   const dailyBarData = useMemo(() => {
     const days = []
-    for (let i = 13; i >= 0; i--) {
+    for (let i = dailyBarDays - 1; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().split('T')[0]
       const c = contributions[dateStr]
+      const hours = c?.hours || 0
+      // For longer ranges, use shorter date format
+      const dateLabel = dailyBarDays <= 14
+        ? d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+        : dailyBarDays <= 30
+        ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       days.push({
-        date: d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-        hours: parseFloat((c?.hours || 0).toFixed(2)),
+        date: dateLabel,
+        hours: parseFloat(hours.toFixed(2)),
         sessions: c?.sessions || 0,
       })
     }
     return days
-  }, [contributions])
+  }, [contributions, dailyBarDays])
 
   // Productivity radar data
   const radarData = useMemo(() => {
@@ -491,6 +515,9 @@ export default function DashboardPage() {
     }
     return { '7d': sumDays(7), '1m': sumDays(30), '3m': sumDays(90) }
   }, [contributions])
+
+  // Period hours use server data only (accurate active-time tracking)
+  const periodHoursDisplay = periodHours
 
   // ─── Loading state ─────────────────────────────────────────────────────────
   if (status === 'loading' || (loading && !stats)) {
@@ -536,14 +563,14 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-row items-center justify-between gap-3 sm:gap-4"
+          className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
         >
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0 md:mt-16">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 md:mt-16 w-full sm:w-auto">
             {session.user?.image && (
               <img src={session.user.image} alt="" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full ring-2 ring-blue-500/30 mt-1 shrink-0" />
             )}
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold whitespace-nowrap truncate">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">
                 Welcome back, <span className="text-emerald-400">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
               </h1>
               <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
@@ -553,7 +580,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Connection status */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 whitespace-nowrap">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
             <div
               className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
                 connectionStatus.connected
@@ -565,7 +592,7 @@ export default function DashboardPage() {
                   ? 'VS Code is actively sending heartbeats'
                   : connectionStatus.hasApiKey
                     ? 'VS Code disconnected — reconnect to continue tracking'
-                    : 'No API key yet — go to Settings'
+                    : 'No API key yet — open Setup Guide'
               }
             >
               <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
@@ -573,7 +600,7 @@ export default function DashboardPage() {
               }`} />
               {connectionStatus.connected ? 'Connected' : 'Disconnected'}
             </div>
-            {apiKey && (
+            {apiKey && connectionStatus.connected && (
               <button
                 onClick={disconnectTracking}
                 disabled={disconnecting}
@@ -582,8 +609,8 @@ export default function DashboardPage() {
                 {disconnecting ? 'Disconnecting...' : 'Disconnect'}
               </button>
             )}
-            <Link href="/settings" className="text-[11px] sm:text-xs text-gray-500 hover:text-gray-300 transition-colors">
-              Settings
+            <Link href="/onboarding" className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-all">
+              Setup Guide
             </Link>
           </div>
         </motion.div>
@@ -607,7 +634,7 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="text-sm font-medium text-gray-200">API Key</h3>
                   <p className="text-xs text-gray-500">
-                    {apiKey ? 'Click to view • Used by VS Code extension to send heartbeats' : 'No key generated — go to Settings to create one'}
+                    {apiKey ? 'Click to view • Used by VS Code extension to send heartbeats' : 'No key generated — open Setup Guide to create one'}
                   </p>
                 </div>
               </div>
@@ -741,7 +768,7 @@ export default function DashboardPage() {
                     {timerFilter === '7d' ? 'Last 7 Days' : timerFilter === '1m' ? 'Last 30 Days' : 'Last 90 Days'}
                   </p>
                   <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-blue-300' : 'text-white'}`}>
-                    {formatHours(periodHours[timerFilter])}
+                    {formatHours(periodHoursDisplay[timerFilter])}
                   </p>
                   <p className="text-[10px] text-gray-600 mt-0.5">total in VS Code</p>
                 </div>
@@ -750,7 +777,7 @@ export default function DashboardPage() {
                 }`}>
                   <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Daily Avg</p>
                   <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-blue-400' : 'text-blue-400'}`}>
-                    {formatHours(periodHours[timerFilter] / (timerFilter === '7d' ? 7 : timerFilter === '1m' ? 30 : 90))}
+                    {formatHours(periodHoursDisplay[timerFilter] / (timerFilter === '7d' ? 7 : timerFilter === '1m' ? 30 : 90))}
                   </p>
                   <p className="text-[10px] text-gray-600 mt-0.5">per day</p>
                 </div>
@@ -769,17 +796,18 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {[
-            { label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, color: 'blue', sub: `${stats?.activeDays || 0} active days` },
-            { label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, color: 'orange', sub: `Best: ${stats?.longestStreak || 0}d` },
-            { label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, color: 'blue', sub: `Score: ${stats?.productivityScore || 0}/100` },
-            { label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, color: 'violet', sub: `${stats?.totalSessions || 0} sessions` },
+            { key: 'totalHours', label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, color: 'blue', sub: `${stats?.activeDays || 0} active days` },
+            { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, color: 'orange', sub: `Best: ${stats?.longestStreak || 0}d` },
+            { key: 'today', label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, color: 'blue', sub: `Score: ${stats?.productivityScore || 0}/100` },
+            { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, color: 'violet', sub: `${stats?.totalSessions || 0} sessions` },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.05 }}
-              className={`group relative bg-gray-900/80 border border-gray-800 rounded-xl p-4 sm:p-5 hover:border-${stat.color}-500/30 transition-all overflow-hidden`}
+              onClick={() => setActiveStatPopup(stat.key)}
+              className={`group relative bg-gray-900/80 border border-gray-800 rounded-xl p-4 sm:p-5 hover:border-${stat.color}-500/30 transition-all overflow-hidden cursor-pointer active:scale-[0.97]`}
             >
               <div className={`absolute top-0 right-0 w-20 h-20 bg-${stat.color}-500/5 rounded-full -translate-y-1/2 translate-x-1/2`} />
               <div className="relative">
@@ -793,6 +821,224 @@ export default function DashboardPage() {
             </motion.div>
           ))}
         </div>
+
+        {/* Stat Popup Modals */}
+        <AnimatePresence>
+          {activeStatPopup && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setActiveStatPopup(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Total Hours Popup */}
+                {activeStatPopup === 'totalHours' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                          <Clock className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">Total Hours</h3>
+                          <p className="text-xs text-gray-500">All-time coding breakdown</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setActiveStatPopup(null)} className="p-1 hover:bg-gray-800 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-gray-500" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-bold text-blue-400">{formatHours(stats?.totalHours || 0)}</p>
+                        <p className="text-xs text-gray-500 mt-1">Total Coded</p>
+                      </div>
+                      <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                        <p className="text-2xl font-bold text-blue-300">{stats?.activeDays || 0}</p>
+                        <p className="text-xs text-gray-500 mt-1">Active Days</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Daily Average</span>
+                        <span className="text-sm font-semibold">{formatHours(stats?.activeDays ? (stats?.totalHours || 0) / stats.activeDays : 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Last 7 Days</span>
+                        <span className="text-sm font-semibold">{formatHours(periodHoursDisplay['7d'])}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Last 30 Days</span>
+                        <span className="text-sm font-semibold">{formatHours(periodHoursDisplay['1m'])}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Last 90 Days</span>
+                        <span className="text-sm font-semibold">{formatHours(periodHoursDisplay['3m'])}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Best Day</span>
+                        <span className="text-sm font-semibold">{formatHours(stats?.maxDayHours || 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Total Sessions</span>
+                        <span className="text-sm font-semibold">{stats?.totalSessions || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Streak Popup */}
+                {activeStatPopup === 'streak' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
+                          <Flame className="w-5 h-5 text-orange-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">Streak Details</h3>
+                          <p className="text-xs text-gray-500">Your coding consistency</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setActiveStatPopup(null)} className="p-1 hover:bg-gray-800 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-gray-500" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-orange-500/5 border border-orange-500/15 rounded-xl p-4 text-center">
+                        <p className="text-3xl font-bold text-orange-400">{stats?.currentStreak || 0}<span className="text-lg">d</span></p>
+                        <p className="text-xs text-gray-500 mt-1">Current Streak</p>
+                      </div>
+                      <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                        <p className="text-3xl font-bold text-yellow-400">{stats?.longestStreak || 0}<span className="text-lg">d</span></p>
+                        <p className="text-xs text-gray-500 mt-1">Longest Streak</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Active Days</span>
+                        <span className="text-sm font-semibold">{stats?.activeDays || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Coded Today</span>
+                        <span className="text-sm font-semibold">{(stats?.hoursToday || 0) > 0 ? '✅ Yes' : '❌ Not yet'}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Productivity Score</span>
+                        <span className="text-sm font-semibold">{stats?.productivityScore || 0}/100</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-4 text-center">Code at least once per day to keep your streak alive!</p>
+                  </div>
+                )}
+
+                {/* Today Popup */}
+                {activeStatPopup === 'today' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">Today&apos;s Activity</h3>
+                          <p className="text-xs text-gray-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setActiveStatPopup(null)} className="p-1 hover:bg-gray-800 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-gray-500" />
+                      </button>
+                    </div>
+                    <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl p-5 text-center mb-4">
+                      <p className="text-4xl font-bold text-blue-400">{formatHours(stats?.hoursToday || 0)}</p>
+                      <p className="text-xs text-gray-500 mt-1">Coded today</p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Server-tracked</span>
+                        <span className="text-sm font-semibold">{formatHours(stats?.hoursToday || 0)}</span>
+                      </div>
+                      {connectionStatus.connected && (
+                        <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                          <span className="text-sm text-gray-400">Current session</span>
+                          <span className="text-sm font-semibold text-emerald-400">{formatTimer(liveSeconds)}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Daily Average</span>
+                        <span className="text-sm font-semibold">{formatHours(stats?.avgDailyHours || 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Productivity Score</span>
+                        <span className="text-sm font-semibold">{stats?.productivityScore || 0}/100</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                        <span className="text-sm text-gray-400">Best Day Ever</span>
+                        <span className="text-sm font-semibold">{formatHours(stats?.maxDayHours || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Languages Popup */}
+                {activeStatPopup === 'languages' && (
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center">
+                          <Globe2 className="w-5 h-5 text-violet-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">Languages Used</h3>
+                          <p className="text-xs text-gray-500">{stats?.uniqueLanguages || 0} languages across {stats?.totalSessions || 0} sessions</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setActiveStatPopup(null)} className="p-1 hover:bg-gray-800 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-gray-500" />
+                      </button>
+                    </div>
+                    {stats?.topLanguages && stats.topLanguages.length > 0 ? (
+                      <div className="space-y-3">
+                        {stats.topLanguages.map((lang) => (
+                          <div key={lang.language} className="p-3 bg-gray-800/30 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getLangColor(lang.language) }} />
+                                <span className="text-sm font-medium capitalize">{lang.language}</span>
+                              </div>
+                              <span className="text-xs text-gray-500">{formatHours(lang.hours)} ({lang.percentage}%)</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{ width: `${lang.percentage}%`, backgroundColor: getLangColor(lang.language) }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-600">
+                        <Globe2 className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">No language data yet</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Contribution Graph */}
         <motion.div
@@ -982,25 +1228,26 @@ export default function DashboardPage() {
                       <FolderGit2 className="w-4 h-4 text-violet-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
                           {project.repoUrl ? (
                             <a
                               href={project.repoUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-blue-400 hover:text-blue-300 truncate transition-colors flex items-center gap-1"
+                              className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 min-w-0"
+                              onClick={e => e.stopPropagation()}
                             >
-                              {project.name || `Project ${project.hash.slice(0, 8)}`}
+                              <span className="truncate">{project.name || `Project ${project.hash.slice(0, 8)}`}</span>
                               <ExternalLink className="w-3 h-3 shrink-0" />
                             </a>
                           ) : (
-                            <span className="text-sm text-gray-200 truncate">
+                            <span className="text-sm text-gray-200 truncate block" title={project.name || `Project ${project.hash.slice(0, 8)}`}>
                               {project.name || `Project ${project.hash.slice(0, 8)}`}
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-gray-500 shrink-0 ml-2">{formatHours(project.hours)}</span>
+                        <span className="text-xs text-gray-500 shrink-0">{formatHours(project.hours)}</span>
                       </div>
                       <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
                         <motion.div
@@ -1096,11 +1343,11 @@ export default function DashboardPage() {
                   tick={{ fill: '#4b5563', fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={v => `${v}h`}
+                  tickFormatter={v => formatHoursShort(v)}
                 />
                 <ReTooltip
                   contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#e5e7eb', fontSize: '12px' }}
-                  formatter={(v: number) => [`${v}h`, 'Hours']}
+                  formatter={(v: number) => [formatHoursShort(v), 'Coded']}
                   labelStyle={{ color: '#9ca3af' }}
                 />
                 <Area
@@ -1173,36 +1420,59 @@ export default function DashboardPage() {
 
         {/* Daily Hours Bar Chart + Productivity Radar */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Daily Hours (14 days) */}
+          {/* Daily Hours */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className="bg-gray-900/80 border border-gray-800 rounded-xl p-5"
           >
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-cyan-400" />
-              Daily Hours (Last 14 Days)
-            </h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-cyan-400" />
+                Daily Hours
+              </h2>
+              <div className="flex items-center gap-1 bg-gray-800/80 rounded-xl p-0.5">
+                {([
+                  { key: '7d' as const, label: '7D' },
+                  { key: '14d' as const, label: '14D' },
+                  { key: '1m' as const, label: '1M' },
+                  { key: '3m' as const, label: '3M' },
+                  { key: '1y' as const, label: '1Y' },
+                ]).map(f => (
+                  <button
+                    key={f.key}
+                    onClick={() => setDailyBarFilter(f.key)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+                      dailyBarFilter === f.key
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={dailyBarData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <BarChart data={dailyBarData} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
                 <XAxis
                   dataKey="date"
                   tick={{ fill: '#4b5563', fontSize: 10 }}
                   tickLine={false}
                   axisLine={{ stroke: '#1f2937' }}
-                  interval={1}
+                  interval={dailyBarDays <= 14 ? 1 : dailyBarDays <= 30 ? 3 : dailyBarDays <= 90 ? 13 : 29}
                 />
                 <YAxis
                   tick={{ fill: '#4b5563', fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={v => `${v}h`}
+                  tickFormatter={v => formatHoursShort(v)}
                 />
                 <ReTooltip
                   contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#e5e7eb', fontSize: '12px' }}
-                  formatter={(v: number) => [`${v}h`, 'Hours']}
+                  formatter={(v: number) => [formatHoursShort(v), 'Coded']}
                   labelStyle={{ color: '#9ca3af' }}
                 />
                 <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />

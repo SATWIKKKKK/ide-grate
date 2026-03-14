@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireServerUser } from "@/lib/serverAuth"
 import prisma from "@/lib/prisma"
 
+// Non-language file types to exclude from language stats
+const NON_LANGUAGES = new Set([
+  'dotenv', 'markdown', 'json', 'jsonc', 'yaml', 'yml', 'toml', 'xml',
+  'plaintext', 'text', 'log', 'csv', 'tsv', 'ini', 'cfg', 'conf',
+  'properties', 'env', 'editorconfig', 'gitignore', 'gitattributes',
+  'dockerignore', 'npmignore', 'eslintignore', 'prettierignore',
+  'ignore', 'lock', 'svg', 'ico', 'png', 'jpg', 'jpeg', 'gif',
+  'bmp', 'webp', 'woff', 'woff2', 'ttf', 'eot', 'otf',
+  'binary', 'image', 'font', 'pdf', 'zip', 'tar', 'gz',
+])
+
 // GET /api/stats/overview - Comprehensive stats for dashboard
 export async function GET(request: NextRequest) {
   try {
@@ -226,7 +237,7 @@ function parseLanguageTotals(raw: unknown): Record<string, number> {
     raw.forEach((entry) => {
       const item = entry as { language?: unknown; hours?: unknown; seconds?: unknown }
       const language = typeof item.language === 'string' ? item.language.toLowerCase() : ''
-      if (!language || language === 'unknown') return
+      if (!language || language === 'unknown' || NON_LANGUAGES.has(language)) return
 
       if (typeof item.seconds === 'number' && Number.isFinite(item.seconds) && item.seconds > 0) {
         fromArray[language] = (fromArray[language] || 0) + item.seconds
@@ -243,7 +254,7 @@ function parseLanguageTotals(raw: unknown): Record<string, number> {
   if (typeof raw === 'object') {
     const fromObject: Record<string, number> = {}
     Object.entries(raw as Record<string, unknown>).forEach(([language, value]) => {
-      if (!language || language.toLowerCase() === 'unknown') return
+      if (!language || language.toLowerCase() === 'unknown' || NON_LANGUAGES.has(language.toLowerCase())) return
       if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return
       fromObject[language.toLowerCase()] = value
     })
@@ -260,6 +271,7 @@ function aggregateLanguagesFromActivities(
   activities.forEach((a) => {
     if (a.language && a.language !== 'unknown') {
       const key = a.language.toLowerCase()
+      if (NON_LANGUAGES.has(key)) return
       languageTotals[key] = (languageTotals[key] || 0) + a.duration
     }
   })

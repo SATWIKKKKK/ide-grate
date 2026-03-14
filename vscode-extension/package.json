@@ -64,7 +64,7 @@
         },
         "vsIntegrate.apiEndpoint": {
           "type": "string",
-          "default": "http://localhost:3001/api/heartbeat",
+          "default": "https://vs-integrate.vercel.app/api/heartbeat",
           "description": "API endpoint for heartbeat data. You can enter either your site URL or the full /api/heartbeat URL."
         },
         "vsIntegrate.heartbeatInterval": {
