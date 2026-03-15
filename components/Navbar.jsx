@@ -44,7 +44,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
         {/* Logo (left) */}
         <div className="flex items-center gap-2">
-          <Link href="/">
+          <Link href={session ? "/dashboard" : "/"}>
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="flex items-center cursor-pointer"

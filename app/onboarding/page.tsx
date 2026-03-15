@@ -123,7 +123,7 @@ export default function OnboardingPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/80 border-b border-gray-800 shrink-0">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center">
+          <Link href="/dashboard" className="flex items-center">
             <Logo size="sm" />
           </Link>
           <button

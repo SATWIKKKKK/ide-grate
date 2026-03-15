@@ -184,6 +184,7 @@ export default function DashboardPage() {
   const [activeStatPopup, setActiveStatPopup] = useState<string | null>(null)
   const [dailyBarFilter, setDailyBarFilter] = useState<'7d' | '14d' | '1m' | '3m' | '1y'>('14d')
   const [showTimerPopup, setShowTimerPopup] = useState(false)
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
   const hasFetched = useRef(false)
   const prevConnected = useRef<boolean | null>(null)
   const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -325,7 +326,19 @@ export default function DashboardPage() {
     }
   }, [session, fetchAllData])
 
+  // Redirect first-time users to onboarding (no API key, no sessions)
+  useEffect(() => {
+    if (loading || !connectionReady) return
+    const skippedOnboarding = typeof window !== 'undefined' && localStorage.getItem('onboarding_skipped')
+    if (!apiKey && !connectionStatus.hasApiKey && (stats?.totalSessions || 0) === 0 && !skippedOnboarding) {
+      router.push('/onboarding')
+    }
+  }, [loading, connectionReady, apiKey, connectionStatus.hasApiKey, stats, router])
+
+  const confirmDisconnect = () => setShowDisconnectConfirm(true)
+
   const disconnectTracking = async () => {
+    setShowDisconnectConfirm(false)
     setDisconnecting(true)
     try {
       const res = await fetch('/api/apikey', { method: 'DELETE' })
@@ -618,7 +631,7 @@ export default function DashboardPage() {
             </div>
             {apiKey && connectionStatus.connected && (
               <button
-                onClick={disconnectTracking}
+                onClick={confirmDisconnect}
                 disabled={disconnecting}
                 className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 active:scale-95 transition-all disabled:opacity-60"
               >
@@ -940,6 +953,52 @@ export default function DashboardPage() {
                       <span className="text-xs text-emerald-400">Currently tracking — {formatTimer(liveSeconds)} this viewing session</span>
                     </div>
                   )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Disconnect Confirmation Popup */}
+        <AnimatePresence>
+          {showDisconnectConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setShowDisconnectConfirm(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-sm"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="p-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-4">
+                    <WifiOff className="w-6 h-6 text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Disconnect Tracking?</h3>
+                  <p className="text-sm text-gray-400 mb-1">This will end your current session and revoke your API key.</p>
+                  <p className="text-xs text-gray-500 mb-5">You&apos;ll need to generate a new key and reconfigure VS Code to resume tracking.</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowDisconnectConfirm(false)}
+                      className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm text-gray-300 font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={disconnectTracking}
+                      className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-sm text-white font-medium transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
