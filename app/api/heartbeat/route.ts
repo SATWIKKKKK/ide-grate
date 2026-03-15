@@ -172,16 +172,40 @@ export async function POST(request: NextRequest) {
           },
         })
       } else {
-        // Continue existing session — always extend regardless of time gap
-        await prisma.activity.update({
-          where: { id: lastActivity.id },
-          data: {
-            endTime: now,
-            duration: lastActivity.duration + HEARTBEAT_INTERVAL,
-            language: language || lastActivity.language,
-            idleTime: isIdle ? lastActivity.idleTime + HEARTBEAT_INTERVAL : lastActivity.idleTime,
-          },
-        })
+        // Check if the project changed — if so, start a new activity record
+        const currentProjectHash = body.projectHash || null
+        const lastProjectHash = lastActivity.projectHash || null
+        const projectChanged = currentProjectHash !== lastProjectHash
+
+        if (projectChanged) {
+          // Project switched — create a new activity for the new project
+          await prisma.activity.create({
+            data: {
+              userId: user.id,
+              startTime: now,
+              endTime: now,
+              duration: HEARTBEAT_INTERVAL,
+              language: language || 'unknown',
+              fileType: file ? file.split('.').pop() : null,
+              extensions: [],
+              idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
+              projectHash: currentProjectHash,
+              projectName: body.project || null,
+              platform: body.platform || null,
+            },
+          })
+        } else {
+          // Same project — extend existing session
+          await prisma.activity.update({
+            where: { id: lastActivity.id },
+            data: {
+              endTime: now,
+              duration: lastActivity.duration + HEARTBEAT_INTERVAL,
+              language: language || lastActivity.language,
+              idleTime: isIdle ? lastActivity.idleTime + HEARTBEAT_INTERVAL : lastActivity.idleTime,
+            },
+          })
+        }
         activityDuration = HEARTBEAT_INTERVAL
 
         // If this is the first heartbeat of a new day with a continuing session,
