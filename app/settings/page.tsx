@@ -227,16 +227,10 @@ export default function SettingsPage() {
         const data = await res.json()
         key = data.apiKey
         setApiKey(key)
-        setShowKey(true)
       }
-
-      if (!key) throw new Error('API key was not generated')
-
-      const endpoint = `${window.location.origin}/api/heartbeat`
-      const deepLink = `vscode://vsintegrate.vs-integrate-tracker/auth?key=${encodeURIComponent(key)}&endpoint=${encodeURIComponent(endpoint)}`
-      window.location.href = deepLink
+      setShowKey(true)
     } catch (error) {
-      console.error('Failed to connect VS Code:', error)
+      console.error('Failed to generate API key:', error)
     } finally {
       setApiKeyLoading(false)
     }
@@ -510,20 +504,25 @@ export default function SettingsPage() {
 
               {apiKey && !connection?.connected && (
                 <div className="space-y-3">
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                    <p className="text-xs text-amber-400 flex items-center gap-1.5 mb-1">
-                      <Info className="w-3 h-3 shrink-0" /> Extension must be installed first
-                    </p>
-                    <p className="text-[11px] text-gray-500">Install the extension via the terminal command below, then click &quot;Connect VS Code&quot; to auto-configure it.</p>
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                    <p className="text-xs text-blue-400 font-medium mb-1">How to connect:</p>
+                    <ol className="text-[11px] text-gray-400 space-y-1 list-decimal list-inside">
+                      <li>Install the extension using the terminal command below</li>
+                      <li>Open VS Code → <code className="text-blue-300 bg-gray-800 px-1 rounded">Ctrl+Shift+P</code> → <code className="text-blue-300 bg-gray-800 px-1 rounded">VS Integrate: Set API Key</code></li>
+                      <li>Paste your API key (shown below) when prompted</li>
+                      <li>Start coding — tracking begins automatically!</li>
+                    </ol>
                   </div>
-                  <button
-                    onClick={connectVsCode}
-                    disabled={apiKeyLoading}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm transition-all shadow-sm hover:shadow-emerald-500/20 hover:shadow-md flex items-center justify-center gap-2"
-                  >
-                    {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Code2 className="w-4 h-4" />}
-                    Connect VS Code (after installing)
-                  </button>
+                  {!apiKey && (
+                    <button
+                      onClick={connectVsCode}
+                      disabled={apiKeyLoading}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm transition-all shadow-sm hover:shadow-emerald-500/20 hover:shadow-md flex items-center justify-center gap-2"
+                    >
+                      {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
+                      Generate API Key
+                    </button>
+                  )}
                 </div>
               )}
 

@@ -72,12 +72,9 @@ export default function OnboardingPage() {
         key = data.apiKey
         setApiKey(key)
       }
-      const endpoint = `${window.location.origin}/api/heartbeat`
-      const deepLink = `vscode://vsintegrate.vs-integrate-tracker/auth?key=${encodeURIComponent(key!)}&endpoint=${encodeURIComponent(endpoint)}`
-      window.location.href = deepLink
-      setTimeout(() => { setStep(3); setConnecting(false) }, 1500)
+      setTimeout(() => { setStep(3); setConnecting(false) }, 500)
     } catch {
-      setError('Failed to connect. Please try again.')
+      setError('Failed to generate key. Please try again.')
       setConnecting(false)
     }
   }
@@ -309,47 +306,58 @@ export default function OnboardingPage() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={handleConnect}
-                      disabled={connecting}
-                      className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 rounded-xl text-white font-semibold text-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                      {connecting ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Opening VS Code...
-                        </>
-                      ) : (
-                        <>
-                          <Code2 className="w-5 h-5" />
-                          Connect VS Code
-                        </>
-                      )}
-                    </button>
+                    {!apiKey ? (
+                      <button
+                        onClick={handleConnect}
+                        disabled={connecting}
+                        className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 rounded-xl text-white font-semibold text-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        {connecting ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Generating Key...
+                          </>
+                        ) : (
+                          <>
+                            <Code2 className="w-5 h-5" />
+                            Generate API Key
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-gray-800 rounded-xl border border-gray-700">
+                          <p className="text-xs text-gray-500 mb-2">Your API Key:</p>
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 text-sm text-blue-300 font-mono break-all select-all">{apiKey}</code>
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(apiKey!); }}
+                              className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors shrink-0"
+                            >
+                              <Copy className="w-4 h-4 text-gray-400" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                          <p className="text-sm text-blue-400 font-medium mb-2">Set the key in VS Code:</p>
+                          <ol className="text-xs text-gray-400 space-y-1.5 list-decimal list-inside">
+                            <li>Open VS Code</li>
+                            <li>Press <code className="px-1 bg-gray-800 rounded text-white">Ctrl+Shift+P</code> (or <code className="px-1 bg-gray-800 rounded text-white">Cmd+Shift+P</code> on Mac)</li>
+                            <li>Type <code className="px-1 bg-gray-800 rounded text-white">VS Integrate: Set API Key</code></li>
+                            <li>Paste your API key when prompted</li>
+                          </ol>
+                        </div>
+                        <button
+                          onClick={() => setStep(3)}
+                          className="w-full py-3.5 bg-green-600 hover:bg-green-500 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
+                        >
+                          <ArrowRight className="w-5 h-5" />
+                          I&apos;ve set the API key — Verify Connection
+                        </button>
+                      </div>
+                    )}
 
                     {error && <p className="text-sm text-red-400 mt-3 text-center">{error}</p>}
-
-                    <p className="text-xs text-gray-500 mt-4 text-center">
-                      This generates your account API key and opens VS Code to auto-configure tracking.
-                      <br />Make sure VS Code is open and the extension is installed.
-                    </p>
-
-                    <details className="mt-4 text-xs text-gray-500">
-                      <summary className="cursor-pointer hover:text-gray-300 transition-colors">
-                        Manual setup (if auto-connect doesn&apos;t work)
-                      </summary>
-                      <div className="mt-2 p-3 bg-gray-800 rounded-lg space-y-2 text-gray-400">
-                        <p>1. Open VS Code Command Palette: <code className="px-1 bg-gray-700 rounded text-white">Ctrl+Shift+P</code></p>
-                        <p>2. Type: <code className="px-1 bg-gray-700 rounded text-white">VS Integrate: Set API Key</code></p>
-                        <p>3. Paste your API key when prompted</p>
-                        {apiKey && (
-                          <div className="mt-2 p-2 bg-gray-900 rounded border border-gray-700">
-                            <p className="text-xs text-gray-500 mb-1">Your API Key:</p>
-                            <code className="text-xs text-gray-300 break-all">{apiKey}</code>
-                          </div>
-                        )}
-                      </div>
-                    </details>
                   </div>
                 </motion.div>
               )}
