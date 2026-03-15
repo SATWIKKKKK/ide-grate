@@ -29,7 +29,7 @@ function CopyButton({ text }) {
 
 function InstallTabs() {
   const [tab, setTab] = useState('oneliner')
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://vs-integrate.vercel.app'
+  const siteUrl = 'https://vs-integrate.vercel.app'
 
   const tabs = [
     { key: 'oneliner', label: 'One-Liner (macOS/Linux)', icon: Terminal },

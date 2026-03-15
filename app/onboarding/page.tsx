@@ -26,6 +26,7 @@ export default function OnboardingPage() {
   const [connecting, setConnecting] = useState(false)
   const [connected, setConnected] = useState(false)
   const [receivingData, setReceivingData] = useState(false)
+  const [verifyTimedOut, setVerifyTimedOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -43,17 +44,24 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (step < 3) return
+    let attempts = 0
     const poll = async () => {
       try {
         const res = await fetch('/api/connection-status')
         if (res.ok) {
           const data = await res.json()
           if (data.connected) {
+            setVerifyTimedOut(false)
             setConnected(true)
             if (data.hasActivity && data.totalSessions > 0) setReceivingData(true)
+            return
           }
         }
       } catch { /* ignore */ }
+      attempts++
+      if (attempts >= 20) {
+        setVerifyTimedOut(true)
+      }
     }
     poll()
     const interval = setInterval(poll, 3000)
@@ -89,7 +97,12 @@ export default function OnboardingPage() {
   }
 
   const goToStep = (target: number) => {
+    if (target !== 3) setVerifyTimedOut(false)
     setStep(target)
+  }
+
+  const openVSCode = () => {
+    window.location.href = 'vscode://file'
   }
 
   if (status === 'loading') {
@@ -219,10 +232,10 @@ export default function OnboardingPage() {
                         <div className="relative">
                           <p className="text-[11px] text-gray-500 mb-1">macOS / Linux:</p>
                           <pre className="bg-gray-800 border border-gray-700 rounded-lg p-3 pr-10 overflow-x-auto text-xs">
-                            <code className="text-emerald-300">{`curl -fsSL ${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix`}</code>
+                            <code className="text-emerald-300">curl -fsSL https://vs-integrate.vercel.app/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix</code>
                           </pre>
                           <button
-                            onClick={() => navigator.clipboard.writeText(`curl -fsSL ${window.location.origin}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix`)}
+                            onClick={() => navigator.clipboard.writeText('curl -fsSL https://vs-integrate.vercel.app/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix')}
                             className="absolute top-6 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
                           >
                             <Copy className="w-3 h-3 text-gray-400" />
@@ -231,10 +244,10 @@ export default function OnboardingPage() {
                         <div className="relative">
                           <p className="text-[11px] text-gray-500 mb-1">Windows PowerShell:</p>
                           <pre className="bg-gray-800 border border-gray-700 rounded-lg p-3 pr-10 overflow-x-auto text-xs">
-                            <code className="text-emerald-300">{`Invoke-WebRequest -Uri "${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix`}</code>
+                            <code className="text-emerald-300">Invoke-WebRequest -Uri "https://vs-integrate.vercel.app/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix</code>
                           </pre>
                           <button
-                            onClick={() => navigator.clipboard.writeText(`Invoke-WebRequest -Uri "${window.location.origin}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix`)}
+                            onClick={() => navigator.clipboard.writeText('Invoke-WebRequest -Uri "https://vs-integrate.vercel.app/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix')}
                             className="absolute top-6 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
                           >
                             <Copy className="w-3 h-3 text-gray-400" />
@@ -346,6 +359,12 @@ export default function OnboardingPage() {
                             <li>Type <code className="px-1 bg-gray-800 rounded text-white">VS Integrate: Set API Key</code></li>
                             <li>Paste your API key when prompted</li>
                           </ol>
+                          <button
+                            onClick={openVSCode}
+                            className="mt-3 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-300 transition-colors"
+                          >
+                            Open VS Code
+                          </button>
                         </div>
                         <button
                           onClick={() => setStep(3)}
@@ -408,19 +427,42 @@ export default function OnboardingPage() {
                     ) : (
                       <div className="text-center py-4">
                         <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
-                          <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                          <Loader2 className={`w-8 h-8 text-blue-400 ${verifyTimedOut ? '' : 'animate-spin'}`} />
                         </div>
-                        <h2 className="text-xl font-semibold mb-2">Waiting for Connection...</h2>
-                        <p className="text-sm text-gray-400 mb-4">
+                        <h2 className="text-xl font-semibold mb-2">
+                          {verifyTimedOut ? 'Connection not detected yet' : 'Waiting for Connection...'}
+                        </h2>
+                        <p className="text-sm text-gray-400 mb-3">
                           Keep VS Code open with the extension enabled.
                         </p>
-                        <button
-                          onClick={handleConnect}
-                          className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
-                        >
-                          <RefreshCw className="w-4 h-4 inline mr-2" />
-                          Try Again
-                        </button>
+                        <p className="text-xs text-gray-500 mb-4">
+                          If extension is missing, run: <code className="text-blue-300 bg-gray-800 px-1 rounded">Invoke-WebRequest -Uri "https://vs-integrate.vercel.app/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix</code>
+                        </p>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => goToStep(2)}
+                            className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
+                          >
+                            Back to Step 2
+                          </button>
+                          <button
+                            onClick={openVSCode}
+                            className="px-4 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 rounded-lg text-sm text-blue-300 transition-colors"
+                          >
+                            Open VS Code
+                          </button>
+                          <button
+                            onClick={() => {
+                              setVerifyTimedOut(false)
+                              setStep(2)
+                              setTimeout(() => setStep(3), 0)
+                            }}
+                            className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
+                          >
+                            <RefreshCw className="w-4 h-4 inline mr-2" />
+                            Retry Check
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

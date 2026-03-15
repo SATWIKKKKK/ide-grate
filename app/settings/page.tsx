@@ -585,11 +585,11 @@ export default function SettingsPage() {
                 <div className="mt-2 ml-6 space-y-1.5">
                   <p className="text-[10px] text-gray-500 font-medium">macOS / Linux:</p>
                   <pre className="bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-x-auto text-[11px]">
-                    <code className="text-emerald-300/80">{`curl -fsSL ${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix`}</code>
+                    <code className="text-emerald-300/80">curl -fsSL https://vs-integrate.vercel.app/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix</code>
                   </pre>
                   <p className="text-[10px] text-gray-500 font-medium mt-2">Windows PowerShell:</p>
                   <pre className="bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-x-auto text-[11px]">
-                    <code className="text-emerald-300/80">{`Invoke-WebRequest -Uri "${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix`}</code>
+                    <code className="text-emerald-300/80">Invoke-WebRequest -Uri "https://vs-integrate.vercel.app/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix</code>
                   </pre>
                 </div>
               </div>
