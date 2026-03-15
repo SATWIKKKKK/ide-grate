@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     if (!user?.apiKey) {
       return NextResponse.json({
         connected: false,
+        active: false,
         hasApiKey: false,
         hasActivity: false,
         lastActivityAt: null,
@@ -55,8 +56,11 @@ export async function GET(request: NextRequest) {
     // so we also check lastActiveDate to detect fresh connections
     const recentConnectionTest = stats?.lastActiveDate && stats.lastActiveDate >= fiveMinutesAgo
 
+    const isActive = !!recentActivity || !!recentConnectionTest
+
     return NextResponse.json({
-      connected: !!recentActivity || !!recentConnectionTest,
+      connected: true, // has API key = extension is configured & tracking
+      active: isActive, // recent heartbeat = actively coding right now
       hasApiKey: true,
       hasActivity: totalSessions > 0 || !!recentConnectionTest,
       lastActivityAt: latestActivity?.endTime || stats?.lastActiveDate || null,

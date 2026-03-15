@@ -161,8 +161,8 @@ export default function DashboardPage() {
   const [totalUnlockedAchievements, setTotalUnlockedAchievements] = useState(0)
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<{
-    connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null
-  }>({ connected: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
+    connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null
+  }>({ connected: false, active: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
   const [connectionReady, setConnectionReady] = useState(false)
 
   // UI state
@@ -185,6 +185,7 @@ export default function DashboardPage() {
   const [dailyBarFilter, setDailyBarFilter] = useState<'7d' | '14d' | '1m' | '3m' | '1y'>('14d')
   const [showTimerPopup, setShowTimerPopup] = useState(false)
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
+  const [showReconnectPopup, setShowReconnectPopup] = useState(false)
   const hasFetched = useRef(false)
   const prevConnected = useRef<boolean | null>(null)
   const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -201,7 +202,7 @@ export default function DashboardPage() {
       cachedFetch<{ goals: GoalData[] }>('goals', '/api/goals'),
       cachedFetch<{ achievements: AchievementData[]; totalUnlocked: number }>('achievements', '/api/achievements'),
       cachedFetch<{ apiKey: string | null }>('apikey', '/api/apikey'),
-      cachedFetch<{ connected: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null }>('connection', '/api/connection-status'),
+      cachedFetch<{ connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null }>('connection', '/api/connection-status'),
     ])
 
     if (statsData) setStats(statsData)
@@ -215,6 +216,10 @@ export default function DashboardPage() {
     if (connData) {
       setConnectionStatus(connData)
       setConnectionReady(true)
+      // Show reconnect popup if disconnected and had previous activity
+      if (!connData.connected && connData.hasActivity) {
+        setShowReconnectPopup(true)
+      }
     }
 
     setLoading(false)
@@ -231,20 +236,25 @@ export default function DashboardPage() {
           const data = await res.json()
           setConnectionStatus(data)
           setConnectionReady(true)
-          // Show toast on status change
+          // Show toast only when connection truly changes (API key added/removed)
           if (prevConnected.current !== null && prevConnected.current !== data.connected) {
-            setConnectionToast({
-              show: true,
-              message: data.connected
-                ? 'VS Code is now connected and tracking!'
-                : data.hasApiKey
-                  ? '🔴 VS Code disconnected — reconnect to continue tracking'
-                  : '🔴 API key disconnected — reconnect VS Code tracking',
-              type: data.connected ? 'success' : 'warning',
-            })
+            if (data.connected) {
+              setConnectionToast({
+                show: true,
+                message: 'VS Code is now connected and tracking!',
+                type: 'success',
+              })
+              setShowReconnectPopup(false)
+            } else {
+              setShowReconnectPopup(true)
+            }
             setTimeout(() => setConnectionToast(null), 5000)
           }
-          // Refresh stats + contributions immediately on reconnect, or every 4th poll when connected
+          // Show reconnect popup if disconnected on first load
+          if (prevConnected.current === null && !data.connected && data.hasActivity) {
+            setShowReconnectPopup(true)
+          }
+          // Refresh stats periodically when connected
           const justReconnected = prevConnected.current === false && data.connected
           prevConnected.current = data.connected
           pollCount++
@@ -344,19 +354,15 @@ export default function DashboardPage() {
       const res = await fetch('/api/apikey', { method: 'DELETE' })
       if (res.ok) {
         setApiKey(null)
-        setConnectionStatus(prev => ({ ...prev, connected: false, hasApiKey: false }))
+        setConnectionStatus(prev => ({ ...prev, connected: false, active: false, hasApiKey: false }))
         setConnectionReady(true)
         sessionStartRef.current = null
         setLiveSeconds(0)
         if (typeof window !== 'undefined') {
           localStorage.removeItem(liveTimerStorageKey)
         }
-        setConnectionToast({
-          show: true,
-          message: ' Tracking disconnected. Reconnect API key in VS Code to resume tracking.',
-          type: 'warning',
-        })
-        setTimeout(() => setConnectionToast(null), 5000)
+        // Show reconnect popup after disconnect
+        setShowReconnectPopup(true)
       }
     } catch {
       setConnectionToast({
@@ -613,21 +619,25 @@ export default function DashboardPage() {
             <div
               className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
                 connectionStatus.connected
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                  ? connectionStatus.active
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
                   : 'bg-red-500/10 text-red-400 border border-red-500/30'
               }`}
               title={
                 connectionStatus.connected
-                  ? 'VS Code is actively sending heartbeats'
-                  : connectionStatus.hasApiKey
-                    ? 'VS Code disconnected — reconnect to continue tracking'
-                    : 'No API key yet — generate one to start tracking'
+                  ? connectionStatus.active
+                    ? 'VS Code is actively sending heartbeats'
+                    : 'VS Code extension configured — tracking resumes when you code'
+                  : 'No API key yet — generate one to start tracking'
               }
             >
               <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                connectionStatus.connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+                connectionStatus.connected
+                  ? connectionStatus.active ? 'bg-emerald-400 animate-pulse' : 'bg-blue-400'
+                  : 'bg-red-400'
               }`} />
-              {connectionStatus.connected ? 'Connected' : 'Disconnected'}
+              {connectionStatus.connected ? (connectionStatus.active ? 'Connected' : 'Connected') : 'Disconnected'}
             </div>
             {apiKey && connectionStatus.connected && (
               <button
@@ -715,14 +725,20 @@ export default function DashboardPage() {
             {/* Connected banner */}
             {connectionStatus.connected && (
               <div className="bg-blue-500/10 border-b border-blue-500/20 px-5 py-2 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-blue-400 animate-pulse' : 'bg-blue-400/60'}`} />
                 <span className="text-xs text-blue-400 font-medium">
-                  Connected since {sessionStartRef.current ? sessionStartRef.current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'now'}
-                  {sessionStartRef.current && (
-                    <span className="text-blue-500/60 ml-1">
-                      — {sessionStartRef.current.toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                    </span>
-                  )}
+                  {connectionStatus.active
+                    ? <>Connected since {sessionStartRef.current ? sessionStartRef.current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'now'}
+                        {sessionStartRef.current && (
+                          <span className="text-blue-500/60 ml-1">
+                            — {sessionStartRef.current.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </>
+                    : <>Connected • {connectionStatus.lastActivityAt
+                        ? `Last active ${new Date(connectionStatus.lastActivityAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+                        : 'Waiting for VS Code activity'}</>
+                  }
                 </span>
               </div>
             )}
@@ -743,7 +759,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Current Session</span>
-                      {connectionStatus.connected && (
+                      {connectionStatus.active && (
                         <span className="flex items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/25 font-semibold">
                           <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                           LIVE
@@ -757,10 +773,10 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs mt-1">
                       {connectionStatus.connected
-                        ? <span className="text-emerald-400/70">Session time • Today&apos;s total: {formatHours(stats?.hoursToday || 0)}</span>
-                        : connectionStatus.hasApiKey
-                          ? <span className="text-red-400/80">Disconnected. Reconnect VS Code to resume tracking.</span>
-                          : <span className="text-red-400/80">Generate API key and reconnect to start VS Code tracking.</span>}
+                        ? connectionStatus.active
+                          ? <span className="text-emerald-400/70">Session time • Today&apos;s total: {formatHours(stats?.hoursToday || 0)}</span>
+                          : <span className="text-blue-400/70">Today&apos;s total: {formatHours(stats?.hoursToday || 0)} • Tracking resumes when you code</span>
+                        : <span className="text-red-400/80">Generate API key and connect VS Code to start tracking.</span>}
                     </p>
                   </div>
                 </div>
@@ -948,9 +964,13 @@ export default function DashboardPage() {
                   )}
 
                   {connectionStatus.connected && (
-                    <div className="mt-4 p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-lg flex items-center gap-2">
-                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                      <span className="text-xs text-emerald-400">Currently tracking — {formatTimer(liveSeconds)} this viewing session</span>
+                    <div className={`mt-4 p-3 ${connectionStatus.active ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-blue-500/5 border-blue-500/15'} border rounded-lg flex items-center gap-2`}>
+                      <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-emerald-400 animate-pulse' : 'bg-blue-400'}`} />
+                      <span className={`text-xs ${connectionStatus.active ? 'text-emerald-400' : 'text-blue-400'}`}>
+                        {connectionStatus.active
+                          ? `Currently tracking — ${formatTimer(liveSeconds)} this viewing session`
+                          : `Session timer: ${formatTimer(liveSeconds)} — tracking resumes when you code`}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -998,6 +1018,53 @@ export default function DashboardPage() {
                     >
                       Disconnect
                     </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Reconnect Popup — shown when user is disconnected (no API key) */}
+        <AnimatePresence>
+          {showReconnectPopup && !connectionStatus.connected && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setShowReconnectPopup(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-sm"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="p-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/15 flex items-center justify-center mx-auto mb-4">
+                    <WifiOff className="w-6 h-6 text-orange-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Tracking Disconnected</h3>
+                  <p className="text-sm text-gray-400 mb-1">Your API key has been revoked or is missing.</p>
+                  <p className="text-xs text-gray-500 mb-5">Follow the setup guide to generate a new key and reconnect VS Code to resume tracking your coding activity.</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowReconnectPopup(false)}
+                      className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm text-gray-300 font-medium transition-colors"
+                    >
+                      Dismiss
+                    </button>
+                    <Link
+                      href="/onboarding"
+                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm text-white font-medium transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      Setup Guide
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
                   </div>
                 </div>
               </motion.div>
