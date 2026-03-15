@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Copy, Download, Key, Settings, Terminal, Monitor } from 'lucide-react'
+import { Check, Copy, Download, Key, Settings } from 'lucide-react'
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -28,47 +28,31 @@ function CopyButton({ text }) {
 }
 
 function InstallTabs() {
-  const [tab, setTab] = useState('oneliner')
   const siteUrl = 'https://vs-integrate.vercel.app'
 
-  const tabs = [
-    { key: 'oneliner', label: 'One-Liner (macOS/Linux)', icon: Terminal },
-    { key: 'powershell', label: 'PowerShell (Windows)', icon: Monitor },
-    { key: 'manual', label: 'Manual', icon: Download },
-  ]
-
-  const commands = {
-    oneliner: `curl -fsSL ${siteUrl}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix`,
-    powershell: `Invoke-WebRequest -Uri "${siteUrl}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix`,
-    manual: `# 1. Download from: ${siteUrl}/api/download/vsix\n# 2. Open VS Code → Extensions (Ctrl+Shift+X)\n# 3. Click ⋯ menu → "Install from VSIX..."\n# 4. Select the downloaded file`,
-  }
-
   return (
-    <div>
-      <div className="flex gap-1 mb-3 flex-wrap">
-        {tabs.map(t => {
-          const Icon = t.icon
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                tab === t.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              <Icon className="w-3 h-3" />
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
-      <div className="relative">
-        <pre className="bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-x-auto text-sm">
-          <code className="text-gray-300">{commands[tab]}</code>
-        </pre>
-        <CopyButton text={commands[tab]} />
+    <div className="space-y-3">
+      <a
+        href={`${siteUrl}/api/download/vsix`}
+        download="vs-integrate-extension.vsix"
+        className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
+      >
+        <Download className="w-4 h-4" />
+        Download .vsix File
+      </a>
+      <div className="space-y-1.5">
+        {[
+          'Open VS Code → Extensions panel (Ctrl+Shift+X)',
+          'Click the ⋯ menu (three dots) → "Install from VSIX..."',
+          'Select the downloaded .vsix file',
+        ].map((text, i) => (
+          <div key={i} className="flex items-start gap-2.5 p-2 bg-gray-800/50 rounded-lg">
+            <span className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+              {i + 1}
+            </span>
+            <span className="text-xs text-gray-400">{text}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -79,16 +63,17 @@ export default function GetStarted() {
     {
       icon: Download,
       title: 'Install the VS Code Extension',
-      description: 'Run one command in your terminal to download and install the extension:',
+      description: 'Download the .vsix file and install it in VS Code:',
       custom: 'install-tabs',
     },
     {
       icon: Key,
       title: 'Generate & Set API Key',
-      description: 'Sign in to VS Integrate, go to Settings → VS Code Connection, and generate an API key. Then use "Connect VS Code Automatically" or set it manually:',
+      description: 'Sign in to VS Integrate, go to Settings → VS Code Connection, and generate an API key. Then in VS Code:',
       commands: [
-        '# In VS Code: Ctrl+Shift+P → "VS Integrate: Set API Key"',
+        '# Press Ctrl+Shift+P → "VS Integrate: Set API Key"',
         '# Paste your API key when prompted',
+        '# Set endpoint: https://vs-integrate.vercel.app/api/heartbeat',
       ],
     },
     {
@@ -105,7 +90,7 @@ export default function GetStarted() {
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">Get Started</h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Install the VS Code extension with a single command and start tracking your coding activity.
+            Install the VS Code extension and start tracking your coding activity in minutes.
           </p>
         </div>
 

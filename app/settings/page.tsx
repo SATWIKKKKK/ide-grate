@@ -507,10 +507,10 @@ export default function SettingsPage() {
                   <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                     <p className="text-xs text-blue-400 font-medium mb-1">How to connect:</p>
                     <ol className="text-[11px] text-gray-400 space-y-1 list-decimal list-inside">
-                      <li>Install the extension using the terminal command below</li>
-                      <li>Open VS Code → <code className="text-blue-300 bg-gray-800 px-1 rounded">Ctrl+Shift+P</code> → <code className="text-blue-300 bg-gray-800 px-1 rounded">VS Integrate: Set API Key</code></li>
-                      <li>Paste your API key (shown below) when prompted</li>
-                      <li>Start coding — tracking begins automatically!</li>
+                      <li>Download the .vsix file (button below) and install it in VS Code</li>
+                      <li>In VS Code: Extensions (Ctrl+Shift+X) → ⋯ menu → &quot;Install from VSIX...&quot;</li>
+                      <li>Press <code className="text-blue-300 bg-gray-800 px-1 rounded">Ctrl+Shift+P</code> → <code className="text-blue-300 bg-gray-800 px-1 rounded">VS Integrate: Set API Key</code></li>
+                      <li>Paste your API key and set endpoint to: <code className="text-blue-300 bg-gray-800 px-1 rounded">https://vs-integrate.vercel.app/api/heartbeat</code></li>
                     </ol>
                   </div>
                   {!apiKey && (
@@ -571,26 +571,26 @@ export default function SettingsPage() {
                   <Terminal className="w-3.5 h-3.5 text-blue-400" /> How to connect VS Code
                 </p>
                 {[
-                  'Install the extension by running the command below in your terminal',
-                  'Use “Connect VS Code Automatically” above so the app sends both your API key and the correct site endpoint',
-                  'If you configure it manually, set both the API key and the heartbeat endpoint for this site',
-                  'Status bar shows tracking state, and the site flips to Connected after heartbeats arrive',
-                  'Your contribution graph updates as tracked heartbeats accumulate into daily contributions',
+                  'Download the .vsix file using the button below',
+                  'In VS Code: Extensions (Ctrl+Shift+X) \u2192 \u22ef menu \u2192 "Install from VSIX..." \u2192 select the file',
+                  'Press Ctrl+Shift+P \u2192 type "VS Integrate: Set API Key" \u2192 paste your key',
+                  'When prompted for endpoint, enter: https://vs-integrate.vercel.app/api/heartbeat',
+                  'Status bar shows tracking state. Your dashboard updates as heartbeats arrive.',
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-2.5">
                     <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
                     <p className="text-xs text-gray-400 leading-relaxed">{step}</p>
                   </div>
                 ))}
-                <div className="mt-2 ml-6 space-y-1.5">
-                  <p className="text-[10px] text-gray-500 font-medium">macOS / Linux:</p>
-                  <pre className="bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-x-auto text-[11px]">
-                    <code className="text-emerald-300/80">curl -fsSL https://vs-integrate.vercel.app/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix</code>
-                  </pre>
-                  <p className="text-[10px] text-gray-500 font-medium mt-2">Windows PowerShell:</p>
-                  <pre className="bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-x-auto text-[11px]">
-                    <code className="text-emerald-300/80">Invoke-WebRequest -Uri "https://vs-integrate.vercel.app/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix</code>
-                  </pre>
+                <div className="mt-3">
+                  <a
+                    href="/downloads/extension.vsix"
+                    download="vs-integrate-extension.vsix"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs text-white font-medium transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download .vsix Extension
+                  </a>
                 </div>
               </div>
             </div>

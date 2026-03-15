@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Clock, Flame, Zap, Code2, Trophy, Target, Calendar, Copy, Check,
   TrendingUp, BarChart3, Globe2, FolderGit2, ChevronDown, Plus, X,
-  Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info, Timer, WifiOff, Terminal
+  Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info, Timer, WifiOff, Terminal, Download
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -811,41 +811,30 @@ export default function DashboardPage() {
                   <p className="text-xs font-semibold text-gray-300 mb-2 flex items-center gap-1.5">
                     <Terminal className="w-3.5 h-3.5 text-blue-400" /> Quick Install
                   </p>
-                  <p className="text-[11px] text-gray-500 mb-2">Run this in your terminal to install the VS Code extension:</p>
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <p className="text-[10px] text-gray-500 mb-1 font-medium">macOS / Linux:</p>
-                      <pre className="bg-gray-900 border border-gray-700 rounded-lg p-2.5 pr-8 overflow-x-auto text-[11px]">
-                        <code className="text-emerald-300/80">curl -fsSL https://vs-integrate.vercel.app/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix</code>
-                      </pre>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          navigator.clipboard.writeText('curl -fsSL https://vs-integrate.vercel.app/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix')
-                        }}
-                        className="absolute top-6 right-1.5 p-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
-                      >
-                        <Copy className="w-3 h-3 text-gray-400" />
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <p className="text-[10px] text-gray-500 mb-1 font-medium">Windows PowerShell:</p>
-                      <pre className="bg-gray-900 border border-gray-700 rounded-lg p-2.5 pr-8 overflow-x-auto text-[11px]">
-                        <code className="text-emerald-300/80">Invoke-WebRequest -Uri "https://vs-integrate.vercel.app/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix</code>
-                      </pre>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          navigator.clipboard.writeText('Invoke-WebRequest -Uri "https://vs-integrate.vercel.app/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix')
-                        }}
-                        className="absolute top-6 right-1.5 p-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
-                      >
-                        <Copy className="w-3 h-3 text-gray-400" />
-                      </button>
-                    </div>
+                  <p className="text-[11px] text-gray-500 mb-2">Download and install the VS Code extension:</p>
+                  <a
+                    href="/downloads/extension.vsix"
+                    download="vs-integrate-extension.vsix"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download .vsix File
+                  </a>
+                  <div className="mt-2 space-y-1">
+                    {[
+                      'Open VS Code → Extensions (Ctrl+Shift+X)',
+                      'Click ⋯ menu → "Install from VSIX..."',
+                      'Select the downloaded file',
+                    ].map((text, i) => (
+                      <div key={i} className="flex items-start gap-2 p-1.5 bg-gray-900/50 rounded-lg">
+                        <span className="w-4 h-4 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-[9px] font-bold shrink-0">{i + 1}</span>
+                        <span className="text-[10px] text-gray-500">{text}</span>
+                      </div>
+                    ))}
                   </div>
                   <p className="text-[10px] text-gray-600 mt-2">
-                    Then generate an API key above and set it in VS Code (Ctrl+Shift+P → &quot;VS Integrate: Set API Key&quot;)
+                    Then generate an API key above and set it in VS Code (Ctrl+Shift+P → &quot;VS Integrate: Set API Key&quot;). Use endpoint: <code className="text-blue-400">https://vs-integrate.vercel.app/api/heartbeat</code>
                   </p>
                 </div>
               )}
