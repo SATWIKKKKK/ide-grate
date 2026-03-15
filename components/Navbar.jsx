@@ -26,13 +26,15 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const navLinks = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, requiresAuth: true },
-    { href: '/settings', label: 'Settings', icon: Settings, requiresAuth: true },
-  ];
-
-  const filteredLinks = navLinks.filter(link => !link.requiresAuth || session);
+  const navLinks = session
+    ? [
+        { href: '/', label: 'Home', icon: Home },
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/settings', label: 'Settings', icon: Settings },
+      ]
+    : [
+        { href: '/', label: 'Home', icon: Home },
+      ];
 
   return (
     <motion.nav
@@ -57,7 +59,7 @@ export default function Navbar() {
         {/* Centered Navigation Links (md+) */}
         <div className="flex-1 flex justify-center">
           <div className="hidden md:flex items-center gap-1">
-            {filteredLinks.map((link) => {
+            {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
               return (
@@ -212,7 +214,7 @@ export default function Navbar() {
       {showMobileMenu && (
         <div className="md:hidden border-t border-gray-800 bg-black/95 backdrop-blur-md">
           <div className="px-4 py-3 flex flex-col gap-1">
-            {filteredLinks.map((link) => {
+            {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
               return (

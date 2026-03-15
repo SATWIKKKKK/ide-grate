@@ -161,10 +161,8 @@ export const authOptions: AuthOptions = {
       if (url.startsWith("/") && url !== "/") return `${baseUrl}${url}`
       if (url.startsWith(baseUrl) && url !== baseUrl && url !== `${baseUrl}/`) return url
 
-      // Default: redirect to /onboarding for new users, /dashboard for returning ones
-      // The client-side onboarding page handles the actual check
-      // We always send to /dashboard and let the dashboard redirect if needed
-      return `${baseUrl}/`
+      // Default: send to /dashboard, which will redirect first-time users to /onboarding
+      return `${baseUrl}/dashboard`
     },
   },
   pages: {
