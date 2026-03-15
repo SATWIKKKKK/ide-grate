@@ -26,7 +26,7 @@ export default function OnboardingPage() {
   const [connecting, setConnecting] = useState(false)
   const [connected, setConnected] = useState(false)
   const [receivingData, setReceivingData] = useState(false)
-  const [verifyTimedOut, setVerifyTimedOut] = useState(false)
+  const [verifyStartedAt, setVerifyStartedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -44,6 +44,8 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (step < 3) return
+    // Record when verification started so we only count NEW activity
+    const startedAt = Date.now()
     let attempts = 0
     const poll = async () => {
       try {
@@ -51,16 +53,19 @@ export default function OnboardingPage() {
         if (res.ok) {
           const data = await res.json()
           if (data.connected) {
-            setVerifyTimedOut(false)
-            setConnected(true)
-            if (data.hasActivity && data.totalSessions > 0) setReceivingData(true)
-            return
+            // Only count as verified if activity happened AFTER we started checking
+            const lastAt = data.lastActivityAt ? new Date(data.lastActivityAt).getTime() : 0
+            if (lastAt > startedAt - 10000) {
+              setConnected(true)
+              if (data.hasActivity && data.totalSessions > 0) setReceivingData(true)
+              return
+            }
           }
         }
       } catch { /* ignore */ }
       attempts++
       if (attempts >= 20) {
-        setVerifyTimedOut(true)
+        setVerifyStartedAt(-1) // signal timeout
       }
     }
     poll()
@@ -72,15 +77,11 @@ export default function OnboardingPage() {
     setConnecting(true)
     setError(null)
     try {
-      let key = apiKey
-      if (!key) {
-        const res = await fetch('/api/apikey', { method: 'POST' })
-        if (!res.ok) throw new Error('Failed to generate API key')
-        const data = await res.json()
-        key = data.apiKey
-        setApiKey(key)
-      }
-      setTimeout(() => { setStep(3); setConnecting(false) }, 500)
+      const res = await fetch('/api/apikey', { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to generate API key')
+      const data = await res.json()
+      setApiKey(data.apiKey)
+      setConnecting(false)
     } catch {
       setError('Failed to generate key. Please try again.')
       setConnecting(false)
@@ -97,7 +98,9 @@ export default function OnboardingPage() {
   }
 
   const goToStep = (target: number) => {
-    if (target !== 3) setVerifyTimedOut(false)
+    if (target !== 3) setVerifyStartedAt(null)
+    setConnected(false)
+    setReceivingData(false)
     setStep(target)
   }
 
@@ -393,10 +396,10 @@ export default function OnboardingPage() {
                     ) : (
                       <div className="text-center py-4">
                         <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
-                          <Loader2 className={`w-8 h-8 text-blue-400 ${verifyTimedOut ? '' : 'animate-spin'}`} />
+                          <Loader2 className={`w-8 h-8 text-blue-400 ${verifyStartedAt === -1 ? '' : 'animate-spin'}`} />
                         </div>
                         <h2 className="text-xl font-semibold mb-2">
-                          {verifyTimedOut ? 'Connection not detected yet' : 'Waiting for Connection...'}
+                          {verifyStartedAt === -1 ? 'Connection not detected yet' : 'Waiting for Connection...'}
                         </h2>
                         <p className="text-sm text-gray-400 mb-3">
                           Keep VS Code open with the extension enabled.
@@ -419,7 +422,9 @@ export default function OnboardingPage() {
                           </button>
                           <button
                             onClick={() => {
-                              setVerifyTimedOut(false)
+                              setVerifyStartedAt(null)
+                              setConnected(false)
+                              setReceivingData(false)
                               setStep(2)
                               setTimeout(() => setStep(3), 0)
                             }}
