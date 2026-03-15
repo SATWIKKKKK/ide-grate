@@ -812,21 +812,39 @@ export default function DashboardPage() {
                     <Terminal className="w-3.5 h-3.5 text-blue-400" /> Quick Install
                   </p>
                   <p className="text-[11px] text-gray-500 mb-2">Run this in your terminal to install the VS Code extension:</p>
-                  <div className="relative">
-                    <pre className="bg-gray-900 border border-gray-700 rounded-lg p-2.5 overflow-x-auto text-[11px]">
-                      <code className="text-emerald-300/80">{`curl -fsSL ${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix`}</code>
-                    </pre>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigator.clipboard.writeText(`curl -fsSL ${window.location.origin}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix`)
-                      }}
-                      className="absolute top-1.5 right-1.5 p-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
-                    >
-                      <Copy className="w-3 h-3 text-gray-400" />
-                    </button>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <p className="text-[10px] text-gray-500 mb-1 font-medium">macOS / Linux:</p>
+                      <pre className="bg-gray-900 border border-gray-700 rounded-lg p-2.5 pr-8 overflow-x-auto text-[11px]">
+                        <code className="text-emerald-300/80">{`curl -fsSL ${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix`}</code>
+                      </pre>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigator.clipboard.writeText(`curl -fsSL ${window.location.origin}/api/download/vsix -o vs-integrate.vsix && code --install-extension vs-integrate.vsix && rm vs-integrate.vsix`)
+                        }}
+                        className="absolute top-6 right-1.5 p-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+                      >
+                        <Copy className="w-3 h-3 text-gray-400" />
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <p className="text-[10px] text-gray-500 mb-1 font-medium">Windows PowerShell:</p>
+                      <pre className="bg-gray-900 border border-gray-700 rounded-lg p-2.5 pr-8 overflow-x-auto text-[11px]">
+                        <code className="text-emerald-300/80">{`Invoke-WebRequest -Uri "${typeof window !== 'undefined' ? window.location.origin : ''}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix`}</code>
+                      </pre>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigator.clipboard.writeText(`Invoke-WebRequest -Uri "${window.location.origin}/api/download/vsix" -OutFile "vs-integrate.vsix"; code --install-extension vs-integrate.vsix; Remove-Item vs-integrate.vsix`)
+                        }}
+                        className="absolute top-6 right-1.5 p-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+                      >
+                        <Copy className="w-3 h-3 text-gray-400" />
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-gray-600 mt-1.5">
+                  <p className="text-[10px] text-gray-600 mt-2">
                     Then generate an API key above and set it in VS Code (Ctrl+Shift+P → &quot;VS Integrate: Set API Key&quot;)
                   </p>
                 </div>

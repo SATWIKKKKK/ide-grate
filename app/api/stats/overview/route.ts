@@ -180,13 +180,17 @@ export async function GET(request: NextRequest) {
     const productivityScore = calculateProductivityScore(hoursToday, currentStreak, uniqueActiveDaysThisWeek, avgSessionMinutes)
 
     // Today's session details for the timer popup
+    // Include activities that started today OR span into today (started before but still active today)
     const todayStart = new Date(todayKey)
     const todayEnd = new Date(todayStart)
     todayEnd.setDate(todayEnd.getDate() + 1)
     const todayActivities = await prisma.activity.findMany({
       where: {
         userId: sessionUser.id,
-        startTime: { gte: todayStart, lt: todayEnd },
+        OR: [
+          { startTime: { gte: todayStart, lt: todayEnd } },
+          { startTime: { lt: todayStart }, endTime: { gte: todayStart } },
+        ],
       },
       orderBy: { startTime: 'asc' },
       select: { startTime: true, endTime: true, duration: true },

@@ -234,7 +234,7 @@ function SignUpContent() {
             <div className="space-y-3">
               {[
                 { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-white border-gray-700 hover:border-white', text: 'text-white hover:text-black' },
-                { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-gray-800 hover:text-black' },
+                { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-white hover:text-black' },
               ].map(({ id, name, Icon, bg, text }) => (
                 <Button
                   key={id}

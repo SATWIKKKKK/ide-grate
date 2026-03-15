@@ -305,7 +305,7 @@ export default function OnboardingPage() {
                       </div>
                       <div>
                         <h2 className="text-xl font-semibold">Connect VS Code</h2>
-                        <p className="text-sm text-gray-400">Generate key & open deep-link automatically</p>
+                        <p className="text-sm text-gray-400">Make sure the extension is installed from Step 1 first</p>
                       </div>
                     </div>
 

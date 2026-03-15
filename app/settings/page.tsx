@@ -509,14 +509,22 @@ export default function SettingsPage() {
               </div>
 
               {apiKey && !connection?.connected && (
-                <button
-                  onClick={connectVsCode}
-                  disabled={apiKeyLoading}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm transition-all shadow-sm hover:shadow-emerald-500/20 hover:shadow-md flex items-center justify-center gap-2"
-                >
-                  {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Code2 className="w-4 h-4" />}
-                  Connect VS Code Automatically
-                </button>
+                <div className="space-y-3">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                    <p className="text-xs text-amber-400 flex items-center gap-1.5 mb-1">
+                      <Info className="w-3 h-3 shrink-0" /> Extension must be installed first
+                    </p>
+                    <p className="text-[11px] text-gray-500">Install the extension via the terminal command below, then click &quot;Connect VS Code&quot; to auto-configure it.</p>
+                  </div>
+                  <button
+                    onClick={connectVsCode}
+                    disabled={apiKeyLoading}
+                    className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm transition-all shadow-sm hover:shadow-emerald-500/20 hover:shadow-md flex items-center justify-center gap-2"
+                  >
+                    {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Code2 className="w-4 h-4" />}
+                    Connect VS Code (after installing)
+                  </button>
+                </div>
               )}
 
               {/* API Key display */}

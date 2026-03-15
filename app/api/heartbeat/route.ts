@@ -125,6 +125,17 @@ export async function POST(request: NextRequest) {
     let activityDuration = HEARTBEAT_INTERVAL // Default to one heartbeat interval
     
     if (lastActivity) {
+      // Check if this is the first heartbeat on a new day (session carrying over from previous day)
+      // Compare using local dates (same timezone as todayStr) not UTC
+      let lastActivityLocalDate: string
+      if (typeof timezoneOffset === 'number') {
+        const localEndTime = new Date(lastActivity.endTime.getTime() - timezoneOffset * 60000)
+        lastActivityLocalDate = localEndTime.toISOString().split('T')[0]
+      } else {
+        lastActivityLocalDate = lastActivity.endTime.toISOString().split('T')[0]
+      }
+      const isNewDay = lastActivityLocalDate !== todayStr && !hasSessionBoundary
+
       // Only start a new session if manually disconnected (sessionBoundary flag)
       if (hasSessionBoundary) {
         // Manual disconnect happened — start new session
@@ -172,6 +183,15 @@ export async function POST(request: NextRequest) {
           },
         })
         activityDuration = HEARTBEAT_INTERVAL
+
+        // If this is the first heartbeat of a new day with a continuing session,
+        // ensure today's contribution has at least 1 session (carried over)
+        if (isNewDay && dailyContribution.sessions === 0) {
+          await prisma.dailyContribution.update({
+            where: { id: dailyContribution.id },
+            data: { sessions: 1 },
+          })
+        }
       }
     } else {
       // First activity ever - create new session
