@@ -2,26 +2,23 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, LayoutDashboard, BookOpen } from 'lucide-react';
+import { ArrowRight, LayoutDashboard, TerminalSquare } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Logo from './Logo';
 import ContributionGraph from './ContributionGraph';
 
-const container = {
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const stagger = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
   },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
 export default function Hero() {
@@ -30,43 +27,35 @@ export default function Hero() {
   /* ── Authenticated view ── */
   if (session) {
     return (
-      <section className="min-h-screen px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden bg-black">
-        <div className="absolute inset-0 bg-black pointer-events-none" />
+      <section className="min-h-screen px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-background">
         <motion.div
-          variants={container}
+          variants={stagger}
           initial="hidden"
           animate="show"
-          className="max-w-2xl mx-auto text-center relative z-10"
+          className="max-w-xl mx-auto text-center"
         >
-          <motion.div variants={item} className="mb-6 flex justify-center">
+          <motion.div variants={fadeUp} className="mb-6 flex justify-center">
             <Logo size="lg" />
           </motion.div>
 
           <motion.h1
-            variants={item}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight"
+            variants={fadeUp}
+            className="text-2xl sm:text-3xl font-display font-medium mb-4 text-foreground"
           >
-            You&apos;re in.{' '}
-            <span className="bg-linear-to-r from-white to-blue-400 bg-clip-text text-transparent">
-              Now go get your API key.
-            </span>
+            You’re in.
           </motion.h1>
 
-          <motion.p variants={item} className="text-base sm:text-lg text-gray-400 mb-10 leading-relaxed">
-            Use the setup guide for the new step-by-step flow: install extension, connect account, verify heartbeats, and confirm tracking.
+          <motion.p variants={fadeUp} className="text-base text-muted-foreground mb-8">
+            Install the extension, connect your account, and confirm tracking.
           </motion.p>
 
-          <motion.div variants={item} className="flex flex-col sm:flex-row gap-3 justify-center">
+          <motion.div variants={fadeUp} className="flex justify-center">
             <Link href="/dashboard">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)' }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 shadow-lg"
-              >
-                <LayoutDashboard className="w-5 h-5" />
+              <button className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-medium flex items-center gap-2 transition-colors outline-ring">
+                <LayoutDashboard className="w-4 h-4" />
                 Go to Dashboard
-                <ArrowRight className="w-5 h-5" />
-              </motion.button>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </Link>
           </motion.div>
         </motion.div>
@@ -74,80 +63,74 @@ export default function Hero() {
     );
   }
 
-  /* ── Unauthenticated view ── */
+  /* ── Unauthenticated view (Workbench Macrostructure) ── */
   return (
-    <section className="min-h-screen pt-32 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden bg-black">
-      {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-black pointer-events-none" />
-      
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-        {/* Left Content */}
-        <motion.div variants={container} initial="hidden" animate="show">
-          <motion.h1
-            variants={item}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance"
-          >
-            Track Your Real Coding.{' '}
-            <span className="bg-linear-to-r from-white to-blue-400 bg-clip-text text-transparent">
-              Not Just Commits.
-            </span>
-          </motion.h1>
+    <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 bg-background relative selection:bg-accent/20">
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+        className="max-w-[1000px] mx-auto"
+      >
+        {/* Small, functional heading */}
+        <motion.header variants={fadeUp} className="max-w-2xl mb-12 sm:mb-16">
+          <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase mb-3 font-sans">
+            vs-integrate
+          </p>
+          <h1 className="text-4xl sm:text-5xl lg:text-[clamp(2.75rem,5vw+1rem,5rem)] font-display text-foreground leading-[1.05] tracking-tight mb-6">
+            Track real coding. <br className="hidden sm:block" />
+            Not just commits.
+          </h1>
+          <p className="text-lg text-muted-foreground leading-relaxed max-w-xl">
+            Visualize real VS Code activity with contribution graphs, streaks, and productivity insights. No code access required.
+          </p>
+        </motion.header>
 
-          <motion.p
-            variants={item}
-            className="text-lg text-gray-400 mb-8 max-w-lg leading-relaxed"
-          >
-            Visualize real VS Code activity with contribution graphs, streaks, and productivity insights — automatically.
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div variants={item} className="flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-4">
-            <Link href="/signup">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)' }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 shadow-lg"
-              >
-                Get Started Free
-                <ArrowRight className="w-5 h-5" />
-              </motion.button>
-            </Link>
-            <Link href="/login">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 text-white"
-              >
-                Sign In
-              </motion.button>
-            </Link>
-          </motion.div>
-
-          {/* Secondary info */}
-          <motion.p
-            variants={item}
-            className="text-sm text-gray-500"
-          >
-            No code access. No file names. Just your real activity.
-          </motion.p>
-        </motion.div>
-
-        {/* Right Visual — contribution graph with glitter */}
-        <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="hidden lg:block"
-        >
-          <div className="relative">
-            <div className="absolute -inset-4 bg-linear-to-r from-blue-600/20 to-transparent rounded-2xl blur-3xl" />
-            <div className="relative bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-2xl">
+        {/* The Workbench Frame (Minimal Hairline, no fake chrome) */}
+        <motion.section variants={fadeUp} className="relative w-full rounded-xl bg-card border border-border shadow-[0_4px_24px_oklch(0%_0_0_/_0.04)] overflow-hidden mb-8">
+          
+          {/* Main Screenshot/Demo Area */}
+          <div className="p-8 sm:p-12 bg-background flex justify-center items-center relative min-h-[300px]">
+             {/* Subtle background pattern for depth */}
+            <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+            
+            <div className="relative z-10 w-full max-w-3xl bg-card p-6 rounded-lg border border-border shadow-sm">
               <ContributionGraph />
+              
+              {/* Annotation Callout */}
+              <div className="absolute -right-4 -bottom-6 sm:-right-12 sm:bottom-4 flex flex-col items-start gap-1">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="text-accent/60 -rotate-12 mb-1">
+                  <path d="M5 35 Q 20 5 35 15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+                  <path d="M28 12 L 36 15 L 32 23" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="text-sm font-medium text-foreground bg-card px-3 py-1.5 rounded-full border border-border shadow-sm">
+                  Real keystrokes, logged automatically.
+                </span>
+              </div>
             </div>
           </div>
+        </motion.section>
+        
+        {/* Inline Workbench steps */}
+        <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8 border-t border-border">
+          <div className="flex flex-col gap-2">
+            <TerminalSquare className="w-5 h-5 text-muted-foreground mb-2" />
+            <h3 className="text-base font-medium text-foreground">1. Install</h3>
+            <p className="text-sm text-muted-foreground">Add the extension to your VS Code editor.</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <svg className="w-5 h-5 text-muted-foreground mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <h3 className="text-base font-medium text-foreground">2. Connect</h3>
+            <p className="text-sm text-muted-foreground">Sign in securely to link your activity stream.</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <svg className="w-5 h-5 text-muted-foreground mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <h3 className="text-base font-medium text-foreground">3. Track</h3>
+            <p className="text-sm text-muted-foreground">Write code. The graph builds itself instantly.</p>
+          </div>
         </motion.div>
-      </div>
+
+      </motion.div>
     </section>
   );
 }
-

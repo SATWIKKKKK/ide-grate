@@ -62,22 +62,22 @@ function LoginContent() {
 
   // Always show GitHub + Google buttons
   const oauthButtons = [
-    { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-gray-800 hover:bg-white border-gray-700 hover:border-white', text: 'text-white hover:text-black' },
-    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-white hover:text-black' },
+    { id: 'github', name: 'GitHub', Icon: Github, bg: 'bg-secondary hover:bg-white border-border hover:border-white', text: 'text-foreground hover:text-black' },
+    { id: 'google', name: 'Google', Icon: GoogleIcon, bg: 'bg-white hover:bg-white border-gray-300 hover:border-white', text: 'text-foreground hover:text-black' },
   ]
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center mb-8">
           <Logo size="xl" />
         </Link>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl text-white">Welcome Back</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-xl text-foreground">Welcome Back</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Sign in to continue tracking your coding activity
             </CardDescription>
             
@@ -85,7 +85,7 @@ function LoginContent() {
 
           <CardContent>
             {(error || loginError) && (
-              <div className="mb-4 p-3 bg-red-900/30 border border-red-600/30 rounded-lg text-red-400 text-sm text-center">
+              <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm text-center">
                 {error === 'OAuthAccountNotLinked'
                   ? 'Linking your account — please try signing in again.'
                   : loginError || 'An error occurred during sign in. Please try again.'}
@@ -118,16 +118,16 @@ function LoginContent() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-gray-900 text-gray-500">or sign in with email</span>
+                <span className="px-4 bg-card text-muted-foreground">or sign in with email</span>
               </div>
             </div>
 
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">Email</Label>
+                <Label htmlFor="email" className="text-muted-foreground">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -135,12 +135,12 @@ function LoginContent() {
                   onChange={(e) => setDevEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30"
+                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/30"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300">Password</Label>
+                <Label htmlFor="password" className="text-muted-foreground">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -149,12 +149,12 @@ function LoginContent() {
                     onChange={(e) => setDevPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500/30 pr-10"
+                    className="bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring/30 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -164,7 +164,7 @@ function LoginContent() {
               <Button
                 type="submit"
                 disabled={isLoading !== null || !devEmail || !devPassword}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
+                className="w-full bg-primary hover:bg-primary text-foreground font-medium"
               >
                 {isLoading === 'credentials' ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -179,9 +179,9 @@ function LoginContent() {
           </CardContent>
 
           <CardFooter className="justify-center">
-            <p className="text-gray-500 text-sm">
+            <p className="text-muted-foreground text-sm">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+              <Link href="/signup" className="text-primary hover:text-primary font-medium transition-colors">
                 Sign up
               </Link>
             </p>
@@ -195,8 +195,8 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-blue-500 rounded-full animate-spin" />
       </div>
     }>
       <LoginContent />

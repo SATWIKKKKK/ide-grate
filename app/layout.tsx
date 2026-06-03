@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Newsreader } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SessionProvider } from '@/components/session-provider'
@@ -6,6 +6,7 @@ import './globals.css'
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-display", style: ['normal', 'italic'] });
 
 export const metadata = {
   title: 'vs-integrate - Track Your Real Coding Activity',
@@ -20,7 +21,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} ${geistMono.variable} font-mono antialiased`}>
+      <body className={`${geist.variable} ${geistMono.variable} ${newsreader.variable} font-sans antialiased`}>
         <SessionProvider>
           <ThemeProvider
             attribute="class"

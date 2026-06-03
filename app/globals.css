@@ -1,84 +1,87 @@
+/* Hallmark · macrostructure: Workbench · F5 Annotated screenshot knobs: frame=browser chrome, annotations=inline arrows
+ * theme: custom · vibe: "classic realistic, authentic, archival, tactile" · paper: oklch(98% 0.008 145) · accent: oklch(45% 0.16 145)
+ * display: Newsreader · body: Geist · axes: light / roman-serif / chromatic-green
+ * studied: no · context: inferred · v1.0.0
+ */
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
-
-/* Light Mode - Blue gradient background */
+/* Remove existing dark variant logic, Hallmark controls the exact palette */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --secondary: #e2e8f0;
-  --secondary-foreground: #0f172a;
-  --muted: #e2e8f0;
-  --muted-foreground: #64748b;
-  --accent: #2563eb;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #cbd5e1;
-  --input: #cbd5e1;
-  --ring: #2563eb;
-  --chart-1: #2563eb;
-  --chart-2: #3b82f6;
-  --chart-3: #60a5fa;
-  --chart-4: #93c5fd;
-  --chart-5: #1e40af;
-  --radius: 0.75rem;
-  --sidebar: #f1f5f9;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #2563eb;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2563eb;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #cbd5e1;
-  --sidebar-ring: #2563eb;
-}
+  /* Hallmark Custom Tokens: Classic Realistic / Forest Green */
+  --color-paper: oklch(98% 0.008 145);
+  --color-paper-2: oklch(95% 0.010 145);
+  --color-ink: oklch(20% 0.012 145);
+  --color-ink-2: oklch(40% 0.012 145);
+  --color-muted: oklch(55% 0.010 145);
+  --color-rule: oklch(88% 0.010 145);
+  --color-rule-2: oklch(84% 0.010 145);
+  --color-accent: oklch(45% 0.16 145);
+  --color-accent-ink: oklch(98% 0.008 145);
+  --color-focus: oklch(50% 0.20 145);
 
-/* Dark Mode - Blue, grey, black */
-.dark {
-  --background: #030712;
-  --foreground: #f8fafc;
-  --card: #111827;
-  --card-foreground: #f8fafc;
-  --popover: #111827;
-  --popover-foreground: #f8fafc;
-  --primary: #3b82f6;
-  --primary-foreground: #030712;
-  --secondary: #1f2937;
-  --secondary-foreground: #f8fafc;
-  --muted: #374151;
-  --muted-foreground: #9ca3af;
-  --accent: #3b82f6;
-  --accent-foreground: #030712;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #1f2937;
-  --input: #1f2937;
-  --ring: #3b82f6;
-  --chart-1: #3b82f6;
-  --chart-2: #60a5fa;
-  --chart-3: #93c5fd;
-  --chart-4: #dbeafe;
-  --chart-5: #1e40af;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #3b82f6;
-  --sidebar-primary-foreground: #030712;
-  --sidebar-accent: #3b82f6;
-  --sidebar-accent-foreground: #030712;
-  --sidebar-border: #1f2937;
-  --sidebar-ring: #3b82f6;
+  /* Semantic aliases for Radix UI compatibility */
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+  --card: var(--color-paper-2);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-paper);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-accent-ink);
+  --secondary: var(--color-paper-2);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-ink);
+  --destructive: oklch(55% 0.18 20);
+  --destructive-foreground: oklch(98% 0 0);
+  --border: var(--color-rule);
+  --input: var(--color-rule);
+  --ring: var(--color-focus);
+  --radius: 0.25rem;
+
+  /* Typography Scale */
+  --text-xs: 0.64rem;
+  --text-sm: 0.8rem;
+  --text-base: 1rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: 1.9531rem;
+  --text-2xl: 2.4414rem;
+  --text-3xl: 3.0518rem;
+  --text-4xl: 3.8147rem;
+  --text-display: clamp(2.75rem, 5vw + 1rem, 5rem);
+  --text-display-s: clamp(2.25rem, 4vw + 1rem, 3.5rem);
+
+  /* Spacing Scale (4pt base) */
+  --space-3xs: 0.125rem; /* 2px */
+  --space-2xs: 0.25rem;  /* 4px */
+  --space-xs: 0.5rem;    /* 8px */
+  --space-sm: 0.75rem;   /* 12px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2.5rem;    /* 40px */
+  --space-2xl: 4rem;     /* 64px */
+  --space-3xl: 6rem;     /* 96px */
+  --space-4xl: 9rem;     /* 144px */
+
+  /* Microinteraction variables */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --rule-hair: 1px;
 }
 
 @theme inline {
   --font-sans: var(--font-sans), 'Geist', system-ui, sans-serif;
   --font-mono: var(--font-mono), 'Geist Mono', monospace;
+  --font-display: 'Newsreader', var(--font-sans);
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -89,8 +92,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--color-paper-2);
+  --color-muted-foreground: var(--muted);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -98,23 +101,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+html, body {
+  overflow-x: clip; /* Hallmark page-edge clipping safety */
 }
 
 @layer base {
@@ -122,57 +112,52 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    margin: 0;
   }
-  /* Light mode blue gradient background */
-  html:not(.dark) body {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 25%, #f8fafc 50%, #dbeafe 75%, #eff6ff 100%);
-    background-attachment: fixed;
-  }
-  /* Dark mode solid black with subtle blue tint */
-  html.dark body {
-    background: linear-gradient(180deg, #030712 0%, #0a1628 50%, #030712 100%);
-    background-attachment: fixed;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    font-weight: 400; /* Roman serif doesn't need high weight */
+    line-height: 1.1;
+    letter-spacing: -0.02em;
   }
 }
 
-/* Global glitter animation used by ContributionGraph */
-/* Only uses filter+shadow — avoids conflicts with framer-motion's inline transform control */
+/* Microinteraction focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  transition: none; /* Focus must show instantly */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Glitter animation - preserving for ContributionGraph */
 @keyframes glitter {
   0%   { filter: brightness(1);    box-shadow: none; }
-  6%   { filter: brightness(2.2);  box-shadow: 0 0 6px 2px rgba(147, 197, 253, 0.8); }
-  12%  { filter: brightness(1.4);  box-shadow: 0 0 3px 1px rgba(147, 197, 253, 0.4); }
+  6%   { filter: brightness(1.5);  box-shadow: 0 0 6px 1px rgba(75, 139, 98, 0.4); }
+  12%  { filter: brightness(1.2);  box-shadow: 0 0 3px 1px rgba(75, 139, 98, 0.2); }
   18%  { filter: brightness(1);    box-shadow: none; }
   100% { filter: brightness(1);    box-shadow: none; }
 }
-
 .glitter {
   animation-name: glitter;
   animation-duration: 3s;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
-
-@layer utilities {
-  .animate-glitter {
-    /* use CSS vars so duration/delay can be set per-element via inline styles */
-    animation-name: glitter;
-    animation-duration: var(--glitter-duration, 3s);
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-delay: var(--glitter-delay, 0s);
-    animation-play-state: running !important;
-  }
-}
-
-/* Ensure spin animations always run continuously and don't get paused on reload */
-.animate-spin,
-[class*="animate-spin"] {
+.animate-spin {
   animation-iteration-count: infinite !important;
-  animation-play-state: running !important;
-}
-
-/* Override any accidental paused utility to keep animations running */
-.paused {
   animation-play-state: running !important;
 }
