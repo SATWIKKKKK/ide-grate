@@ -62,14 +62,14 @@ function AuthErrorContent() {
 
           <Link
             href="/login"
-            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-all"
+            className="inline-block px-6 py-3 bg-primary hover:bg-primary/70 text-white font-medium rounded-lg transition-all"
           >
             Try Again
           </Link>
 
           <Link
             href="/"
-            className="block mt-4 text-gray-500 hover:text-blue-400 transition-colors text-sm"
+            className="block mt-4 text-gray-500 hover:text-primary transition-colors text-sm"
           >
             ← Back to home
           </Link>
@@ -83,7 +83,7 @@ export default function AuthError() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     }>
       <AuthErrorContent />

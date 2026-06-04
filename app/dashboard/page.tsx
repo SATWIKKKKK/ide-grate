@@ -559,7 +559,7 @@ export default function DashboardPage() {
  return (
  <div className="min-h-screen bg-background flex items-center justify-center">
  <div className="flex flex-col items-center gap-4">
- <div className="w-10 h-10 border-4 border-primary/30 border-t-blue-500 rounded-full animate-spin" />
+ <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
  <p className="text-muted-foreground text-sm">Loading your dashboard...</p>
  </div>
  </div>
@@ -568,11 +568,11 @@ export default function DashboardPage() {
 
  if (!session) return null
 
- const levelColors = ['bg-secondary/50', 'bg-primary/60', 'bg-primary/70', 'bg-primary/80', 'bg-blue-400']
+ const levelColors = ['bg-secondary/50', 'bg-primary/60', 'bg-primary/70', 'bg-primary/80', 'bg-primary']
  const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', '']
 
  return (
- <div className="min-h-screen bg-background text-foreground">
+ <div className="page-shell min-h-screen text-foreground">
  <Navbar />
 
  {/* Connection status toast */}
@@ -582,7 +582,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: -40 }}
  animate={{ opacity: 1, y: 0 }}
  exit={{ opacity: 0, y: -40 }}
- className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-lg backdrop-blur-md text-sm font-medium ${
+ className={`fixed top-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-lg backdrop-blur-md text-sm font-medium text-center ${
  connectionToast.type === 'success'
  ? 'bg-primary/10 border-primary/30 text-primary'
  : 'bg-destructive/10 border-red-500/30 text-destructive'
@@ -593,7 +593,7 @@ export default function DashboardPage() {
  )}
  </AnimatePresence>
 
- <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-12">
+ <main className="dashboard-shell pt-6 sm:pt-8 pb-12">
  {/* Header */}
  <motion.div
  initial={{ opacity: 0, y: 20 }}
@@ -634,7 +634,7 @@ export default function DashboardPage() {
  >
  <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
  connectionStatus.connected
- ? connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-blue-400'
+ ? connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary'
  : 'bg-red-400'
  }`} />
  {connectionStatus.connected ? (connectionStatus.active ? 'Connected' : 'Connected') : 'Disconnected'}
@@ -659,7 +659,7 @@ export default function DashboardPage() {
  className="mb-6"
  >
  <div
- className="bg-secondary border border-border rounded-xl p-4 cursor-pointer hover:border-primary/30 transition-all group"
+ className="muted-panel rounded-xl p-4 cursor-pointer hover:border-primary/30 transition-all group"
  onClick={() => setShowApiKey(!showApiKey)}
  >
  <div className="flex items-center justify-between">
@@ -725,7 +725,7 @@ export default function DashboardPage() {
  {/* Connected banner */}
  {connectionStatus.connected && (
  <div className="bg-primary/10 border-b border-primary/20 px-5 py-2 flex items-center gap-2">
- <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-blue-400 animate-pulse' : 'bg-blue-400/60'}`} />
+ <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary/60'}`} />
  <span className="text-xs text-primary font-medium">
  {connectionStatus.active
  ? <>Connected since {sessionStartRef.current ? sessionStartRef.current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'now'}
@@ -743,7 +743,7 @@ export default function DashboardPage() {
  </div>
  )}
 
- <div className="p-5">
+ <div className="p-4 sm:p-5">
  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
  {/* Timer display */}
  <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -766,7 +766,7 @@ export default function DashboardPage() {
  </span>
  )}
  </div>
- <p className={`text-5xl font-mono font-bold tracking-tight tabular-nums ${
+ <p className={`text-3xl min-[380px]:text-4xl sm:text-5xl font-mono font-bold tracking-normal tabular-nums break-words ${
  connectionStatus.connected ? 'text-primary' : 'text-muted-foreground'
  }`}>
  {connectionStatus.connected ? formatTimer(liveSeconds) : '0:00:00'}
@@ -782,7 +782,7 @@ export default function DashboardPage() {
  </div>
 
  {/* Period filter */}
- <div className="flex items-center bg-secondary/80 rounded-xl p-1 gap-0.5 shrink-0">
+ <div className="w-full sm:w-auto flex items-center bg-secondary/80 rounded-xl p-1 gap-0.5 shrink-0">
  {([
  { key: '7d' as const, label: '7 Days' },
  { key: '1m' as const, label: '1 Month' },
@@ -791,7 +791,7 @@ export default function DashboardPage() {
  <button
  key={f.key}
  onClick={(e) => { e.stopPropagation(); setTimerFilter(f.key) }}
- className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+ className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 whitespace-nowrap ${
  timerFilter === f.key
  ? 'bg-primary/20 text-primary shadow-sm'
  : 'text-muted-foreground hover:text-muted-foreground hover:bg-secondary/50'
@@ -844,7 +844,7 @@ export default function DashboardPage() {
  <a
  href="/downloads/extension.vsix"
  download="vs-integrate-extension.vsix"
- className="w-full py-2.5 bg-primary hover:bg-primary rounded-lg text-foreground text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+ className="w-full py-2.5 bg-primary hover:bg-primary rounded-lg text-primary-foreground text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
  onClick={e => e.stopPropagation()}
  >
  <Download className="w-3.5 h-3.5" />
@@ -879,7 +879,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  transition={{ duration: 0.2 }}
- className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4"
+ className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4"
  onClick={() => setShowTimerPopup(false)}
  >
  <motion.div
@@ -887,18 +887,18 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.25, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto"
+ className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] sm:max-h-[80vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
- <div className="p-6">
- <div className="flex items-center justify-between mb-5">
+ <div className="p-4 sm:p-6">
+ <div className="flex items-start justify-between gap-3 mb-5">
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
  <Timer className="w-5 h-5 text-primary" />
  </div>
- <div>
+ <div className="min-w-0">
  <h3 className="text-lg font-semibold">Session Details</h3>
- <p className="text-xs text-muted-foreground">
+ <p className="text-xs text-muted-foreground leading-relaxed">
  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
  </p>
  </div>
@@ -909,17 +909,17 @@ export default function DashboardPage() {
  </div>
 
  {/* Summary */}
- <div className="grid grid-cols-3 gap-3 mb-5">
+ <div className="grid grid-cols-1 min-[380px]:grid-cols-3 gap-3 mb-5">
  <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-center">
- <p className="text-2xl font-bold text-primary">{formatHours(stats?.hoursToday || 0)}</p>
+ <p className="text-xl sm:text-2xl font-bold text-primary break-words">{formatHours(stats?.hoursToday || 0)}</p>
  <p className="text-[10px] text-muted-foreground mt-1">Total Today</p>
  </div>
  <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-center">
- <p className="text-2xl font-bold text-primary">{stats?.todaySessions?.length || 0}</p>
+ <p className="text-xl sm:text-2xl font-bold text-primary">{stats?.todaySessions?.length || 0}</p>
  <p className="text-[10px] text-muted-foreground mt-1">Sessions</p>
  </div>
  <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-center">
- <p className="text-2xl font-bold text-primary">
+ <p className="text-xl sm:text-2xl font-bold text-primary break-words">
  {connectionStatus.connected ? formatTimer(liveSeconds) : '—'}
  </p>
  <p className="text-[10px] text-muted-foreground mt-1">Live Timer</p>
@@ -935,19 +935,19 @@ export default function DashboardPage() {
  const end = new Date(session.endTime)
  const durationHrs = session.duration / 3600
  return (
- <div key={i} className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg border border-border">
- <div className="flex items-center gap-3">
+ <div key={i} className="flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-3 p-3 bg-secondary/30 rounded-lg border border-border">
+ <div className="flex items-center gap-3 min-w-0">
  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
  <span className="text-xs font-bold text-primary">#{i + 1}</span>
  </div>
- <div>
- <p className="text-sm font-medium">
+ <div className="min-w-0">
+ <p className="text-sm font-medium break-words">
  {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
  </p>
  <p className="text-[10px] text-muted-foreground">Session {i + 1}</p>
  </div>
  </div>
- <div className="text-right">
+ <div className="text-left min-[420px]:text-right">
  <p className="text-sm font-semibold text-primary">{formatHours(durationHrs)}</p>
  <p className="text-[10px] text-muted-foreground">active time</p>
  </div>
@@ -965,7 +965,7 @@ export default function DashboardPage() {
 
  {connectionStatus.connected && (
  <div className={`mt-4 p-3 ${connectionStatus.active ? 'bg-primary/5 border-primary/15' : 'bg-primary/5 border-primary/15'} border rounded-lg flex items-center gap-2`}>
- <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-blue-400'}`} />
+ <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary'}`} />
  <span className={`text-xs ${connectionStatus.active ? 'text-primary' : 'text-primary'}`}>
  {connectionStatus.active
  ? `Currently tracking — ${formatTimer(liveSeconds)} this viewing session`
@@ -987,7 +987,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  transition={{ duration: 0.15 }}
- className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4"
+ className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4"
  onClick={() => setShowDisconnectConfirm(false)}
  >
  <motion.div
@@ -995,17 +995,17 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.2, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm"
+ className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
- <div className="p-6 text-center">
+ <div className="p-4 sm:p-6 text-center">
  <div className="w-12 h-12 rounded-full bg-destructive/15 flex items-center justify-center mx-auto mb-4">
  <WifiOff className="w-6 h-6 text-destructive" />
  </div>
  <h3 className="text-lg font-semibold mb-2">Disconnect Tracking?</h3>
  <p className="text-sm text-muted-foreground mb-1">This will end your current session and revoke your API key.</p>
  <p className="text-xs text-muted-foreground mb-5">You&apos;ll need to generate a new key and reconfigure VS Code to resume tracking.</p>
- <div className="flex gap-3">
+ <div className="flex flex-col min-[380px]:flex-row gap-3">
  <button
  onClick={() => setShowDisconnectConfirm(false)}
  className="flex-1 py-2.5 bg-secondary hover:bg-secondary rounded-xl text-sm text-muted-foreground font-medium transition-colors"
@@ -1033,7 +1033,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  transition={{ duration: 0.15 }}
- className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4"
+ className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4"
  onClick={() => setShowReconnectPopup(false)}
  >
  <motion.div
@@ -1041,17 +1041,17 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.2, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm"
+ className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
- <div className="p-6 text-center">
+ <div className="p-4 sm:p-6 text-center">
  <div className="w-12 h-12 rounded-full bg-orange-500/15 flex items-center justify-center mx-auto mb-4">
  <WifiOff className="w-6 h-6 text-orange-400" />
  </div>
  <h3 className="text-lg font-semibold mb-2">Tracking Disconnected</h3>
  <p className="text-sm text-muted-foreground mb-1">Your API key has been revoked or is missing.</p>
  <p className="text-xs text-muted-foreground mb-5">Follow the setup guide to generate a new key and reconnect VS Code to resume tracking your coding activity.</p>
- <div className="flex gap-3">
+ <div className="flex flex-col min-[380px]:flex-row gap-3">
  <button
  onClick={() => setShowReconnectPopup(false)}
  className="flex-1 py-2.5 bg-secondary hover:bg-secondary rounded-xl text-sm text-muted-foreground font-medium transition-colors"
@@ -1060,7 +1060,7 @@ export default function DashboardPage() {
  </button>
  <Link
  href="/onboarding"
- className="flex-1 py-2.5 bg-primary hover:bg-primary rounded-xl text-sm text-foreground font-medium transition-colors flex items-center justify-center gap-1.5"
+ className="flex-1 py-2.5 bg-primary hover:bg-primary rounded-xl text-sm text-primary-foreground font-medium transition-colors flex items-center justify-center gap-1.5"
  >
  Setup Guide
  <ArrowRight className="w-4 h-4" />
@@ -1075,10 +1075,10 @@ export default function DashboardPage() {
  {/* Stats Grid */}
  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
  {[
- { key: 'totalHours', label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, color: 'blue', sub: `${stats?.activeDays || 0} active days` },
- { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, color: 'orange', sub: `Best: ${stats?.longestStreak || 0}d` },
- { key: 'today', label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, color: 'blue', sub: `Score: ${stats?.productivityScore || 0}/100` },
- { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, color: 'violet', sub: `${stats?.totalSessions || 0} sessions` },
+ { key: 'totalHours', label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `${stats?.activeDays || 0} active days` },
+ { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, iconClass: 'text-orange-400', glowClass: 'bg-orange-500/5', hoverClass: 'hover:border-orange-500/30', sub: `Best: ${stats?.longestStreak || 0}d` },
+ { key: 'today', label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `Score: ${stats?.productivityScore || 0}/100` },
+ { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, iconClass: 'text-violet-400', glowClass: 'bg-violet-500/5', hoverClass: 'hover:border-violet-500/30', sub: `${stats?.totalSessions || 0} sessions` },
  ].map((stat, i) => (
  <motion.div
  key={stat.label}
@@ -1086,13 +1086,13 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.1 + i * 0.05 }}
  onClick={() => setActiveStatPopup(stat.key)}
- className={`group relative bg-card/80 border border-border rounded-xl p-4 sm:p-5 hover:border-${stat.color}-500/30 transition-all overflow-hidden cursor-pointer active:scale-[0.97]`}
+ className={`group relative app-card p-4 sm:p-5 ${stat.hoverClass} transition-all overflow-hidden cursor-pointer active:scale-[0.97]`}
  >
- <div className={`absolute top-0 right-0 w-20 h-20 bg-${stat.color}-500/5 rounded-full -translate-y-1/2 translate-x-1/2`} />
+ <div className={`absolute top-0 right-0 w-20 h-20 ${stat.glowClass} rounded-full -translate-y-1/2 translate-x-1/2`} />
  <div className="relative">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</span>
- <stat.icon className={`w-4 h-4 text-${stat.color}-400 opacity-60`} />
+ <stat.icon className={`w-4 h-4 ${stat.iconClass} opacity-70`} />
  </div>
  <p className="text-2xl sm:text-3xl font-bold tracking-tight">{stat.value}</p>
  <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
@@ -1109,7 +1109,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1 }}
  exit={{ opacity: 0 }}
  transition={{ duration: 0.2 }}
- className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4"
+ className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4"
  onClick={() => setActiveStatPopup(null)}
  >
  <motion.div
@@ -1117,12 +1117,12 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.25, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto"
+ className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] sm:max-h-[80vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
  {/* Total Hours Popup */}
  {activeStatPopup === 'totalHours' && (
- <div className="p-6">
+ <div className="p-4 sm:p-6">
  <div className="flex items-center justify-between mb-5">
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -1178,7 +1178,7 @@ export default function DashboardPage() {
 
  {/* Streak Popup */}
  {activeStatPopup === 'streak' && (
- <div className="p-6">
+ <div className="p-4 sm:p-6">
  <div className="flex items-center justify-between mb-5">
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
@@ -1223,7 +1223,7 @@ export default function DashboardPage() {
 
  {/* Today Popup */}
  {activeStatPopup === 'today' && (
- <div className="p-6">
+ <div className="p-4 sm:p-6">
  <div className="flex items-center justify-between mb-5">
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -1271,7 +1271,7 @@ export default function DashboardPage() {
 
  {/* Languages Popup */}
  {activeStatPopup === 'languages' && (
- <div className="p-6">
+ <div className="p-4 sm:p-6">
  <div className="flex items-center justify-between mb-5">
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -1324,7 +1324,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.3 }}
- className="bg-card/80 border border-border rounded-xl p-4 sm:p-6 mb-8"
+ className="app-card p-4 sm:p-6 mb-8"
  >
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
  <div>
@@ -1372,7 +1372,7 @@ export default function DashboardPage() {
  key={`${wi}-${di}`}
  className={`w-3.25 h-3.25 rounded-[2px] transition-all cursor-pointer ${
  day.level < 0 ? 'opacity-0' : day.level === 0 ? 'bg-secondary/50 hover:bg-secondary/50' : levelColors[day.level]
- } hover:ring-1 hover:ring-blue-400/50 hover:scale-125`}
+ } hover:ring-1 hover:ring-primary/50 hover:scale-125`}
  onMouseEnter={(e) => {
  if (day.level < 0 || !day.date) return
  const rect = e.currentTarget.getBoundingClientRect()
@@ -1427,7 +1427,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.35 }}
- className="bg-card/80 border border-border rounded-xl p-5"
+ className="app-card p-5"
  >
  <div className="flex items-center justify-between mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1474,7 +1474,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.4 }}
- className="bg-card/80 border border-border rounded-xl p-5"
+ className="app-card p-5"
  >
  <div className="flex items-center justify-between mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1555,7 +1555,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.45 }}
- className="bg-card/80 border border-border rounded-xl p-5 mb-8"
+ className="app-card p-5 mb-8"
  >
  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
  <TrendingUp className="w-4 h-4 text-primary" />
@@ -1591,7 +1591,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.5 }}
- className="lg:col-span-3 bg-card/80 border border-border rounded-xl p-5"
+ className="lg:col-span-3 app-card p-5"
  >
  <div className="flex items-center justify-between mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1606,8 +1606,8 @@ export default function DashboardPage() {
  <AreaChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
  <defs>
  <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
- <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+ <stop offset="5%" stopColor="#4b8b62" stopOpacity={0.35} />
+ <stop offset="95%" stopColor="#4b8b62" stopOpacity={0} />
  </linearGradient>
  </defs>
  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
@@ -1633,11 +1633,11 @@ export default function DashboardPage() {
  <Area
  type="monotone"
  dataKey="hours"
- stroke="#3b82f6"
+ stroke="#4b8b62"
  fill="url(#trendGrad)"
  strokeWidth={2}
  dot={false}
- activeDot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
+ activeDot={{ r: 4, fill: '#4b8b62', strokeWidth: 0 }}
  />
  </AreaChart>
  </ResponsiveContainer>
@@ -1648,7 +1648,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.55 }}
- className="lg:col-span-2 bg-card/80 border border-border rounded-xl p-5"
+ className="lg:col-span-2 app-card p-5"
  >
  <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
  <Globe2 className="w-4 h-4 text-primary" />
@@ -1707,11 +1707,11 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.6 }}
- className="bg-card/80 border border-border rounded-xl p-5"
+ className="app-card p-5"
  >
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
- <BarChart3 className="w-4 h-4 text-cyan-400" />
+ <BarChart3 className="w-4 h-4 text-primary" />
  Daily Hours
  </h2>
  <div className="flex items-center gap-1 bg-secondary/80 rounded-xl p-0.5">
@@ -1758,7 +1758,7 @@ export default function DashboardPage() {
  labelStyle={{ color: '#9ca3af' }}
  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
  />
- <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+ <Bar dataKey="hours" fill="#4b8b62" radius={[4, 4, 0, 0]} />
  </BarChart>
  </ResponsiveContainer>
  </motion.div>
@@ -1768,7 +1768,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.65 }}
- className="bg-card/80 border border-border rounded-xl p-5"
+ className="app-card p-5"
  >
  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
  <Zap className="w-4 h-4 text-amber-400" />
@@ -1809,7 +1809,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.5 }}
- className="bg-card/80 border border-border rounded-xl p-5 mb-8"
+ className="app-card p-5 mb-8"
  >
  <div className="flex items-center justify-between mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1879,7 +1879,7 @@ export default function DashboardPage() {
  <button
  onClick={createGoal}
  disabled={goalSaving || !newGoalTarget}
- className="px-4 py-1.5 bg-primary hover:bg-primary disabled:bg-secondary text-foreground rounded-lg text-xs font-medium transition-all active:scale-95 flex items-center gap-1"
+ className="px-4 py-1.5 bg-primary hover:bg-primary disabled:bg-secondary text-primary-foreground disabled:text-muted-foreground rounded-lg text-xs font-medium transition-all active:scale-95 flex items-center gap-1"
  >
  {goalSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
  Create Goal
@@ -1953,7 +1953,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.52 }}
- className="bg-card/80 border border-border rounded-xl p-5 mb-8"
+ className="app-card p-5 mb-8"
  >
  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
  <Trophy className="w-4 h-4 text-primary" />
@@ -1972,7 +1972,7 @@ export default function DashboardPage() {
  <div
  className={`border rounded-xl p-3 text-center transition-all cursor-default ${
  achievement.unlocked
- ? 'bg-secondary border-primary/30 hover:border-blue-400/50 hover:scale-105'
+ ? 'bg-secondary border-primary/30 hover:border-primary/50 hover:scale-105'
  : 'bg-secondary/30 border-border/60 hover:border-input hover:scale-105'
  }`}
  >
@@ -2012,7 +2012,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.52 }}
- className="bg-card/80 border border-border rounded-xl p-5 mb-8"
+ className="app-card p-5 mb-8"
  >
  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
  <Trophy className="w-4 h-4 text-amber-400" />
@@ -2047,7 +2047,7 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.55 }}
- className="bg-card/80 border border-border rounded-xl p-5"
+ className="app-card p-5"
  >
  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
  <Trophy className="w-4 h-4 text-amber-400" />
@@ -2061,8 +2061,8 @@ export default function DashboardPage() {
  <motion.circle
  cx="60" cy="60" r="54" fill="none"
  stroke={
- (stats?.productivityScore || 0) >= 75 ? '#2563eb' :
- (stats?.productivityScore || 0) >= 50 ? '#3b82f6' :
+ (stats?.productivityScore || 0) >= 75 ? '#4b8b62' :
+ (stats?.productivityScore || 0) >= 50 ? '#4b8b62' :
  (stats?.productivityScore || 0) >= 25 ? '#f59e0b' : '#ef4444'
  }
  strokeWidth="8"

@@ -67,7 +67,7 @@ export default function PublicProfile() {
  if (loading) {
  return (
  <div className="min-h-screen bg-background flex items-center justify-center">
- <div className="w-8 h-8 border-4 border-primary/30 border-t-blue-500 rounded-full animate-spin" />
+ <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
  </div>
  )
  }
@@ -83,7 +83,7 @@ export default function PublicProfile() {
  <p className="text-muted-foreground mb-6 text-sm">
  {error === 'This profile is private' ? 'This user has chosen to keep their profile private.' : 'The user you are looking for does not exist.'}
  </p>
- <Link href="/" className="px-5 py-2.5 bg-primary hover:bg-primary text-foreground rounded-lg inline-flex items-center gap-2 text-sm transition-colors">
+ <Link href="/" className="px-5 py-2.5 bg-primary hover:bg-primary text-primary-foreground rounded-lg inline-flex items-center gap-2 text-sm transition-colors">
  <ArrowLeft className="w-4 h-4" />
  Go Home
  </Link>
@@ -157,7 +157,7 @@ export default function PublicProfile() {
  <p className="text-xs text-muted-foreground">Current Streak</p>
  </div>
  <div className="bg-card border border-border rounded-xl p-4 text-center">
- <TrendingUp className="w-5 h-5 text-green-400 mx-auto mb-2" />
+ <TrendingUp className="w-5 h-5 text-primary mx-auto mb-2" />
  <p className="text-xl font-bold">{stats.longestStreak}</p>
  <p className="text-xs text-muted-foreground">Longest Streak</p>
  </div>
@@ -238,7 +238,7 @@ export default function PublicProfile() {
  {/* CTA */}
  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="mt-8 text-center">
  <p className="text-muted-foreground text-sm mb-3">Track your own coding activity</p>
- <Link href="/signup" className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary text-foreground rounded-lg text-sm font-medium transition-colors">
+ <Link href="/signup" className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary text-primary-foreground rounded-lg text-sm font-medium transition-colors">
  <Code2 className="w-4 h-4" />
  Get Started Free
  </Link>

@@ -20,8 +20,8 @@ export default function FinalCTA() {
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-black">
       {/* Radial gradient background */}
-      <div className="absolute inset-0 bg-linear-to-br from-blue-900/20 via-transparent to-transparent pointer-events-none" />
-      <div className="absolute top-1/2 -translate-y-1/2 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-1/2 -translate-y-1/2 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -33,7 +33,7 @@ export default function FinalCTA() {
           className="text-5xl sm:text-6xl font-bold mb-6"
         >
           Your contribution graph{' '}
-          <span className="bg-linear-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-primary to-primary bg-clip-text text-transparent">
             deserves the truth.
           </span>
         </motion.h2>
@@ -63,7 +63,7 @@ export default function FinalCTA() {
             }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handleSignIn('github')}
-            className="px-10 py-4 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 group text-lg shadow-lg"
+            className="px-10 py-4 bg-linear-to-r from-primary to-primary hover:from-primary hover:to-primary text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 group text-lg shadow-lg"
           >
             <Github className="w-6 h-6" />
             Continue with GitHub
@@ -101,7 +101,7 @@ export default function FinalCTA() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => handleSignIn('github')}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-500 transition-all duration-300 flex items-center justify-center gap-2"
+          className="w-full py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/70 transition-all duration-300 flex items-center justify-center gap-2"
         >
           <Github className="w-5 h-5" />
           Get Started Now

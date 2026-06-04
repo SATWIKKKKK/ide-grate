@@ -290,7 +290,7 @@ export default function SettingsPage() {
  <div className="min-h-screen bg-background flex items-center justify-center">
  <div className="flex flex-col items-center gap-4">
  <div className="relative">
- <div className="w-12 h-12 border-4 border-primary/20 border-t-emerald-500 rounded-full animate-spin" />
+ <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
  <div className="absolute inset-0 flex items-center justify-center">
  <div className="w-4 h-4 bg-primary/30 rounded-full animate-pulse" />
  </div>
@@ -305,10 +305,10 @@ export default function SettingsPage() {
 
  // ── Render ──────────────────────────────────────────────────────────────────
  return (
- <div className="min-h-screen bg-background text-foreground">
+ <div className="page-shell min-h-screen text-foreground">
  <Navbar />
 
- <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
+ <main className="dashboard-shell max-w-5xl pt-6 sm:pt-8 pb-12">
  {/* Header */}
  <motion.div
  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -365,7 +365,7 @@ export default function SettingsPage() {
  <motion.div
  key={s.label}
  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.08 + i * 0.04 }}
- className={`bg-card/80 border border-border rounded-xl p-3 sm:p-4 transition-colors ${s.border}`}
+ className={`app-card p-3 sm:p-4 transition-colors ${s.border}`}
  >
  <div className="flex items-center gap-2 mb-2">
  <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
@@ -386,7 +386,7 @@ export default function SettingsPage() {
  {/* Username */}
  <div>
  <label className="text-sm text-muted-foreground mb-1.5 block">Username</label>
- <div className="flex gap-2">
+ <div className="flex flex-col sm:flex-row gap-2">
  <div className="flex-1 flex items-center bg-secondary border border-border rounded-lg overflow-hidden focus-within:border-primary/50 transition-colors">
  <span className="px-3 text-muted-foreground text-sm shrink-0">/u/</span>
  <input
@@ -400,7 +400,7 @@ export default function SettingsPage() {
  <button
  onClick={() => saveSettings({ username })}
  disabled={saving || !username || username === (settings.username || '')}
- className="px-4 py-2 bg-primary hover:bg-primary active:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-blue-500/20 hover:shadow-md flex items-center gap-1.5 shrink-0"
+ className="px-4 py-2 bg-primary hover:bg-primary active:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md flex items-center justify-center gap-1.5 shrink-0"
  >
  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
  Save
@@ -412,7 +412,7 @@ export default function SettingsPage() {
  {/* Bio */}
  <div>
  <label className="text-sm text-muted-foreground mb-1.5 block">Bio <span className="text-muted-foreground">{bio.length}/200</span></label>
- <div className="flex gap-2">
+ <div className="flex flex-col sm:flex-row gap-2">
  <textarea
  value={bio} onChange={e => setBio(e.target.value)}
  placeholder="Tell others about yourself…"
@@ -422,7 +422,7 @@ export default function SettingsPage() {
  <button
  onClick={() => saveSettings({ bio })}
  disabled={saving || bio === (settings.bio || '')}
- className="px-4 py-2 bg-primary hover:bg-primary active:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-blue-500/20 hover:shadow-md self-end flex items-center gap-1.5 shrink-0"
+ className="px-4 py-2 bg-primary hover:bg-primary active:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md sm:self-end flex items-center justify-center gap-1.5 shrink-0"
  >
  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
  Save
@@ -517,7 +517,7 @@ export default function SettingsPage() {
  <button
  onClick={connectVsCode}
  disabled={apiKeyLoading}
- className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md flex items-center justify-center gap-2"
+ className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md flex items-center justify-center gap-2"
  >
  {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
  Generate API Key
@@ -558,7 +558,7 @@ export default function SettingsPage() {
  <div className="text-center py-4">
  <p className="text-muted-foreground text-sm mb-3">No API key generated yet</p>
  <button onClick={generateApiKey} disabled={apiKeyLoading}
- className="px-5 py-2.5 bg-primary hover:bg-primary active:bg-primary text-foreground rounded-lg text-sm transition-all shadow-md hover:shadow-blue-500/30 flex items-center gap-2 mx-auto">
+ className="px-5 py-2.5 bg-primary hover:bg-primary active:bg-primary text-primary-foreground rounded-lg text-sm transition-all shadow-md hover:shadow-primary/30 flex items-center gap-2 mx-auto">
  {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
  Generate API Key
  </button>
@@ -586,7 +586,7 @@ export default function SettingsPage() {
  <a
  href="/downloads/extension.vsix"
  download="vs-integrate-extension.vsix"
- className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary rounded-lg text-xs text-foreground font-medium transition-colors"
+ className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary rounded-lg text-xs text-primary-foreground font-medium transition-colors"
  >
  <Download className="w-3.5 h-3.5" />
  Download .vsix Extension
@@ -678,7 +678,7 @@ export default function SettingsPage() {
  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
  <button
  onClick={() => signOut({ callbackUrl: '/' })}
- className="w-full p-4 bg-card/80 hover:bg-destructive/5 border border-border hover:border-red-500/40 rounded-xl text-muted-foreground hover:text-destructive font-medium transition-all flex items-center justify-center gap-2"
+ className="w-full p-4 app-card hover:bg-destructive/5 border-border hover:border-red-500/40 rounded-xl text-muted-foreground hover:text-destructive font-medium transition-all flex items-center justify-center gap-2"
  >
  <LogOut className="w-4 h-4" />
  Sign Out
@@ -729,7 +729,7 @@ export default function SettingsPage() {
  <input
  type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
  placeholder="DELETE" autoFocus
- className="w-full p-3 bg-secondary border border-border rounded-xl text-foreground text-sm font-mono text-center mb-4 focus:border-red-500 outline-none"
+ className="w-full p-3 muted-panel rounded-xl text-foreground text-sm font-mono text-center mb-4 focus:border-red-500 outline-none"
  />
  <div className="flex gap-3">
  <button onClick={() => { setShowDataDeleteConfirm(false); setDeleteStep(1); setDeleteConfirmText('') }}
@@ -802,11 +802,11 @@ function ToggleRow({
 
 function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
  return (
- <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
+ <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-background/60 backdrop-blur-sm"
  onClick={onClose}>
  <motion.div
  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
- className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-6"
+ className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-card border border-border rounded-2xl shadow-2xl p-4 sm:p-6"
  onClick={e => e.stopPropagation()}
  >
  {children}

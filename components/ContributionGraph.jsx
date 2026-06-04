@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
 export default function ContributionGraph() {
@@ -9,6 +9,7 @@ export default function ContributionGraph() {
   const [contributionData, setContributionData] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     if (session?.user) {
@@ -20,6 +21,33 @@ export default function ContributionGraph() {
       setLoading(false);
     }
   }, [session]);
+
+  useEffect(() => {
+    if (loading || !contributionData) return;
+
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+
+    let animationFrame;
+    let lastTime = performance.now();
+
+    const animate = (time) => {
+      const delta = time - lastTime;
+      lastTime = time;
+
+      if (scroller.scrollWidth > scroller.clientWidth) {
+        scroller.scrollLeft += delta * 0.018;
+        if (scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1) {
+          scroller.scrollLeft = 0;
+        }
+      }
+
+      animationFrame = requestAnimationFrame(animate);
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [loading, contributionData]);
 
   const fetchContributions = async () => {
     try {
@@ -115,12 +143,12 @@ export default function ContributionGraph() {
   const contributions = contributionData ? getContributionGrid() : [];
   
   const getColor = (level) => {
-    if (level === 0) return 'bg-[#1e2530]';
-    if (level === 1) return 'bg-blue-300';
-    if (level === 2) return 'bg-blue-500';
-    if (level === 3) return 'bg-blue-700';
-    if (level === 4) return 'bg-blue-900';
-    return 'bg-blue-950';
+    if (level === 0) return 'bg-secondary';
+    if (level === 1) return 'bg-primary/25';
+    if (level === 2) return 'bg-primary/70';
+    if (level === 3) return 'bg-primary/85';
+    if (level === 4) return 'bg-primary';
+    return 'bg-primary';
   };
 
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -128,7 +156,7 @@ export default function ContributionGraph() {
   if (loading) {
     return (
       <div className="w-full flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -137,7 +165,7 @@ export default function ContributionGraph() {
     <div className="w-full">
       {/* keyframes are defined globally in app/globals.css; use CSS vars per-square for duration/delay */}
       
-      <div className="flex gap-2 items-start overflow-x-hidden pb-4">
+      <div ref={scrollRef} className="heatmap-scroll flex gap-2 items-start overflow-x-auto pb-3">
         {/* Day labels */}
        
 
@@ -157,7 +185,7 @@ export default function ContributionGraph() {
                 return (
                   <div
                     key={`${weekIdx}-${dayIdx}`}
-                    className={`w-3 h-3 rounded-sm ${getColor(day.level)} cursor-pointer border border-gray-700 hover:border-blue-400 hover:scale-125 transition-all ${day.level > 0 ? 'animate-glitter' : ''}`}
+                    className={`w-3 h-3 rounded-sm ${getColor(day.level)} cursor-pointer border border-border hover:border-primary hover:scale-125 transition-all ${day.level > 0 ? 'animate-glitter' : ''}`}
                     style={squareStyle}
                     title={`${day.date}: ${day.hours.toFixed(1)}h coding`}
                   />
@@ -169,51 +197,51 @@ export default function ContributionGraph() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-3 mt-6 text-xs text-gray-500">
+      <div className="flex items-center gap-3 mt-6 text-xs text-muted-foreground">
         <span>Less</span>
         <div className="flex gap-1">
-          <div className="w-3 h-3 bg-[#1e2530] rounded-sm" />
-          <div className="w-3 h-3 bg-blue-300 rounded-sm" />
-          <div className="w-3 h-3 bg-blue-500 rounded-sm" />
-          <div className="w-3 h-3 bg-blue-700 rounded-sm" />
-          <div className="w-3 h-3 bg-blue-900 rounded-sm" />
+          <div className="w-3 h-3 bg-secondary rounded-sm" />
+          <div className="w-3 h-3 bg-primary/25 rounded-sm" />
+          <div className="w-3 h-3 bg-primary/70 rounded-sm" />
+          <div className="w-3 h-3 bg-primary/85 rounded-sm" />
+          <div className="w-3 h-3 bg-primary rounded-sm" />
         </div>
         <span>More</span>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-3 mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8">
         <motion.div
           whileHover={{ y: -5 }}
-          className="bg-gray-900 rounded-lg p-4 border border-gray-800 hover:border-blue-500/50 transition-all"
+          className="bg-secondary/60 rounded-lg p-4 border border-border hover:border-primary/50 transition-all"
         >
-          <p className="text-gray-500 text-xs mb-1">Total Hours</p>
-          <p className="text-2xl font-bold text-blue-500">
+          <p className="text-muted-foreground text-xs mb-1">Total Hours</p>
+          <p className="text-2xl font-medium text-primary">
             {stats?.totalHours || 0}h
           </p>
-          <p className="text-xs text-gray-500 mt-2">This year</p>
+          <p className="text-xs text-muted-foreground mt-2">This year</p>
         </motion.div>
 
         <motion.div
           whileHover={{ y: -5 }}
-          className="bg-gray-900 rounded-lg p-4 border border-gray-800 hover:border-blue-500/50 transition-all"
+          className="bg-secondary/60 rounded-lg p-4 border border-border hover:border-primary/50 transition-all"
         >
-          <p className="text-gray-500 text-xs mb-1">Active Days</p>
-          <p className="text-2xl font-bold text-blue-500">
+          <p className="text-muted-foreground text-xs mb-1">Active Days</p>
+          <p className="text-2xl font-medium text-primary">
             {stats?.activeDays || 0}
           </p>
-          <p className="text-xs text-gray-500 mt-2">Days coded</p>
+          <p className="text-xs text-muted-foreground mt-2">Days coded</p>
         </motion.div>
 
         <motion.div
           whileHover={{ y: -5 }}
-          className="bg-gray-900 rounded-lg p-4 border border-gray-800 hover:border-blue-500/50 transition-all"
+          className="bg-secondary/60 rounded-lg p-4 border border-border hover:border-primary/50 transition-all"
         >
-          <p className="text-gray-500 text-xs mb-1">Avg. Daily</p>
-          <p className="text-2xl font-bold text-blue-500">
+          <p className="text-muted-foreground text-xs mb-1">Avg. Daily</p>
+          <p className="text-2xl font-medium text-primary">
             {stats?.avgHoursPerDay || 0}h
           </p>
-          <p className="text-xs text-gray-500 mt-2">Per active day</p>
+          <p className="text-xs text-muted-foreground mt-2">Per active day</p>
         </motion.div>
       </div>
     </div>

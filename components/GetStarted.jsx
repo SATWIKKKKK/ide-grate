@@ -19,7 +19,7 @@ function CopyButton({ text }) {
       title="Copy to clipboard"
     >
       {copied ? (
-        <Check className="w-4 h-4 text-green-500" />
+        <Check className="w-4 h-4 text-primary" />
       ) : (
         <Copy className="w-4 h-4 text-gray-400" />
       )}
@@ -35,7 +35,7 @@ function InstallTabs() {
       <a
         href={`${siteUrl}/api/download/vsix`}
         download="vs-integrate-extension.vsix"
-        className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 bg-primary hover:bg-primary/70 rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
       >
         <Download className="w-4 h-4" />
         Download .vsix File
@@ -47,7 +47,7 @@ function InstallTabs() {
           'Select the downloaded .vsix file',
         ].map((text, i) => (
           <div key={i} className="flex items-start gap-2.5 p-2 bg-gray-800/50 rounded-lg">
-            <span className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+            <span className="w-5 h-5 rounded-full bg-primary/30 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
               {i + 1}
             </span>
             <span className="text-xs text-gray-400">{text}</span>
@@ -103,7 +103,7 @@ export default function GetStarted() {
               return (
                 <div key={index} className="relative flex gap-6">
                   <div className="relative z-10 shrink-0">
-                    <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
+                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg">
                       <Icon className="w-7 h-7 text-white" />
                     </div>
                   </div>

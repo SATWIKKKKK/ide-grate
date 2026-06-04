@@ -9,7 +9,7 @@ import {
   ArrowRight, CheckCircle2, Loader2,
   Wifi
 } from 'lucide-react'
-import Logo from '@/components/Logo'
+import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 
 const STEPS = [
@@ -28,9 +28,10 @@ export default function OnboardingPage() {
   const [receivingData, setReceivingData] = useState(false)
   const [verifyStartedAt, setVerifyStartedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') router.push('/login')
+    if (status === 'unauthenticated') router.push('/signup')
   }, [status, router])
 
   useEffect(() => {
@@ -44,7 +45,6 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (step < 3) return
-    // Record when verification started so we only count NEW activity
     const startedAt = Date.now()
     let attempts = 0
     const poll = async () => {
@@ -53,7 +53,6 @@ export default function OnboardingPage() {
         if (res.ok) {
           const data = await res.json()
           if (data.connected) {
-            // Only count as verified if activity happened AFTER we started checking
             const lastAt = data.lastActivityAt ? new Date(data.lastActivityAt).getTime() : 0
             if (lastAt > startedAt - 10000) {
               setConnected(true)
@@ -65,7 +64,7 @@ export default function OnboardingPage() {
       } catch { /* ignore */ }
       attempts++
       if (attempts >= 20) {
-        setVerifyStartedAt(-1) // signal timeout
+        setVerifyStartedAt(-1)
       }
     }
     poll()
@@ -108,10 +107,18 @@ export default function OnboardingPage() {
     window.location.href = 'vscode://file'
   }
 
+  const copyKey = () => {
+    if (apiKey) {
+      navigator.clipboard.writeText(apiKey)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     )
   }
@@ -119,90 +126,84 @@ export default function OnboardingPage() {
   if (!session) return null
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/80 border-b border-gray-800 shrink-0">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center">
-            <Logo size="sm" />
-          </Link>
-          <button
-            onClick={() => { localStorage.setItem('onboarding_skipped', 'true'); window.location.href = '/dashboard' }}
-            className="text-xs text-gray-500 hover:text-white transition-colors"
-          >
-            Skip →
-          </button>
-        </div>
-      </nav>
+    <div className="page-shell min-h-screen text-foreground flex flex-col">
+      <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Connect VS Code in 3 Steps</h1>
-          <p className="text-gray-400 text-sm sm:text-base">Install → Connect → Verify</p>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-7 lg:mb-8">
+          <p className="text-sm font-semibold text-primary mb-2">Setup guide</p>
+          <h1 className="text-3xl sm:text-4xl font-display font-bold mb-2">Connect VS Code in 3 steps</h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">Install the extension, add your API key, then verify that editor heartbeats are reaching your dashboard.</p>
         </motion.div>
 
-        {/* Stepper (left) + Content (right) layout */}
-        <div className="flex flex-col md:flex-row gap-8 md:gap-12">
+        {/* Stepper + Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-5 lg:gap-8">
           {/* Left: Vertical stepper */}
-          <div className="flex md:flex-col items-center md:items-start gap-0 md:pt-2 shrink-0">
+          <div className="app-surface rounded-xl p-4 lg:p-5">
+          <div className="w-full flex lg:flex-col items-center lg:items-start justify-start gap-0 shrink-0 overflow-x-auto pb-2 lg:pb-0">
             {STEPS.map((s, i) => {
               const isCompleted = step > s.num
               const isActive = step === s.num
               return (
-                <div key={s.num} className="flex md:flex-col items-center">
-                  {/* Step circle + label */}
+                <div key={s.num} className="flex lg:flex-col items-center">
                   <button
                     onClick={() => goToStep(s.num)}
                     className="flex items-center gap-3 group cursor-pointer"
                   >
                     <motion.div
                       animate={{
-                        backgroundColor: isCompleted ? '#16a34a' : isActive ? '#2563eb' : '#1f2937',
+                        backgroundColor: isCompleted
+                          ? 'var(--color-accent)'
+                          : isActive
+                          ? 'var(--color-accent)'
+                          : 'var(--color-rule)',
                         scale: isActive ? 1.1 : 1,
                       }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-shadow ${
-                        isActive ? 'ring-4 ring-blue-500/30' : isCompleted ? 'ring-2 ring-green-500/30' : ''
+                        isActive ? 'ring-4 ring-primary/30' : isCompleted ? 'ring-2 ring-primary/30' : ''
                       }`}
                     >
                       {isCompleted ? (
                         <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300 }}>
-                          <Check className="w-5 h-5 text-white" />
+                          <Check className="w-5 h-5 text-primary-foreground" />
                         </motion.span>
                       ) : (
-                        <span className={isActive ? 'text-white' : 'text-gray-500'}>{s.num}</span>
+                        <span className={isActive ? 'text-primary-foreground' : 'text-muted-foreground'}>{s.num}</span>
                       )}
                     </motion.div>
-                    <div className="hidden md:block text-left">
+                    <div className="hidden lg:block text-left">
                       <p className={`text-sm font-medium transition-colors ${
-                        isActive ? 'text-white' : isCompleted ? 'text-green-400' : 'text-gray-500 group-hover:text-gray-300'
+                        isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                       }`}>
                         {s.title}
                       </p>
-                      <p className="text-xs text-gray-600">{s.desc}</p>
+                      <p className="text-xs text-muted-foreground">{s.desc}</p>
                     </div>
                   </button>
-                  {/* Connector bar */}
                   {i < STEPS.length - 1 && (
-                    <div className="flex md:ml-5 md:my-0 my-0 mx-0">
-                      {/* Horizontal bar (mobile) */}
+                    <div className="flex lg:ml-5 lg:my-0 my-0 mx-0">
                       <motion.div
-                        animate={{ backgroundColor: step > s.num ? '#16a34a' : '#1f2937' }}
+                        animate={{ backgroundColor: step > s.num ? 'var(--color-accent)' : 'var(--color-rule)' }}
                         transition={{ duration: 0.4 }}
-                        className="md:hidden w-12 h-1 rounded-full"
+                        className="lg:hidden w-12 h-1 rounded-full"
                       />
-                      {/* Vertical bar (desktop) */}
                       <motion.div
-                        animate={{ backgroundColor: step > s.num ? '#16a34a' : '#1f2937' }}
+                        animate={{ backgroundColor: step > s.num ? 'var(--color-accent)' : 'var(--color-rule)' }}
                         transition={{ duration: 0.4 }}
-                        className="hidden md:block w-1 h-16 rounded-full"
+                        className="hidden lg:block w-1 h-16 rounded-full"
                       />
                     </div>
                   )}
                 </div>
               )
             })}
+          </div>
+          <div className="hidden lg:block mt-5 pt-5 border-t border-border">
+            <p className="text-sm font-semibold text-foreground">What gets tracked</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Session duration, language, platform, and anonymized project hash. Never source code.</p>
+          </div>
           </div>
 
           {/* Right: Step content */}
@@ -217,28 +218,27 @@ export default function OnboardingPage() {
                   exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                 >
-                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center">
-                        <Download className="w-5 h-5 text-white" />
+                  <div className="app-surface rounded-xl p-5 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+                      <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shrink-0">
+                        <Download className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-semibold">Install the Extension</h2>
-                        <p className="text-sm text-gray-400">Download the VSIX and install it in VS Code</p>
+                        <h2 className="text-lg sm:text-xl font-semibold text-foreground">Install the Extension</h2>
+                        <p className="text-sm text-muted-foreground">Download the VSIX and install it in VS Code</p>
                       </div>
                     </div>
 
-                    {/* Download & Install via VS Code UI */}
                     <div className="space-y-3">
-                      <p className="text-sm font-medium text-gray-300">Step 1: Download the extension</p>
+                      <p className="text-sm font-medium text-foreground">Step 1: Download the extension</p>
                       <button
                         onClick={downloadVSIX}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-medium transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-primary hover:bg-primary/90 rounded-xl text-primary-foreground font-medium transition-colors flex items-center justify-center gap-2"
                       >
                         <Download className="w-4 h-4" />
                         Download .vsix File
                       </button>
-                      <p className="text-sm font-medium text-gray-300 mt-4">Step 2: Install in VS Code</p>
+                      <p className="text-sm font-medium text-foreground mt-4">Step 2: Install in VS Code</p>
                       <div className="space-y-1.5">
                         {[
                           'Open VS Code → Extensions panel (Ctrl+Shift+X)',
@@ -246,11 +246,11 @@ export default function OnboardingPage() {
                           'Select the downloaded .vsix file → click Install',
                           'You should see "VS Integrate" in your extensions list',
                         ].map((text, i) => (
-                          <div key={i} className="flex items-start gap-2.5 p-2 bg-gray-800/50 rounded-lg">
-                            <span className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          <div key={i} className="flex items-start gap-2.5 p-2 bg-secondary/50 rounded-lg">
+                            <span className="w-5 h-5 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
                               {i + 1}
                             </span>
-                            <span className="text-xs text-gray-400">{text}</span>
+                            <span className="text-xs text-muted-foreground leading-relaxed">{text}</span>
                           </div>
                         ))}
                       </div>
@@ -258,7 +258,7 @@ export default function OnboardingPage() {
 
                     <button
                       onClick={() => goToStep(2)}
-                      className="w-full mt-5 py-3.5 bg-green-600 hover:bg-green-500 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
+                      className="w-full mt-5 py-3.5 bg-primary hover:bg-primary/90 rounded-xl text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2"
                     >
                       <ArrowRight className="w-5 h-5" />
                       Continue to Connect
@@ -276,14 +276,14 @@ export default function OnboardingPage() {
                   exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                 >
-                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center">
-                        <Wifi className="w-5 h-5 text-white" />
+                  <div className="app-surface rounded-xl p-5 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+                      <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shrink-0">
+                        <Wifi className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-semibold">Connect VS Code</h2>
-                        <p className="text-sm text-gray-400">Make sure the extension is installed from Step 1 first</p>
+                        <h2 className="text-lg sm:text-xl font-semibold text-foreground">Connect VS Code</h2>
+                        <p className="text-sm text-muted-foreground">Make sure the extension is installed from Step 1 first</p>
                       </div>
                     </div>
 
@@ -291,7 +291,7 @@ export default function OnboardingPage() {
                       <button
                         onClick={handleConnect}
                         disabled={connecting}
-                        className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 rounded-xl text-white font-semibold text-lg transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-xl text-primary-foreground font-semibold text-lg transition-colors flex items-center justify-center gap-2"
                       >
                         {connecting ? (
                           <>
@@ -307,37 +307,37 @@ export default function OnboardingPage() {
                       </button>
                     ) : (
                       <div className="space-y-4">
-                        <div className="p-4 bg-gray-800 rounded-xl border border-gray-700">
-                          <p className="text-xs text-gray-500 mb-2">Your API Key:</p>
+                        <div className="p-4 bg-secondary border border-border rounded-xl">
+                          <p className="text-xs text-muted-foreground mb-2">Your API Key:</p>
                           <div className="flex items-center gap-2">
-                            <code className="flex-1 text-sm text-blue-300 font-mono break-all select-all">{apiKey}</code>
+                            <code className="flex-1 text-sm text-primary font-mono break-all select-all min-w-0">{apiKey}</code>
                             <button
-                              onClick={() => { navigator.clipboard.writeText(apiKey!); }}
-                              className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors shrink-0"
+                              onClick={copyKey}
+                              className="p-2 bg-secondary hover:bg-border rounded-lg transition-colors shrink-0"
                             >
-                              <Copy className="w-4 h-4 text-gray-400" />
+                              {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
                             </button>
                           </div>
                         </div>
-                        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                          <p className="text-sm text-blue-400 font-medium mb-2">Set the key in VS Code:</p>
-                          <ol className="text-xs text-gray-400 space-y-1.5 list-decimal list-inside">
+                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl overflow-hidden">
+                          <p className="text-sm text-primary font-medium mb-2">Set the key in VS Code:</p>
+                          <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside overflow-wrap-anywhere">
                             <li>Open VS Code</li>
-                            <li>Press <code className="px-1 bg-gray-800 rounded text-white">Ctrl+Shift+P</code> (or <code className="px-1 bg-gray-800 rounded text-white">Cmd+Shift+P</code> on Mac)</li>
-                            <li>Type <code className="px-1 bg-gray-800 rounded text-white">VS Integrate: Set API Key</code></li>
+                            <li>Press <code className="px-1 bg-secondary rounded text-foreground">Ctrl+Shift+P</code> (or <code className="px-1 bg-secondary rounded text-foreground">Cmd+Shift+P</code> on Mac)</li>
+                            <li>Type <code className="px-1 bg-secondary rounded text-foreground">VS Integrate: Set API Key</code></li>
                             <li>Paste your API key when prompted</li>
-                            <li>When asked for the endpoint, enter: <code className="px-1 bg-gray-800 rounded text-blue-300">https://vs-integrate.vercel.app/api/heartbeat</code></li>
+                            <li>When asked for the endpoint, enter: <code className="px-1 bg-secondary rounded text-primary break-all">https://vs-integrate.vercel.app/api/heartbeat</code></li>
                           </ol>
                           <button
                             onClick={openVSCode}
-                            className="mt-3 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs text-gray-300 transition-colors"
+                            className="mt-3 px-3 py-2 bg-secondary hover:bg-border rounded-lg text-xs text-foreground transition-colors"
                           >
                             Open VS Code
                           </button>
                         </div>
                         <button
                           onClick={() => setStep(3)}
-                          className="w-full py-3.5 bg-green-600 hover:bg-green-500 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
+                          className="w-full py-3.5 bg-primary hover:bg-primary/90 rounded-xl text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2"
                         >
                           <ArrowRight className="w-5 h-5" />
                           I&apos;ve set the API key — Verify Connection
@@ -345,7 +345,7 @@ export default function OnboardingPage() {
                       </div>
                     )}
 
-                    {error && <p className="text-sm text-red-400 mt-3 text-center">{error}</p>}
+                    {error && <p className="text-sm text-destructive mt-3 text-center">{error}</p>}
                   </div>
                 </motion.div>
               )}
@@ -359,64 +359,64 @@ export default function OnboardingPage() {
                   exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                 >
-                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                  <div className="app-surface rounded-xl p-5 sm:p-6">
                     {receivingData ? (
                       <div className="text-center py-4">
-                        <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold mb-2">Tracking Active!</h2>
-                        <p className="text-gray-400 mb-6 text-sm sm:text-base">
+                        <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold mb-2 text-foreground">Tracking Active!</h2>
+                        <p className="text-muted-foreground mb-6 text-sm sm:text-base">
                           Your coding activity is now being tracked live.
                         </p>
                         <Link
                           href="/dashboard"
-                          className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-semibold"
+                          className="inline-flex items-center gap-2 px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-colors font-semibold"
                         >
                           Go to Dashboard <ArrowRight className="w-4 h-4" />
                         </Link>
                       </div>
                     ) : connected ? (
                       <div className="text-center py-4">
-                        <Wifi className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold mb-2">Connected!</h2>
-                        <p className="text-gray-400 mb-2">VS Code is linked to your account.</p>
-                        <p className="text-sm text-gray-500 mb-6">
+                        <Wifi className="w-16 h-16 text-primary mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold mb-2 text-foreground">Connected!</h2>
+                        <p className="text-muted-foreground mb-2">VS Code is linked to your account.</p>
+                        <p className="text-sm text-muted-foreground mb-6">
                           Open any file in VS Code and start coding. We&apos;ll detect your activity automatically.
                         </p>
-                        <div className="flex items-center justify-center gap-2 text-sm text-blue-400">
+                        <div className="flex items-center justify-center gap-2 text-sm text-primary">
                           <Loader2 className="w-4 h-4 animate-spin" />
                           Waiting for coding activity...
                         </div>
                         <Link
                           href="/dashboard"
-                          className="inline-flex items-center gap-2 px-8 py-3 mt-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-semibold"
+                          className="inline-flex items-center gap-2 px-8 py-3 mt-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-colors font-semibold"
                         >
                           Go to Dashboard <ArrowRight className="w-4 h-4" />
                         </Link>
                       </div>
                     ) : (
                       <div className="text-center py-4">
-                        <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
-                          <Loader2 className={`w-8 h-8 text-blue-400 ${verifyStartedAt === -1 ? '' : 'animate-spin'}`} />
+                        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                          <Loader2 className={`w-8 h-8 text-primary ${verifyStartedAt === -1 ? '' : 'animate-spin'}`} />
                         </div>
-                        <h2 className="text-xl font-semibold mb-2">
+                        <h2 className="text-xl font-semibold mb-2 text-foreground">
                           {verifyStartedAt === -1 ? 'Connection not detected yet' : 'Waiting for Connection...'}
                         </h2>
-                        <p className="text-sm text-gray-400 mb-3">
+                        <p className="text-sm text-muted-foreground mb-3">
                           Keep VS Code open with the extension enabled.
                         </p>
-                        <p className="text-xs text-gray-500 mb-4">
+                        <p className="text-xs text-muted-foreground mb-4">
                           If the extension is not installed, go back to Step 1 and download the .vsix file. Then in VS Code: Extensions (Ctrl+Shift+X) → ⋯ → &quot;Install from VSIX...&quot;
                         </p>
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                           <button
                             onClick={() => goToStep(2)}
-                            className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
+                            className="w-full sm:w-auto px-4 py-2.5 bg-secondary hover:bg-border rounded-lg text-sm text-foreground transition-colors"
                           >
                             Back to Step 2
                           </button>
                           <button
                             onClick={openVSCode}
-                            className="px-4 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 rounded-lg text-sm text-blue-300 transition-colors"
+                            className="w-full sm:w-auto px-4 py-2.5 bg-primary/10 hover:bg-primary/20 rounded-lg text-sm text-primary transition-colors"
                           >
                             Open VS Code
                           </button>
@@ -428,7 +428,7 @@ export default function OnboardingPage() {
                               setStep(2)
                               setTimeout(() => setStep(3), 0)
                             }}
-                            className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
+                            className="w-full sm:w-auto px-4 py-2.5 bg-secondary hover:bg-border rounded-lg text-sm text-foreground transition-colors"
                           >
                             <RefreshCw className="w-4 h-4 inline mr-2" />
                             Retry Check
@@ -446,7 +446,7 @@ export default function OnboardingPage() {
         <div className="mt-8 text-center">
           <button
             onClick={() => { localStorage.setItem('onboarding_skipped', 'true'); window.location.href = '/dashboard' }}
-            className="text-sm text-gray-600 hover:text-gray-400 transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Skip to Dashboard →
           </button>

@@ -1,6 +1,7 @@
-/* Hallmark · macrostructure: Workbench · F5 Annotated screenshot knobs: frame=browser chrome, annotations=inline arrows
- * theme: custom · vibe: "classic realistic, authentic, archival, tactile" · paper: oklch(98% 0.008 145) · accent: oklch(45% 0.16 145)
- * display: Newsreader · body: Geist · axes: light / roman-serif / chromatic-green
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4
+ * Hallmark · macrostructure: Product Workbench · tone: precise SaaS · anchor hue: green
+ * theme: custom · vibe: "classic realistic, authentic, archival, tactile" · paper: oklch(98.8% 0.007 145) · accent: oklch(45% 0.16 145)
+ * display: Newsreader · body: Geist · axes: light / serif-headline / chromatic-green
  * studied: no · context: inferred · v1.0.0
  */
 
@@ -10,16 +11,22 @@
 /* Remove existing dark variant logic, Hallmark controls the exact palette */
 :root {
   /* Hallmark Custom Tokens: Classic Realistic / Forest Green */
-  --color-paper: oklch(98% 0.008 145);
-  --color-paper-2: oklch(95% 0.010 145);
+  --color-paper: oklch(98.8% 0.007 145);
+  --color-paper-2: oklch(96.4% 0.010 145);
   --color-ink: oklch(20% 0.012 145);
   --color-ink-2: oklch(40% 0.012 145);
   --color-muted: oklch(55% 0.010 145);
-  --color-rule: oklch(88% 0.010 145);
-  --color-rule-2: oklch(84% 0.010 145);
+  --color-rule: oklch(89% 0.012 145);
+  --color-rule-2: oklch(84.5% 0.012 145);
   --color-accent: oklch(45% 0.16 145);
+  --color-accent-2: oklch(55% 0.12 145);
+  --color-accent-soft: oklch(92% 0.035 145);
+  --color-accent-deep: oklch(34% 0.12 145);
   --color-accent-ink: oklch(98% 0.008 145);
   --color-focus: oklch(50% 0.20 145);
+  --color-brand-blue: oklch(62% 0.22 255);
+  --color-brand-cyan: oklch(72% 0.18 205);
+  --color-brand-faint: oklch(97.5% 0.025 255);
 
   /* Semantic aliases for Radix UI compatibility */
   --background: var(--color-paper);
@@ -75,12 +82,14 @@
   --dur-fast: 150ms;
   --dur-base: 250ms;
   --rule-hair: 1px;
+  --shadow-panel: 0 18px 55px oklch(20% 0.012 145 / 0.08);
+  --shadow-lift: 0 12px 32px oklch(20% 0.012 145 / 0.10);
 }
 
 @theme inline {
   --font-sans: var(--font-sans), 'Geist', system-ui, sans-serif;
   --font-mono: var(--font-mono), 'Geist Mono', monospace;
-  --font-display: 'Newsreader', var(--font-sans);
+  --font-display: "Newsreader", Georgia, serif;
   
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -105,6 +114,7 @@
 
 html, body {
   overflow-x: clip; /* Hallmark page-edge clipping safety */
+  scroll-behavior: smooth;
 }
 
 @layer base {
@@ -121,10 +131,96 @@ html, body {
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     color: var(--color-ink);
-    font-weight: 400; /* Roman serif doesn't need high weight */
+    font-weight: 400;
     line-height: 1.1;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
+  p, a, button, input, textarea, select, code, span, li {
+    min-width: 0;
+  }
+  strong,
+  b {
+    font-weight: 500;
+  }
+  .font-semibold,
+  .font-bold,
+  .font-extrabold,
+  .font-black {
+    font-weight: 500 !important;
+  }
+  h1.font-semibold,
+  h1.font-bold,
+  h1.font-extrabold,
+  h1.font-black,
+  h2.font-semibold,
+  h2.font-bold,
+  h2.font-extrabold,
+  h2.font-black,
+  h3.font-semibold,
+  h3.font-bold,
+  h3.font-extrabold,
+  h3.font-black {
+    font-weight: 400 !important;
+  }
+}
+
+@layer components {
+  .page-shell {
+    min-height: 100vh;
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--color-paper) 88%, white) 0%, var(--color-paper) 42%),
+      radial-gradient(circle at 20% 15%, color-mix(in oklch, var(--color-accent-soft) 58%, transparent) 0 18rem, transparent 18rem);
+  }
+
+  .app-surface {
+    background: color-mix(in oklch, var(--card) 88%, white);
+    border: 1px solid var(--color-rule);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .app-card {
+    background: color-mix(in oklch, var(--card) 82%, white);
+    border: 1px solid var(--color-rule);
+    border-radius: 0.75rem;
+    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  }
+
+  .app-card:hover {
+    border-color: color-mix(in oklch, var(--color-accent) 35%, var(--color-rule));
+    box-shadow: var(--shadow-lift);
+  }
+
+  .muted-panel {
+    background: color-mix(in oklch, var(--secondary) 72%, white);
+    border: 1px solid color-mix(in oklch, var(--color-rule) 82%, var(--color-accent-soft));
+  }
+
+  .dashboard-shell {
+    max-width: 86rem;
+    margin-inline: auto;
+    padding: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .dashboard-shell {
+      padding: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-shell {
+      padding: 2rem;
+    }
+  }
+}
+
+.heatmap-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.heatmap-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Microinteraction focus ring */
@@ -146,8 +242,8 @@ html, body {
 /* Glitter animation - preserving for ContributionGraph */
 @keyframes glitter {
   0%   { filter: brightness(1);    box-shadow: none; }
-  6%   { filter: brightness(1.5);  box-shadow: 0 0 6px 1px rgba(75, 139, 98, 0.4); }
-  12%  { filter: brightness(1.2);  box-shadow: 0 0 3px 1px rgba(75, 139, 98, 0.2); }
+  6%   { filter: brightness(1.5);  box-shadow: 0 0 6px 1px color-mix(in oklch, var(--color-accent) 40%, transparent); }
+  12%  { filter: brightness(1.2);  box-shadow: 0 0 3px 1px color-mix(in oklch, var(--color-accent) 25%, transparent); }
   18%  { filter: brightness(1);    box-shadow: none; }
   100% { filter: brightness(1);    box-shadow: none; }
 }

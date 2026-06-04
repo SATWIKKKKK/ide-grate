@@ -89,14 +89,35 @@ function SignUpContent() {
   const isFormValid = devEmail && devName && devPassword.length >= 8 && confirmPassword === devPassword
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <Link href="/" className="flex items-center justify-center mb-8">
-          <Logo size="xl" />
-        </Link>
+    <div className="page-shell min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl grid-cols-1 items-center gap-5 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[1fr_0.92fr]">
+        <section className="hidden lg:flex app-surface rounded-xl p-8 min-h-[38rem] flex-col justify-between">
+          <Link href="/" className="inline-flex">
+            <Logo size="md" />
+          </Link>
+          <div>
+            <p className="text-sm font-semibold text-primary mb-3">Create your workspace</p>
+            <h1 className="text-4xl font-bold leading-tight max-w-md">Turn everyday coding into a useful record.</h1>
+            <p className="mt-4 text-muted-foreground max-w-md">
+              Connect VS Code once, then let sessions, streaks, languages, and goals fill in automatically as you work.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {['Install', 'Connect', 'Track'].map((item, index) => (
+              <div key={item} className="muted-panel rounded-lg p-3">
+                <p className="text-lg font-bold text-primary">{index + 1}</p>
+                <p className="text-sm font-semibold text-foreground mt-1">{item}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <Card className="bg-card border-border">
+        <section className="w-full max-w-md mx-auto">
+          <Link href="/" className="flex items-center justify-center mb-6 lg:hidden">
+            <Logo size="xl" />
+          </Link>
+
+        <Card className="app-surface rounded-xl border-border">
           <CardHeader className="text-center">
             <CardTitle className="text-xl text-foreground">Create Your Account</CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -207,7 +228,7 @@ function SignUpContent() {
               <Button
                 type="submit"
                 disabled={isLoading !== null || !isFormValid}
-                className="w-full bg-primary hover:bg-primary text-foreground font-medium"
+                className="w-full bg-primary hover:bg-primary text-primary-foreground font-medium"
               >
                 {isLoading === 'credentials' ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -266,6 +287,7 @@ function SignUpContent() {
             </p>
           </CardFooter>
         </Card>
+        </section>
       </div>
     </div>
   )
@@ -275,7 +297,7 @@ export default function SignUpPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     }>
       <SignUpContent />
