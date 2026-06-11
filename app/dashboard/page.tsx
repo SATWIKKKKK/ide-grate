@@ -557,7 +557,7 @@ export default function DashboardPage() {
  // ─── Loading state ─────────────────────────────────────────────────────────
  if (status === 'loading' || (loading && !stats)) {
  return (
- <div className="min-h-screen bg-background flex items-center justify-center">
+ <div className="page-shell min-h-screen flex items-center justify-center">
  <div className="flex flex-col items-center gap-4">
  <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
  <p className="text-muted-foreground text-sm">Loading your dashboard...</p>
@@ -568,7 +568,7 @@ export default function DashboardPage() {
 
  if (!session) return null
 
- const levelColors = ['bg-secondary/50', 'bg-primary/60', 'bg-primary/70', 'bg-primary/80', 'bg-primary']
+ const levelColors = ['bg-[var(--color-paper-3)]', 'bg-[color-mix(in_oklch,var(--color-accent)_32%,var(--color-paper-3))]', 'bg-[color-mix(in_oklch,var(--color-accent)_56%,var(--color-paper-3))]', 'bg-[color-mix(in_oklch,var(--color-accent)_76%,var(--color-paper-3))]', 'bg-primary']
  const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', '']
 
  return (
@@ -593,14 +593,15 @@ export default function DashboardPage() {
  )}
  </AnimatePresence>
 
- <main className="dashboard-shell pt-6 sm:pt-8 pb-12">
+ <main className="dashboard-shell pt-6 sm:pt-8 pb-12" data-gsap-stagger>
  {/* Header */}
  <motion.div
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
+ data-gsap-item
  >
- <div className="flex items-center gap-3 sm:gap-4 min-w-0 md:mt-16 w-full sm:w-auto">
+ <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
  {session.user?.image && (
  <img src={session.user.image} alt="" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full ring-2 ring-ring/30 mt-1 shrink-0" />
  )}
@@ -657,6 +658,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.05 }}
  className="mb-6"
+ data-gsap-item
  >
  <div
  className="muted-panel rounded-xl p-4 cursor-pointer hover:border-primary/30 transition-all group"
@@ -714,6 +716,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.1 }}
  className="mb-6"
+ data-gsap-item
  >
  <div className={`rounded-xl border transition-all overflow-hidden cursor-pointer ${
  connectionStatus.connected
@@ -887,7 +890,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.25, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] sm:max-h-[80vh] overflow-y-auto"
+ className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-lg max-h-[92vh] sm:max-h-[80vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
  <div className="p-4 sm:p-6">
@@ -995,7 +998,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.2, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto"
+ className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
  <div className="p-4 sm:p-6 text-center">
@@ -1041,7 +1044,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.2, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto"
+ className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
  <div className="p-4 sm:p-6 text-center">
@@ -1073,12 +1076,12 @@ export default function DashboardPage() {
  </AnimatePresence>
 
  {/* Stats Grid */}
- <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8" data-gsap-stagger>
  {[
  { key: 'totalHours', label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `${stats?.activeDays || 0} active days` },
  { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, iconClass: 'text-orange-400', glowClass: 'bg-orange-500/5', hoverClass: 'hover:border-orange-500/30', sub: `Best: ${stats?.longestStreak || 0}d` },
  { key: 'today', label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `Score: ${stats?.productivityScore || 0}/100` },
- { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, iconClass: 'text-violet-400', glowClass: 'bg-violet-500/5', hoverClass: 'hover:border-violet-500/30', sub: `${stats?.totalSessions || 0} sessions` },
+ { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, iconClass: 'text-[var(--color-accent-2)]', glowClass: 'bg-[color-mix(in_oklch,var(--color-accent-2)_10%,transparent)]', hoverClass: 'hover:border-[var(--color-accent-2)]', sub: `${stats?.totalSessions || 0} sessions` },
  ].map((stat, i) => (
  <motion.div
  key={stat.label}
@@ -1087,6 +1090,7 @@ export default function DashboardPage() {
  transition={{ delay: 0.1 + i * 0.05 }}
  onClick={() => setActiveStatPopup(stat.key)}
  className={`group relative app-card p-4 sm:p-5 ${stat.hoverClass} transition-all overflow-hidden cursor-pointer active:scale-[0.97]`}
+ data-gsap-item
  >
  <div className={`absolute top-0 right-0 w-20 h-20 ${stat.glowClass} rounded-full -translate-y-1/2 translate-x-1/2`} />
  <div className="relative">
@@ -1117,7 +1121,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, scale: 1, y: 0 }}
  exit={{ opacity: 0, scale: 0.9, y: 20 }}
  transition={{ duration: 0.25, ease: 'easeOut' }}
- className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] sm:max-h-[80vh] overflow-y-auto"
+ className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-lg max-h-[92vh] sm:max-h-[80vh] overflow-y-auto"
  onClick={e => e.stopPropagation()}
  >
  {/* Total Hours Popup */}
@@ -1210,7 +1214,7 @@ export default function DashboardPage() {
  </div>
  <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
  <span className="text-sm text-muted-foreground">Coded Today</span>
- <span className="text-sm font-semibold">{(stats?.hoursToday || 0) > 0 ? '✅ Yes' : '❌ Not yet'}</span>
+ <span className="text-sm font-semibold">{(stats?.hoursToday || 0) > 0 ? 'Yes' : 'Not yet'}</span>
  </div>
  <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
  <span className="text-sm text-muted-foreground">Productivity Score</span>
@@ -1325,6 +1329,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.3 }}
  className="app-card p-4 sm:p-6 mb-8"
+ data-gsap="fade-up"
  >
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
  <div>
@@ -1355,7 +1360,7 @@ export default function DashboardPage() {
  </div>
 
  <div className="relative">
- <div className="flex gap-0.75 overflow-x-auto pb-2 scrollbar-thin">
+ <div className="heatmap-scroll flex gap-0.75 overflow-x-auto pb-2">
  {/* Day labels */}
  <div className="flex flex-col gap-0.75 mr-1 shrink-0">
  {dayLabels.map((label, i) => (
@@ -1396,7 +1401,7 @@ export default function DashboardPage() {
  className="fixed z-50 pointer-events-none"
  style={{ left: hoveredDay.x - 40, top: hoveredDay.y - 70 }}
  >
- <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-xl shadow-black/50">
+ <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-xl">
  <p className="text-xs font-semibold text-foreground">
  {formatHours(hoveredDay.hours)} on {formatDate(hoveredDay.date)}
  </p>
@@ -1428,6 +1433,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.35 }}
  className="app-card p-5"
+ data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1475,6 +1481,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.4 }}
  className="app-card p-5"
+ data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1533,7 +1540,7 @@ export default function DashboardPage() {
  initial={{ width: 0 }}
  animate={{ width: `${project.percentage}%` }}
  transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }}
- className="h-full rounded-full bg-secondary from-violet-500 to-purple-400"
+ className="h-full rounded-full bg-primary"
  />
  </div>
  </div>
@@ -1556,6 +1563,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.45 }}
  className="app-card p-5 mb-8"
+ data-gsap="fade-up"
  >
  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
  <TrendingUp className="w-4 h-4 text-primary" />
@@ -1574,7 +1582,7 @@ export default function DashboardPage() {
  initial={{ height: 0 }}
  animate={{ height: `${pct}%` }}
  transition={{ delay: 0.6 + i * 0.05, duration: 0.6, ease: 'easeOut' }}
- className="absolute bottom-0 w-full rounded-t-lg bg-linear-to-t "
+ className="absolute bottom-0 w-full rounded-t-lg bg-primary"
  />
  </div>
  <span className="text-[10px] text-muted-foreground">{day}</span>
@@ -1592,6 +1600,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.5 }}
  className="lg:col-span-3 app-card p-5"
+ data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1606,38 +1615,38 @@ export default function DashboardPage() {
  <AreaChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
  <defs>
  <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="#4b8b62" stopOpacity={0.35} />
- <stop offset="95%" stopColor="#4b8b62" stopOpacity={0} />
+ <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.35} />
+ <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
  </linearGradient>
  </defs>
- <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+ <CartesianGrid strokeDasharray="3 3" stroke="var(--color-rule)" vertical={false} />
  <XAxis
  dataKey="date"
- tick={{ fill: '#4b5563', fontSize: 10 }}
+ tick={{ fill: 'var(--color-muted)', fontSize: 10 }}
  tickLine={false}
- axisLine={{ stroke: '#1f2937' }}
+ axisLine={{ stroke: 'var(--color-rule)' }}
  interval={6}
  />
  <YAxis
- tick={{ fill: '#4b5563', fontSize: 10 }}
+ tick={{ fill: 'var(--color-muted)', fontSize: 10 }}
  tickLine={false}
  axisLine={false}
  tickFormatter={v => formatHoursShort(v)}
  />
  <ReTooltip
- contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#e5e7eb', fontSize: '12px' }}
+ contentStyle={{ background: 'var(--color-paper)', border: '1px solid var(--color-rule)', borderRadius: '8px', color: 'var(--color-ink)', fontSize: '12px' }}
  formatter={(v: number) => [formatHoursShort(v), 'Coded']}
- labelStyle={{ color: '#9ca3af' }}
- cursor={{ stroke: '#374151' }}
+ labelStyle={{ color: 'var(--color-muted)' }}
+ cursor={{ stroke: 'var(--color-rule)' }}
  />
  <Area
  type="monotone"
  dataKey="hours"
- stroke="#4b8b62"
+ stroke="var(--color-accent)"
  fill="url(#trendGrad)"
  strokeWidth={2}
  dot={false}
- activeDot={{ r: 4, fill: '#4b8b62', strokeWidth: 0 }}
+ activeDot={{ r: 4, fill: 'var(--color-accent)', strokeWidth: 0 }}
  />
  </AreaChart>
  </ResponsiveContainer>
@@ -1649,6 +1658,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.55 }}
  className="lg:col-span-2 app-card p-5"
+ data-gsap="fade-up"
  >
  <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
  <Globe2 className="w-4 h-4 text-primary" />
@@ -1674,10 +1684,10 @@ export default function DashboardPage() {
  ))}
  </Pie>
  <ReTooltip
- contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', fontSize: '11px', color: '#ffffff' }}
+ contentStyle={{ background: 'var(--color-paper)', border: '1px solid var(--color-rule)', borderRadius: '8px', fontSize: '11px', color: 'var(--color-ink)' }}
  formatter={(v: number, _: string, p) => [`${v}h (${p.payload.percentage}%)`, p.payload.name]}
- itemStyle={{ color: '#ffffff' }}
- labelStyle={{ color: '#9ca3af' }}
+ itemStyle={{ color: 'var(--color-ink)' }}
+ labelStyle={{ color: 'var(--color-muted)' }}
  />
  </PieChart>
  </ResponsiveContainer>
@@ -1708,6 +1718,7 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.6 }}
  className="app-card p-5"
+ data-gsap="fade-up"
  >
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
  <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -1738,27 +1749,27 @@ export default function DashboardPage() {
  </div>
  <ResponsiveContainer width="100%" height={200}>
  <BarChart data={dailyBarData} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
- <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+ <CartesianGrid strokeDasharray="3 3" stroke="var(--color-rule)" vertical={false} />
  <XAxis
  dataKey="date"
- tick={{ fill: '#4b5563', fontSize: 10 }}
+ tick={{ fill: 'var(--color-muted)', fontSize: 10 }}
  tickLine={false}
- axisLine={{ stroke: '#1f2937' }}
+ axisLine={{ stroke: 'var(--color-rule)' }}
  interval={dailyBarDays <= 14 ? 1 : dailyBarDays <= 30 ? 3 : dailyBarDays <= 90 ? 13 : 29}
  />
  <YAxis
- tick={{ fill: '#4b5563', fontSize: 10 }}
+ tick={{ fill: 'var(--color-muted)', fontSize: 10 }}
  tickLine={false}
  axisLine={false}
  tickFormatter={v => formatHoursShort(v)}
  />
  <ReTooltip
- contentStyle={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '8px', color: '#e5e7eb', fontSize: '12px' }}
+ contentStyle={{ background: 'var(--color-paper)', border: '1px solid var(--color-rule)', borderRadius: '8px', color: 'var(--color-ink)', fontSize: '12px' }}
  formatter={(v: number) => [formatHoursShort(v), 'Coded']}
- labelStyle={{ color: '#9ca3af' }}
- cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+ labelStyle={{ color: 'var(--color-muted)' }}
+ cursor={{ fill: 'color-mix(in oklch, var(--color-accent) 8%, transparent)' }}
  />
- <Bar dataKey="hours" fill="#4b8b62" radius={[4, 4, 0, 0]} />
+ <Bar dataKey="hours" fill="var(--color-accent)" radius={[4, 4, 0, 0]} />
  </BarChart>
  </ResponsiveContainer>
  </motion.div>
@@ -1769,16 +1780,17 @@ export default function DashboardPage() {
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.65 }}
  className="app-card p-5"
+ data-gsap="fade-up"
  >
  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
- <Zap className="w-4 h-4 text-amber-400" />
+ <Zap className="w-4 h-4 text-[var(--color-accent-3)]" />
  Productivity Breakdown
  </h2>
  {radarData.length > 0 ? (
  <ResponsiveContainer width="100%" height={200}>
  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
- <PolarGrid stroke="#1f2937" />
- <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+ <PolarGrid stroke="var(--color-rule)" />
+ <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-muted)', fontSize: 11 }} />
  <PolarRadiusAxis
  angle={30}
  domain={[0, 100]}
@@ -1788,8 +1800,8 @@ export default function DashboardPage() {
  <Radar
  name="Score"
  dataKey="value"
- stroke="#8b5cf6"
- fill="#8b5cf6"
+ stroke="var(--color-accent-2)"
+ fill="var(--color-accent-2)"
  fillOpacity={0.25}
  strokeWidth={2}
  />
@@ -1991,7 +2003,7 @@ export default function DashboardPage() {
  </TooltipTrigger>
  <TooltipContent side="top" className="max-w-[200px] text-center">
  <p className="font-semibold text-primary mb-0.5">{achievement.title}</p>
- <p className="text-muted-foreground">{achievement.unlocked ? '✅ ' : '🔒 How to earn: '}{achievement.description}</p>
+ <p className="text-muted-foreground">{achievement.unlocked ? 'Unlocked: ' : 'How to earn: '}{achievement.description}</p>
  </TooltipContent>
  </Tooltip>
  ))}
@@ -2024,10 +2036,10 @@ export default function DashboardPage() {
  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
  {goals.filter(g => g.achieved).map((goal) => {
  const badge = goal.type === 'daily_hours'
- ? { icon: '⏱️', label: `${goal.target}h Day`, color: ' border-primary/30' }
+ ? { icon: 'T', label: `${goal.target}h Day`, color: ' border-primary/30' }
  : goal.type === 'weekly_hours'
- ? { icon: '📅', label: `${goal.target}h Week`, color: 'from-violet-500/20 to-violet-600/10 border-primary/30' }
- : { icon: '🔥', label: `${goal.target}d Streak`, color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30' }
+ ? { icon: 'W', label: `${goal.target}h Week`, color: 'border-primary/30' }
+ : { icon: 'S', label: `${goal.target}d Streak`, color: 'border-[var(--color-accent-3)]/40' }
  return (
  <div key={goal.id} className={`bg-secondary ${badge.color} border rounded-xl p-3 text-center`}>
  <span className="text-2xl">{badge.icon}</span>
@@ -2057,13 +2069,13 @@ export default function DashboardPage() {
  {/* Score ring */}
  <div className="relative w-32 h-32 shrink-0">
  <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
- <circle cx="60" cy="60" r="54" fill="none" stroke="#1f2937" strokeWidth="8" />
+ <circle cx="60" cy="60" r="54" fill="none" stroke="var(--color-rule)" strokeWidth="8" />
  <motion.circle
  cx="60" cy="60" r="54" fill="none"
  stroke={
- (stats?.productivityScore || 0) >= 75 ? '#4b8b62' :
- (stats?.productivityScore || 0) >= 50 ? '#4b8b62' :
- (stats?.productivityScore || 0) >= 25 ? '#f59e0b' : '#ef4444'
+ (stats?.productivityScore || 0) >= 75 ? 'var(--color-accent)' :
+ (stats?.productivityScore || 0) >= 50 ? 'var(--color-accent)' :
+ (stats?.productivityScore || 0) >= 25 ? 'var(--color-accent-3)' : 'var(--color-danger)'
  }
  strokeWidth="8"
  strokeLinecap="round"

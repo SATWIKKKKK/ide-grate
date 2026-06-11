@@ -287,7 +287,7 @@ export default function SettingsPage() {
  // ── Loading state ───────────────────────────────────────────────────────────
  if (status === 'loading' || (settingsLoading && status !== 'unauthenticated')) {
  return (
- <div className="min-h-screen bg-background flex items-center justify-center">
+ <div className="page-shell min-h-screen flex items-center justify-center">
  <div className="flex flex-col items-center gap-4">
  <div className="relative">
  <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -308,11 +308,12 @@ export default function SettingsPage() {
  <div className="page-shell min-h-screen text-foreground">
  <Navbar />
 
- <main className="dashboard-shell max-w-5xl pt-6 sm:pt-8 pb-12">
+ <main className="dashboard-shell max-w-5xl pt-6 sm:pt-8 pb-12" data-gsap-stagger>
  {/* Header */}
  <motion.div
  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
  className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+ data-gsap-item
  >
  <div className="flex items-center gap-4 flex-1">
  {session.user?.image ? (
@@ -323,7 +324,7 @@ export default function SettingsPage() {
  </div>
  )}
  <div>
- <h1 className="text-2xl sm:text-3xl font-bold">{session.user?.name || 'Settings'}</h1>
+ <h1 className="text-3xl sm:text-5xl">{session.user?.name || 'Settings'}</h1>
  <p className="text-muted-foreground text-sm">{session.user?.email}</p>
  {accountCreatedAt && (
  <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-1">
@@ -353,6 +354,7 @@ export default function SettingsPage() {
  <motion.div
  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
  className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6"
+ data-gsap-stagger
  >
  {[
  { label: 'Total Hours', value: formatHours(stats.totalHours), icon: Clock, color: 'text-primary', bg: 'bg-primary/10', border: 'hover:border-primary/30' },
@@ -366,6 +368,7 @@ export default function SettingsPage() {
  key={s.label}
  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.08 + i * 0.04 }}
  className={`app-card p-3 sm:p-4 transition-colors ${s.border}`}
+ data-gsap-item
  >
  <div className="flex items-center gap-2 mb-2">
  <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
@@ -373,7 +376,7 @@ export default function SettingsPage() {
  </div>
  <span className="text-xs text-muted-foreground leading-tight">{s.label}</span>
  </div>
- <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
+ <p className={`font-mono text-xl sm:text-2xl font-semibold ${s.color}`}>{s.value}</p>
  </motion.div>
  ))}
  </motion.div>
@@ -400,7 +403,7 @@ export default function SettingsPage() {
  <button
  onClick={() => saveSettings({ username })}
  disabled={saving || !username || username === (settings.username || '')}
- className="px-4 py-2 bg-primary hover:bg-primary active:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md flex items-center justify-center gap-1.5 shrink-0"
+ className="signal-button px-4 py-2 text-sm disabled:opacity-45 flex items-center justify-center gap-1.5 shrink-0"
  >
  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
  Save
@@ -422,7 +425,7 @@ export default function SettingsPage() {
  <button
  onClick={() => saveSettings({ bio })}
  disabled={saving || bio === (settings.bio || '')}
- className="px-4 py-2 bg-primary hover:bg-primary active:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md sm:self-end flex items-center justify-center gap-1.5 shrink-0"
+ className="signal-button px-4 py-2 text-sm disabled:opacity-45 sm:self-end flex items-center justify-center gap-1.5 shrink-0"
  >
  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
  Save
@@ -517,7 +520,7 @@ export default function SettingsPage() {
  <button
  onClick={connectVsCode}
  disabled={apiKeyLoading}
- className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md flex items-center justify-center gap-2"
+ className="signal-button w-full sm:w-auto px-4 py-2.5 text-sm disabled:opacity-45 flex items-center justify-center gap-2"
  >
  {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
  Generate API Key
@@ -558,7 +561,7 @@ export default function SettingsPage() {
  <div className="text-center py-4">
  <p className="text-muted-foreground text-sm mb-3">No API key generated yet</p>
  <button onClick={generateApiKey} disabled={apiKeyLoading}
- className="px-5 py-2.5 bg-primary hover:bg-primary active:bg-primary text-primary-foreground rounded-lg text-sm transition-all shadow-md hover:shadow-primary/30 flex items-center gap-2 mx-auto">
+ className="signal-button px-5 py-2.5 text-sm flex items-center gap-2 mx-auto">
  {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
  Generate API Key
  </button>
@@ -598,7 +601,7 @@ export default function SettingsPage() {
 
  {/* Privacy Controls */}
  <Section title="Public Profile & Privacy" icon={<Globe className="w-4 h-4 text-primary" />} delay={0.2}>
- <div className="divide-y divide-gray-800/50">
+ <div className="divide-y divide-border">
  <ToggleRow label="Public Profile" description="Let others view your profile at /u/username" value={settings.profilePublic} onChange={() => toggleSetting('profilePublic')} />
  <ToggleRow label="Show Total Hours" description="Display your total coding hours" value={settings.showHours} onChange={() => toggleSetting('showHours')} disabled={!settings.profilePublic} />
  <ToggleRow label="Show Languages" description="Display your top programming languages" value={settings.showLanguages} onChange={() => toggleSetting('showLanguages')} disabled={!settings.profilePublic} />
@@ -610,7 +613,7 @@ export default function SettingsPage() {
 
  {/* Notifications */}
  <Section title="Notifications & Email" icon={<Bell className="w-4 h-4 text-primary" />} delay={0.25}>
- <div className="divide-y divide-gray-800/50">
+ <div className="divide-y divide-border">
  <ToggleRow label="Goal Achievement Email" description="Get emailed when you achieve a coding goal" value={settings.dailyDigest} onChange={() => toggleSetting('dailyDigest')} />
  <ToggleRow label="Streak Reminder" description="Get warned when your streak is about to break" value={settings.streakReminder} onChange={() => toggleSetting('streakReminder')} />
  </div>
@@ -628,7 +631,7 @@ export default function SettingsPage() {
 
  {/* Quick Links */}
  <Section title="Quick Links" icon={<ArrowRight className="w-4 h-4 text-primary" />} delay={0.3}>
- <div className="divide-y divide-gray-800/50">
+ <div className="divide-y divide-border">
  <Link href="/dashboard" className="group flex items-center justify-between px-5 sm:px-6 py-4 hover:bg-primary/5 border-l-2 border-transparent hover:border-primary transition-all">
  <div className="flex items-center gap-3">
  <LayoutDashboard className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -652,11 +655,11 @@ export default function SettingsPage() {
  <div className="bg-secondary/30 border border-border/30 rounded-xl p-4">
  <p className="text-sm font-semibold text-muted-foreground mb-2">What we collect</p>
  <ul className="text-xs text-muted-foreground space-y-1.5">
- <li>✓ Time spent per coding session (seconds)</li>
- <li>✓ Active programming language</li>
- <li>✓ Anonymized project hash (never the path)</li>
- <li>✓ Platform (macOS / Windows / Linux)</li>
- <li className="text-destructive/70">✗ Never: code content, file content, keystrokes, file names</li>
+ <li>Collected: time spent per coding session (seconds)</li>
+ <li>Collected: active programming language</li>
+ <li>Collected: anonymized project hash (never the path)</li>
+ <li>Collected: platform (macOS / Windows / Linux)</li>
+ <li className="text-destructive/70">Never collected: code content, file content, keystrokes, file names</li>
  </ul>
  </div>
  <div className="flex flex-col sm:flex-row gap-3">
@@ -666,7 +669,7 @@ export default function SettingsPage() {
  Export All Data (JSON)
  </button>
  <button onClick={() => setShowDataDeleteConfirm(true)}
- className="flex-1 px-4 py-3 bg-destructive/10 hover:bg-destructive/20 border border-red-600/20 rounded-xl text-sm text-destructive transition-colors flex items-center justify-center gap-2">
+ className="flex-1 px-4 py-3 bg-destructive/10 hover:bg-destructive/20 border border-destructive/25 rounded-lg text-sm text-destructive transition-colors flex items-center justify-center gap-2">
  <Trash2 className="w-4 h-4" />
  Delete All Tracking Data
  </button>
@@ -678,7 +681,7 @@ export default function SettingsPage() {
  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
  <button
  onClick={() => signOut({ callbackUrl: '/' })}
- className="w-full p-4 app-card hover:bg-destructive/5 border-border hover:border-red-500/40 rounded-xl text-muted-foreground hover:text-destructive font-medium transition-all flex items-center justify-center gap-2"
+ className="w-full p-4 app-card hover:bg-destructive/5 border-border hover:border-destructive/40 rounded-lg text-muted-foreground hover:text-destructive font-medium transition-all flex items-center justify-center gap-2"
  >
  <LogOut className="w-4 h-4" />
  Sign Out
@@ -729,7 +732,7 @@ export default function SettingsPage() {
  <input
  type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
  placeholder="DELETE" autoFocus
- className="w-full p-3 muted-panel rounded-xl text-foreground text-sm font-mono text-center mb-4 focus:border-red-500 outline-none"
+ className="w-full p-3 muted-panel rounded-lg text-foreground text-sm font-mono text-center mb-4 focus:border-destructive outline-none"
  />
  <div className="flex gap-3">
  <button onClick={() => { setShowDataDeleteConfirm(false); setDeleteStep(1); setDeleteConfirmText('') }}
@@ -756,11 +759,12 @@ function Section({
  return (
  <motion.div
  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
- className="bg-card/80 border border-border hover:border-border rounded-xl overflow-hidden transition-colors"
+ className="signal-panel overflow-hidden transition-colors"
+ data-gsap="fade-up"
  >
- <div className="px-5 sm:px-6 py-4 border-b border-border flex items-center gap-2.5 bg-card/50">
+ <div className="px-5 sm:px-6 py-4 border-b border-border flex items-center gap-2.5 bg-background/55">
  {icon}
- <h2 className="text-base sm:text-lg font-semibold">{title}</h2>
+ <h2 className="font-sans text-base sm:text-lg font-semibold">{title}</h2>
  </div>
  {children}
  </motion.div>
@@ -776,8 +780,8 @@ function ToggleRow({
  disabled
  ? 'opacity-40'
  : value
- ? 'hover:bg-primary/5 cursor-pointer'
- : 'hover:bg-secondary/30 cursor-pointer'
+ ? 'hover:bg-accent cursor-pointer'
+ : 'hover:bg-secondary/50 cursor-pointer'
  }`}
  onClick={disabled ? undefined : onChange}
  >
@@ -789,12 +793,12 @@ function ToggleRow({
  onClick={e => { e.stopPropagation(); if (!disabled) onChange() }}
  disabled={disabled}
  className={`relative shrink-0 w-11 h-6 rounded-full transition-all ${
- value ? 'bg-primary shadow-sm shadow-primary/30' : 'bg-secondary'
+ value ? 'bg-primary shadow-sm' : 'bg-secondary border border-border'
  } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
  aria-checked={value}
  role="switch"
  >
- <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${value ? 'translate-x-5' : ''}`} />
+ <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-background rounded-full shadow-sm transition-transform ${value ? 'translate-x-5' : ''}`} />
  </button>
  </div>
  )
@@ -806,7 +810,7 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
  onClick={onClose}>
  <motion.div
  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
- className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-card border border-border rounded-2xl shadow-2xl p-4 sm:p-6"
+ className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-card border border-border rounded-lg shadow-2xl p-4 sm:p-6"
  onClick={e => e.stopPropagation()}
  >
  {children}

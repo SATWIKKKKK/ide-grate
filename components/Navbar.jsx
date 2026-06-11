@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, LayoutDashboard, BookOpen, Settings, Menu, X } from 'lucide-react';
+import { BookOpen, LayoutDashboard, LogOut, Menu, Settings, UserRound, X } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,18 +18,13 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setShowUserMenu(false);
-      }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
-        setShowMobileMenu(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShowUserMenu(false);
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) setShowMobileMenu(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setShowMobileMenu(false);
     setShowUserMenu(false);
@@ -42,120 +37,102 @@ export default function Navbar() {
         { href: '/settings', label: 'Settings' },
       ]
     : [
-        { href: '/#features', label: 'Features' },
-        { href: '/#how-it-works', label: 'How it works' },
+        { href: '/#features', label: 'Signals' },
+        { href: '/#how-it-works', label: 'Setup' },
         { href: '/#privacy', label: 'Privacy' },
       ];
 
+  const isActive = (href) => pathname === href || (href.startsWith('/#') && pathname === '/');
+
   return (
-    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16">
-          {/* Logo */}
-          <Link
-            href={session ? '/dashboard' : '/'}
-            className="flex items-center gap-2 shrink-0 outline-ring rounded"
-          >
+    <nav className="sticky top-0 z-50 border-b border-border bg-[var(--color-paper-glass)] backdrop-blur-xl">
+      <div className="signal-container">
+        <div className="flex h-16 items-center justify-between gap-3">
+          <Link href={session ? '/dashboard' : '/'} className="inline-flex shrink-0 rounded-md">
             <Logo size="sm" />
           </Link>
 
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-2">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href.startsWith('/#') && pathname === '/');
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+          <div className="hidden items-center gap-1 md:flex">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`rounded-md px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+                  isActive(link.href)
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Right side: Auth + Mobile toggle */}
           <div className="flex items-center gap-2">
-            {/* Mobile hamburger */}
             <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              onClick={() => setShowMobileMenu((v) => !v)}
+              className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-background/70 text-muted-foreground transition-colors hover:text-foreground md:hidden"
               aria-label="Toggle menu"
             >
-              {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {showMobileMenu ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
 
             {session ? (
               <div className="relative" ref={menuRef}>
                 <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 p-1 rounded-md outline-ring hover:bg-secondary/50 transition-colors"
+                  onClick={() => setShowUserMenu((v) => !v)}
+                  className="flex items-center gap-2 rounded-md border border-border bg-background/80 p-1 pr-2 text-sm font-semibold text-foreground transition-colors hover:border-primary/50"
+                  aria-label="Open account menu"
                 >
                   {session.user?.image ? (
-                    <img
-                      src={session.user.image}
-                      alt=""
-                      className="w-8 h-8 rounded-full border border-border"
-                    />
+                    <img src={session.user.image} alt="" className="size-8 rounded-full border border-border object-cover" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                    <span className="flex size-8 items-center justify-center rounded-full bg-foreground text-background">
                       {session.user?.name?.[0] || session.user?.email?.[0] || '?'}
-                    </div>
+                    </span>
                   )}
+                  <span className="hidden max-w-32 truncate sm:block">{session.user?.name || 'Account'}</span>
                 </button>
 
                 <AnimatePresence>
                   {showUserMenu && (
                     <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                      className="absolute right-0 mt-2 w-[min(18rem,calc(100vw-2rem))] bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                      transition={{ duration: 0.16 }}
+                      className="absolute right-0 mt-2 w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-popover shadow-xl"
                     >
-                      <div className="p-3 border-b border-border">
-                        <p className="font-medium text-sm text-foreground truncate">
-                          {session.user?.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {session.user?.email}
-                        </p>
+                      <div className="border-b border-border p-3">
+                        <p className="truncate text-sm font-semibold text-foreground">{session.user?.name || 'Signed in'}</p>
+                        <p className="truncate text-xs text-muted-foreground">{session.user?.email}</p>
                       </div>
-                      <div className="py-1">
+                      <div className="p-1">
                         {[
                           { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
                           { href: '/settings', label: 'Settings', icon: Settings },
-                          { href: '/onboarding', label: 'Setup Guide', icon: BookOpen },
+                          { href: '/onboarding', label: 'Setup guide', icon: BookOpen },
                         ].map((item) => {
                           const Icon = item.icon;
                           return (
                             <Link
                               key={item.href}
                               href={item.href}
-                              onClick={() => setShowUserMenu(false)}
-                              className="flex items-center gap-3 w-full px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent"
                             >
-                              <Icon className="w-4 h-4 text-muted-foreground" />
+                              <Icon className="size-4 text-muted-foreground" />
                               {item.label}
                             </Link>
                           );
                         })}
                       </div>
-                      <div className="border-t border-border py-1">
+                      <div className="border-t border-border p-1">
                         <button
-                          onClick={() => {
-                            signOut({ callbackUrl: '/' });
-                            setShowUserMenu(false);
-                          }}
-                          className="w-full px-3 py-2 text-left text-destructive hover:bg-destructive/10 flex items-center gap-3 text-sm transition-colors"
+                          onClick={() => signOut({ callbackUrl: '/' })}
+                          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-[var(--color-danger-soft)]"
                         >
-                          <LogOut className="w-4 h-4" />
-                          Sign Out
+                          <LogOut className="size-4" />
+                          Sign out
                         </button>
                       </div>
                     </motion.div>
@@ -163,18 +140,12 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="hidden md:flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md"
-                >
-                  Sign In
+              <div className="hidden items-center gap-2 md:flex">
+                <Link href="/login" className="signal-button signal-button-secondary min-h-10 px-3 text-sm">
+                  Sign in
                 </Link>
-                <Link
-                  href="/signup"
-                  className="px-4 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                  Get Started &rarr;
+                <Link href="/signup" className="signal-button min-h-10 px-3 text-sm">
+                  Start tracking
                 </Link>
               </div>
             )}
@@ -182,7 +153,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile dropdown menu */}
       <AnimatePresence>
         {showMobileMenu && (
           <motion.div
@@ -190,57 +160,38 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-border overflow-hidden bg-background"
+            transition={{ duration: 0.18 }}
+            className="border-t border-border bg-popover md:hidden"
           >
-            <div className="px-4 py-3 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-              {!session && (
+            <div className="space-y-1 p-3">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`block rounded-md px-3 py-2 text-sm font-semibold ${
+                    isActive(link.href) ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {!session ? (
                 <>
-                  <Link
-                    href="/login"
-                    className="block px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  >
-                    Sign In
+                  <Link href="/login" className="block rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    Sign in
                   </Link>
-                  <Link
-                    href="/signup"
-                    className="block px-3 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground text-center"
-                  >
-                    Get Started &rarr;
+                  <Link href="/signup" className="mt-2 flex rounded-md bg-foreground px-3 py-2 text-sm font-semibold text-background">
+                    Start tracking
                   </Link>
                 </>
-              )}
-              {session && (
-                <>
-                  <Link
-                    href="/onboarding"
-                    className="block px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  >
-                    Setup Guide
-                  </Link>
-                  <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10"
-                  >
-                    Sign Out
-                  </button>
-                </>
+              ) : (
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-destructive hover:bg-[var(--color-danger-soft)]"
+                >
+                  <UserRound className="size-4" />
+                  Sign out
+                </button>
               )}
             </div>
           </motion.div>

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import prisma from "@/lib/prisma"
+
+function asJsonObject(value: unknown): Record<string, Prisma.InputJsonValue | null> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
+  return value as Record<string, Prisma.InputJsonValue | null>
+}
 
 // POST /api/heartbeat - Receive heartbeat from VS Code extension
 export async function POST(request: NextRequest) {
@@ -50,7 +56,7 @@ export async function POST(request: NextRequest) {
           where: { userId: user.id },
           select: { monthlyData: true },
         })
-        const md = (existingStats?.monthlyData as Record<string, unknown>) || {}
+        const md = asJsonObject(existingStats?.monthlyData)
         updateData.monthlyData = { ...md, timezoneOffset }
       }
       // Update lastActiveDate in UserStats so the frontend can detect connectivity
@@ -93,7 +99,7 @@ export async function POST(request: NextRequest) {
       where: { userId: user.id },
       select: { monthlyData: true },
     })
-    const monthlyData = (userStats?.monthlyData as Record<string, unknown>) || {}
+    const monthlyData = asJsonObject(userStats?.monthlyData)
     const hasSessionBoundary = !!monthlyData.sessionBoundary
 
     // Get or create today's contribution record
@@ -165,10 +171,17 @@ export async function POST(request: NextRequest) {
         })
 
         // Clear the sessionBoundary flag
+        const nextMonthlyData: Record<string, Prisma.InputJsonValue | null> = { ...monthlyData, sessionBoundary: false }
+        if (typeof timezoneOffset === 'number') {
+          nextMonthlyData.timezoneOffset = timezoneOffset
+        } else if (typeof monthlyData.timezoneOffset === 'number') {
+          nextMonthlyData.timezoneOffset = monthlyData.timezoneOffset
+        }
+
         await prisma.userStats.update({
           where: { userId: user.id },
           data: {
-            monthlyData: { ...monthlyData, sessionBoundary: false, timezoneOffset: typeof timezoneOffset === 'number' ? timezoneOffset : monthlyData.timezoneOffset },
+            monthlyData: nextMonthlyData,
           },
         })
       } else {

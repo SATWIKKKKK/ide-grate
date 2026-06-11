@@ -1,12 +1,10 @@
 'use client'
 
 import { Suspense } from 'react'
-import { motion } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import Logo from '@/components/Logo'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, RotateCcw } from 'lucide-react'
 
 function AuthErrorContent() {
   const searchParams = useSearchParams()
@@ -31,62 +29,39 @@ function AuthErrorContent() {
   const message = error ? errorMessages[error] || errorMessages.Default : errorMessages.Default
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
+    <div className="page-shell flex min-h-screen items-center justify-center p-4">
+      <section className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-card shadow-xl" data-gsap="fade-up">
+        <div className="border-b border-border p-6 text-center">
+          <div className="mb-6 flex justify-center">
             <Logo size="md" />
           </div>
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-900/30 flex items-center justify-center">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
+          <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-md bg-[var(--color-danger-soft)] text-destructive">
+            <AlertTriangle className="size-7" />
           </div>
-
-          <h1 className="text-xl font-semibold text-white mb-2">
-            Authentication Error
-          </h1>
-          
-          <p className="text-gray-400 mb-4">
-            {message}
-          </p>
-
-          {error && (
-            <p className="text-xs text-gray-500 mb-8 font-mono">
-              Error code: {error}
-            </p>
-          )}
-
-          <Link
-            href="/login"
-            className="inline-block px-6 py-3 bg-primary hover:bg-primary/70 text-white font-medium rounded-lg transition-all"
-          >
-            Try Again
+          <h1 className="font-display text-3xl">Authentication error</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{message}</p>
+          {error && <p className="mt-4 font-mono text-xs text-muted-foreground">Error code: {error}</p>}
+        </div>
+        <div className="grid gap-3 p-6">
+          <Link href="/login" className="signal-button">
+            <RotateCcw className="size-4" />
+            Try again
           </Link>
-
-          <Link
-            href="/"
-            className="block mt-4 text-gray-500 hover:text-primary transition-colors text-sm"
-          >
-            ← Back to home
+          <Link href="/" className="signal-button signal-button-secondary">
+            <ArrowLeft className="size-4" />
+            Back home
           </Link>
         </div>
-      </motion.div>
+      </section>
     </div>
   )
 }
 
 export default function AuthError() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<div className="page-shell flex min-h-screen items-center justify-center"><div className="size-8 rounded-full border-4 border-primary/30 border-t-primary animate-spin" /></div>}>
       <AuthErrorContent />
     </Suspense>
   )
 }
+

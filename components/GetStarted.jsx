@@ -13,16 +13,8 @@ function CopyButton({ text }) {
   }
 
   return (
-    <button
-      onClick={handleCopy}
-      className="absolute top-2 right-2 p-2 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
-      title="Copy to clipboard"
-    >
-      {copied ? (
-        <Check className="w-4 h-4 text-primary" />
-      ) : (
-        <Copy className="w-4 h-4 text-gray-400" />
-      )}
+    <button onClick={handleCopy} className="absolute right-2 top-2 rounded-md border border-border bg-background p-2 hover:border-primary" title="Copy to clipboard">
+      {copied ? <Check className="size-4 text-primary" /> : <Copy className="size-4 text-muted-foreground" />}
     </button>
   )
 }
@@ -32,25 +24,19 @@ function InstallTabs() {
 
   return (
     <div className="space-y-3">
-      <a
-        href={`${siteUrl}/api/download/vsix`}
-        download="vs-integrate-extension.vsix"
-        className="w-full py-3 bg-primary hover:bg-primary/70 rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
-      >
-        <Download className="w-4 h-4" />
-        Download .vsix File
+      <a href={`${siteUrl}/api/download/vsix`} download="vs-integrate-extension.vsix" className="signal-button w-full">
+        <Download className="size-4" />
+        Download .vsix file
       </a>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {[
-          'Open VS Code → Extensions panel (Ctrl+Shift+X)',
-          'Click the ⋯ menu (three dots) → "Install from VSIX..."',
-          'Select the downloaded .vsix file',
+          'Open VS Code and go to Extensions.',
+          'Choose Install from VSIX from the menu.',
+          'Select the downloaded .vsix file.',
         ].map((text, i) => (
-          <div key={i} className="flex items-start gap-2.5 p-2 bg-gray-800/50 rounded-lg">
-            <span className="w-5 h-5 rounded-full bg-primary/30 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
-              {i + 1}
-            </span>
-            <span className="text-xs text-gray-400">{text}</span>
+          <div key={i} className="flex items-start gap-2.5 rounded-md border border-border bg-background/65 p-2">
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-accent font-mono text-[10px] font-semibold text-primary">{i + 1}</span>
+            <span className="text-xs text-muted-foreground">{text}</span>
           </div>
         ))}
       </div>
@@ -62,86 +48,66 @@ export default function GetStarted() {
   const steps = [
     {
       icon: Download,
-      title: 'Install the VS Code Extension',
-      description: 'Download the .vsix file and install it in VS Code:',
+      title: 'Install the VS Code extension',
+      description: 'Download the .vsix file and install it in VS Code.',
       custom: 'install-tabs',
     },
     {
       icon: Key,
-      title: 'Generate & Set API Key',
-      description: 'Sign in to VS Integrate, go to Settings → VS Code Connection, and generate an API key. Then in VS Code:',
+      title: 'Generate and set API key',
+      description: 'Sign in, generate an API key, and save it through the VS Integrate command.',
       commands: [
-        '# Press Ctrl+Shift+P → "VS Integrate: Set API Key"',
-        '# Paste your API key when prompted',
-        '# Set endpoint: https://vs-integrate.vercel.app/api/heartbeat',
+        'Ctrl+Shift+P -> VS Integrate: Set API Key',
+        'Paste your API key',
+        'Endpoint: https://vs-integrate.vercel.app/api/heartbeat',
       ],
     },
     {
       icon: Settings,
-      title: 'Start Coding',
-      description: 'Open any file in VS Code and start coding. The extension automatically sends heartbeats. Check your dashboard to see live tracking and contribution graphs.',
+      title: 'Start coding',
+      description: 'Open any file in VS Code. The dashboard updates as heartbeats arrive.',
       commands: [],
     },
   ]
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">Get Started</h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Install the VS Code extension and start tracking your coding activity in minutes.
-          </p>
+    <section className="border-t border-border bg-background/70 px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-12" data-gsap="fade-up">
+          <p className="signal-kicker">setup</p>
+          <h2 className="mt-3 text-3xl sm:text-5xl">Get started without ceremony.</h2>
+          <p className="mt-4 max-w-2xl text-muted-foreground">Install the VS Code extension and start tracking activity in minutes.</p>
         </div>
 
-        <div className="relative">
-          <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-800" />
-
-          <div className="space-y-12">
-            {steps.map((step, index) => {
-              const Icon = step.icon
-              return (
-                <div key={index} className="relative flex gap-6">
-                  <div className="relative z-10 shrink-0">
-                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-                  </div>
-
-                  <div className="flex-1 pb-8">
-                    <h3 className="text-xl font-semibold mb-2 text-white">
-                      {index + 1}. {step.title}
-                    </h3>
-                    <p className="text-gray-400 mb-4">
-                      {step.description}
-                    </p>
-
+        <div className="space-y-4" data-gsap-stagger>
+          {steps.map((step, index) => {
+            const Icon = step.icon
+            return (
+              <article key={step.title} className="app-card grid gap-5 p-5 sm:grid-cols-[4rem_1fr]" data-gsap-item>
+                <div className="flex size-12 items-center justify-center rounded-md bg-foreground text-background">
+                  <Icon className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-sans text-lg font-semibold">{index + 1}. {step.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{step.description}</p>
+                  <div className="mt-4">
                     {step.custom === 'install-tabs' && <InstallTabs />}
-
                     {step.commands && step.commands.length > 0 && (
                       <div className="relative">
-                        <pre className="bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-x-auto text-sm">
-                          <code className="text-gray-300">
-                            {step.commands.join('\n')}
-                          </code>
+                        <pre className="overflow-x-auto rounded-md border border-border bg-secondary p-4 text-sm">
+                          <code className="text-muted-foreground">{step.commands.join('\n')}</code>
                         </pre>
                         <CopyButton text={step.commands.join('\n')} />
                       </div>
                     )}
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="mt-12 p-6 bg-gray-900/50 rounded-lg text-center border border-gray-800">
-          <p className="text-sm text-gray-400">
-            💡 <strong>Tip:</strong> The extension works out of the box once you set your API key. 
-            No additional configuration needed — just install, connect, and code!
-          </p>
+              </article>
+            )
+          })}
         </div>
       </div>
     </section>
   )
 }
+

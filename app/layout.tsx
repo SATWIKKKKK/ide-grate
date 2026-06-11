@@ -2,6 +2,7 @@ import { Geist, Geist_Mono, Newsreader } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SessionProvider } from '@/components/session-provider'
+import GsapMotion from '@/components/motion/GsapMotion'
 import './globals.css'
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -20,8 +21,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} ${geistMono.variable} ${newsreader.variable} font-sans antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable} ${newsreader.variable}`}>
+      <body className="font-sans antialiased">
         <SessionProvider>
           <ThemeProvider
             attribute="class"
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             forcedTheme="dark"
             disableTransitionOnChange
           >
+            <GsapMotion />
             {children}
           </ThemeProvider>
         </SessionProvider>

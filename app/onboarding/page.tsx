@@ -3,19 +3,27 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Code2, Download, Check, RefreshCw, Copy,
-  ArrowRight, CheckCircle2, Loader2,
-  Wifi
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Copy,
+  Download,
+  KeyRound,
+  Loader2,
+  RefreshCw,
+  Shield,
+  TerminalSquare,
+  Wifi,
 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 
 const STEPS = [
-  { num: 1, title: 'Install Extension', desc: 'Download & install the VSIX in VS Code' },
-  { num: 2, title: 'Connect Account', desc: 'Generate API key & link your editor' },
-  { num: 3, title: 'Verify Tracking', desc: 'Confirm live heartbeat tracking' },
+  { num: 1, title: 'Install extension', desc: 'Download and install the VSIX in VS Code', icon: Download },
+  { num: 2, title: 'Connect account', desc: 'Generate an API key and link your editor', icon: KeyRound },
+  { num: 3, title: 'Verify tracking', desc: 'Confirm live heartbeat tracking', icon: Wifi },
 ]
 
 export default function OnboardingPage() {
@@ -63,9 +71,7 @@ export default function OnboardingPage() {
         }
       } catch { /* ignore */ }
       attempts++
-      if (attempts >= 20) {
-        setVerifyStartedAt(-1)
-      }
+      if (attempts >= 20) setVerifyStartedAt(-1)
     }
     poll()
     const interval = setInterval(poll, 3000)
@@ -80,9 +86,9 @@ export default function OnboardingPage() {
       if (!res.ok) throw new Error('Failed to generate API key')
       const data = await res.json()
       setApiKey(data.apiKey)
-      setConnecting(false)
     } catch {
       setError('Failed to generate key. Please try again.')
+    } finally {
       setConnecting(false)
     }
   }
@@ -116,342 +122,235 @@ export default function OnboardingPage() {
   }
 
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    )
+    return <div className="page-shell flex min-h-screen items-center justify-center"><div className="size-8 rounded-full border-4 border-primary/30 border-t-primary animate-spin" /></div>
   }
 
   if (!session) return null
 
   return (
-    <div className="page-shell min-h-screen text-foreground flex flex-col">
+    <div className="page-shell min-h-screen text-foreground">
       <Navbar />
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-7 lg:mb-8">
-          <p className="text-sm font-semibold text-primary mb-2">Setup guide</p>
-          <h1 className="text-3xl sm:text-4xl font-display font-bold mb-2">Connect VS Code in 3 steps</h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">Install the extension, add your API key, then verify that editor heartbeats are reaching your dashboard.</p>
-        </motion.div>
+      <main className="signal-container py-8 sm:py-12">
+        <header className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto]" data-gsap="fade-up">
+          <div>
+            <p className="signal-kicker">setup workbench</p>
+            <h1 className="mt-3 text-4xl sm:text-6xl">Connect VS Code in three steps.</h1>
+            <p className="mt-4 max-w-2xl text-muted-foreground">
+              Install the extension, attach your API key, then verify that live editor heartbeats reach your dashboard.
+            </p>
+          </div>
+          <div className="signal-panel flex items-center gap-3 p-4">
+            <Shield className="size-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold">Privacy boundary</p>
+              <p className="text-xs text-muted-foreground">No code, file names, or keystrokes are collected.</p>
+            </div>
+          </div>
+        </header>
 
-        {/* Stepper + Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-5 lg:gap-8">
-          {/* Left: Vertical stepper */}
-          <div className="app-surface rounded-xl p-4 lg:p-5">
-          <div className="w-full flex lg:flex-col items-center lg:items-start justify-start gap-0 shrink-0 overflow-x-auto pb-2 lg:pb-0">
-            {STEPS.map((s, i) => {
-              const isCompleted = step > s.num
-              const isActive = step === s.num
-              return (
-                <div key={s.num} className="flex lg:flex-col items-center">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[20rem_minmax(0,1fr)]">
+          <aside className="signal-panel p-4 lg:p-5" data-gsap="fade-up">
+            <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+              {STEPS.map((s) => {
+                const Icon = s.icon
+                const isCompleted = step > s.num
+                const isActive = step === s.num
+                return (
                   <button
+                    key={s.num}
                     onClick={() => goToStep(s.num)}
-                    className="flex items-center gap-3 group cursor-pointer"
+                    className={`flex min-w-[14rem] items-center gap-3 rounded-md border p-3 text-left transition-all lg:min-w-0 ${
+                      isActive
+                        ? 'border-primary bg-accent text-foreground'
+                        : isCompleted
+                        ? 'border-primary/30 bg-background text-foreground'
+                        : 'border-border bg-background/60 text-muted-foreground hover:text-foreground'
+                    }`}
                   >
-                    <motion.div
-                      animate={{
-                        backgroundColor: isCompleted
-                          ? 'var(--color-accent)'
-                          : isActive
-                          ? 'var(--color-accent)'
-                          : 'var(--color-rule)',
-                        scale: isActive ? 1.1 : 1,
-                      }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-shadow ${
-                        isActive ? 'ring-4 ring-primary/30' : isCompleted ? 'ring-2 ring-primary/30' : ''
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300 }}>
-                          <Check className="w-5 h-5 text-primary-foreground" />
-                        </motion.span>
-                      ) : (
-                        <span className={isActive ? 'text-primary-foreground' : 'text-muted-foreground'}>{s.num}</span>
-                      )}
-                    </motion.div>
-                    <div className="hidden lg:block text-left">
-                      <p className={`text-sm font-medium transition-colors ${
-                        isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                      }`}>
-                        {s.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{s.desc}</p>
-                    </div>
+                    <span className={`flex size-9 shrink-0 items-center justify-center rounded-md ${isActive || isCompleted ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
+                      {isCompleted ? <Check className="size-4" /> : <Icon className="size-4" />}
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold">{s.title}</span>
+                      <span className="block text-xs leading-relaxed">{s.desc}</span>
+                    </span>
                   </button>
-                  {i < STEPS.length - 1 && (
-                    <div className="flex lg:ml-5 lg:my-0 my-0 mx-0">
-                      <motion.div
-                        animate={{ backgroundColor: step > s.num ? 'var(--color-accent)' : 'var(--color-rule)' }}
-                        transition={{ duration: 0.4 }}
-                        className="lg:hidden w-12 h-1 rounded-full"
-                      />
-                      <motion.div
-                        animate={{ backgroundColor: step > s.num ? 'var(--color-accent)' : 'var(--color-rule)' }}
-                        transition={{ duration: 0.4 }}
-                        className="hidden lg:block w-1 h-16 rounded-full"
-                      />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          <div className="hidden lg:block mt-5 pt-5 border-t border-border">
-            <p className="text-sm font-semibold text-foreground">What gets tracked</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Session duration, language, platform, and anonymized project hash. Never source code.</p>
-          </div>
-          </div>
+                )
+              })}
+            </div>
+            <div className="mt-5 hidden border-t border-border pt-5 lg:block">
+              <p className="text-sm font-semibold">Endpoint</p>
+              <p className="mt-1 break-all font-mono text-xs text-muted-foreground">https://vs-integrate.vercel.app/api/heartbeat</p>
+            </div>
+          </aside>
 
-          {/* Right: Step content */}
-          <div className="flex-1 min-w-0">
+          <section className="min-w-0" data-gsap="fade-up">
             <AnimatePresence mode="wait">
-              {/* ─── STEP 1 ─── */}
               {step === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                >
-                  <div className="app-surface rounded-xl p-5 sm:p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-                      <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shrink-0">
-                        <Download className="w-5 h-5 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <h2 className="text-lg sm:text-xl font-semibold text-foreground">Install the Extension</h2>
-                        <p className="text-sm text-muted-foreground">Download the VSIX and install it in VS Code</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <p className="text-sm font-medium text-foreground">Step 1: Download the extension</p>
-                      <button
-                        onClick={downloadVSIX}
-                        className="w-full py-3 bg-primary hover:bg-primary/90 rounded-xl text-primary-foreground font-medium transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download .vsix File
-                      </button>
-                      <p className="text-sm font-medium text-foreground mt-4">Step 2: Install in VS Code</p>
-                      <div className="space-y-1.5">
-                        {[
-                          'Open VS Code → Extensions panel (Ctrl+Shift+X)',
-                          'Click the ⋯ menu (three dots) at the top → "Install from VSIX..."',
-                          'Select the downloaded .vsix file → click Install',
-                          'You should see "VS Integrate" in your extensions list',
-                        ].map((text, i) => (
-                          <div key={i} className="flex items-start gap-2.5 p-2 bg-secondary/50 rounded-lg">
-                            <span className="w-5 h-5 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
-                              {i + 1}
-                            </span>
-                            <span className="text-xs text-muted-foreground leading-relaxed">{text}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => goToStep(2)}
-                      className="w-full mt-5 py-3.5 bg-primary hover:bg-primary/90 rounded-xl text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2"
-                    >
-                      <ArrowRight className="w-5 h-5" />
-                      Continue to Connect
-                    </button>
-                  </div>
-                </motion.div>
+                <StepCard key="install" icon={<Download className="size-5" />} title="Install the extension" subtitle="Download the VSIX and install it from VS Code.">
+                  <button onClick={downloadVSIX} className="signal-button w-full">
+                    <Download className="size-4" />
+                    Download .vsix file
+                  </button>
+                  <InstructionList
+                    items={[
+                      'Open VS Code and go to the Extensions panel.',
+                      'Open the more actions menu and choose Install from VSIX.',
+                      'Select the downloaded .vsix file and install it.',
+                      'Confirm VS Integrate appears in your extensions list.',
+                    ]}
+                  />
+                  <button onClick={() => goToStep(2)} className="signal-button w-full">
+                    Continue to connect
+                    <ArrowRight className="size-4" />
+                  </button>
+                </StepCard>
               )}
 
-              {/* ─── STEP 2 ─── */}
               {step === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                >
-                  <div className="app-surface rounded-xl p-5 sm:p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-                      <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shrink-0">
-                        <Wifi className="w-5 h-5 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <h2 className="text-lg sm:text-xl font-semibold text-foreground">Connect VS Code</h2>
-                        <p className="text-sm text-muted-foreground">Make sure the extension is installed from Step 1 first</p>
-                      </div>
-                    </div>
-
-                    {!apiKey ? (
-                      <button
-                        onClick={handleConnect}
-                        disabled={connecting}
-                        className="w-full py-4 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-xl text-primary-foreground font-semibold text-lg transition-colors flex items-center justify-center gap-2"
-                      >
-                        {connecting ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Generating Key...
-                          </>
-                        ) : (
-                          <>
-                            <Code2 className="w-5 h-5" />
-                            Generate API Key
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="p-4 bg-secondary border border-border rounded-xl">
-                          <p className="text-xs text-muted-foreground mb-2">Your API Key:</p>
-                          <div className="flex items-center gap-2">
-                            <code className="flex-1 text-sm text-primary font-mono break-all select-all min-w-0">{apiKey}</code>
-                            <button
-                              onClick={copyKey}
-                              className="p-2 bg-secondary hover:bg-border rounded-lg transition-colors shrink-0"
-                            >
-                              {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl overflow-hidden">
-                          <p className="text-sm text-primary font-medium mb-2">Set the key in VS Code:</p>
-                          <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside overflow-wrap-anywhere">
-                            <li>Open VS Code</li>
-                            <li>Press <code className="px-1 bg-secondary rounded text-foreground">Ctrl+Shift+P</code> (or <code className="px-1 bg-secondary rounded text-foreground">Cmd+Shift+P</code> on Mac)</li>
-                            <li>Type <code className="px-1 bg-secondary rounded text-foreground">VS Integrate: Set API Key</code></li>
-                            <li>Paste your API key when prompted</li>
-                            <li>When asked for the endpoint, enter: <code className="px-1 bg-secondary rounded text-primary break-all">https://vs-integrate.vercel.app/api/heartbeat</code></li>
-                          </ol>
-                          <button
-                            onClick={openVSCode}
-                            className="mt-3 px-3 py-2 bg-secondary hover:bg-border rounded-lg text-xs text-foreground transition-colors"
-                          >
-                            Open VS Code
+                <StepCard key="connect" icon={<KeyRound className="size-5" />} title="Connect your editor" subtitle="Generate an API key and save it through the VS Code command palette.">
+                  {!apiKey ? (
+                    <button onClick={handleConnect} disabled={connecting} className="signal-button w-full">
+                      {connecting ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+                      Generate API key
+                    </button>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="rounded-md border border-border bg-background/80 p-4">
+                        <p className="mb-2 text-xs font-semibold text-muted-foreground">Your API key</p>
+                        <div className="flex items-center gap-2">
+                          <code className="min-w-0 flex-1 break-all font-mono text-sm text-primary">{apiKey}</code>
+                          <button onClick={copyKey} className="rounded-md border border-border bg-secondary p-2 hover:border-primary" aria-label="Copy API key">
+                            {copied ? <Check className="size-4 text-primary" /> : <Copy className="size-4 text-muted-foreground" />}
                           </button>
                         </div>
-                        <button
-                          onClick={() => setStep(3)}
-                          className="w-full py-3.5 bg-primary hover:bg-primary/90 rounded-xl text-primary-foreground font-semibold transition-colors flex items-center justify-center gap-2"
-                        >
-                          <ArrowRight className="w-5 h-5" />
-                          I&apos;ve set the API key — Verify Connection
+                      </div>
+                      <InstructionList
+                        items={[
+                          'Open VS Code.',
+                          'Press Ctrl+Shift+P or Cmd+Shift+P on Mac.',
+                          'Run VS Integrate: Set API Key.',
+                          'Paste your API key, then use the heartbeat endpoint when prompted.',
+                        ]}
+                      />
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <button onClick={openVSCode} className="signal-button signal-button-secondary flex-1">
+                          <TerminalSquare className="size-4" />
+                          Open VS Code
+                        </button>
+                        <button onClick={() => goToStep(3)} className="signal-button flex-1">
+                          Verify connection
+                          <ArrowRight className="size-4" />
                         </button>
                       </div>
-                    )}
-
-                    {error && <p className="text-sm text-destructive mt-3 text-center">{error}</p>}
-                  </div>
-                </motion.div>
+                    </div>
+                  )}
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                </StepCard>
               )}
 
-              {/* ─── STEP 3 ─── */}
               {step === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                >
-                  <div className="app-surface rounded-xl p-5 sm:p-6">
-                    {receivingData ? (
-                      <div className="text-center py-4">
-                        <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold mb-2 text-foreground">Tracking Active!</h2>
-                        <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-                          Your coding activity is now being tracked live.
-                        </p>
-                        <Link
-                          href="/dashboard"
-                          className="inline-flex items-center gap-2 px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-colors font-semibold"
+                <StepCard key="verify" icon={<Wifi className="size-5" />} title="Verify live tracking" subtitle="Keep VS Code open while the dashboard checks for fresh heartbeats.">
+                  {receivingData ? (
+                    <ResultState icon={<CheckCircle2 className="size-12 text-primary" />} title="Tracking active" text="Your coding activity is now being tracked live.">
+                      <Link href="/dashboard" className="signal-button">
+                        Go to dashboard
+                        <ArrowRight className="size-4" />
+                      </Link>
+                    </ResultState>
+                  ) : connected ? (
+                    <ResultState icon={<Wifi className="size-12 text-primary" />} title="Connected" text="VS Code is linked. Open any file and start coding while we wait for activity.">
+                      <Link href="/dashboard" className="signal-button signal-button-secondary">
+                        Open dashboard
+                      </Link>
+                    </ResultState>
+                  ) : (
+                    <ResultState
+                      icon={<Loader2 className={`size-12 text-primary ${verifyStartedAt === -1 ? '' : 'animate-spin'}`} />}
+                      title={verifyStartedAt === -1 ? 'Connection not detected yet' : 'Waiting for connection'}
+                      text="If the extension is not installed, return to Step 1. If it is installed, retry after setting the API key."
+                    >
+                      <div className="flex flex-col justify-center gap-2 sm:flex-row">
+                        <button onClick={() => goToStep(2)} className="signal-button signal-button-secondary">Back to Step 2</button>
+                        <button onClick={openVSCode} className="signal-button signal-button-secondary">Open VS Code</button>
+                        <button
+                          onClick={() => {
+                            setVerifyStartedAt(null)
+                            setConnected(false)
+                            setReceivingData(false)
+                            setStep(2)
+                            setTimeout(() => setStep(3), 0)
+                          }}
+                          className="signal-button"
                         >
-                          Go to Dashboard <ArrowRight className="w-4 h-4" />
-                        </Link>
+                          <RefreshCw className="size-4" />
+                          Retry
+                        </button>
                       </div>
-                    ) : connected ? (
-                      <div className="text-center py-4">
-                        <Wifi className="w-16 h-16 text-primary mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold mb-2 text-foreground">Connected!</h2>
-                        <p className="text-muted-foreground mb-2">VS Code is linked to your account.</p>
-                        <p className="text-sm text-muted-foreground mb-6">
-                          Open any file in VS Code and start coding. We&apos;ll detect your activity automatically.
-                        </p>
-                        <div className="flex items-center justify-center gap-2 text-sm text-primary">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Waiting for coding activity...
-                        </div>
-                        <Link
-                          href="/dashboard"
-                          className="inline-flex items-center gap-2 px-8 py-3 mt-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-colors font-semibold"
-                        >
-                          Go to Dashboard <ArrowRight className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    ) : (
-                      <div className="text-center py-4">
-                        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-                          <Loader2 className={`w-8 h-8 text-primary ${verifyStartedAt === -1 ? '' : 'animate-spin'}`} />
-                        </div>
-                        <h2 className="text-xl font-semibold mb-2 text-foreground">
-                          {verifyStartedAt === -1 ? 'Connection not detected yet' : 'Waiting for Connection...'}
-                        </h2>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Keep VS Code open with the extension enabled.
-                        </p>
-                        <p className="text-xs text-muted-foreground mb-4">
-                          If the extension is not installed, go back to Step 1 and download the .vsix file. Then in VS Code: Extensions (Ctrl+Shift+X) → ⋯ → &quot;Install from VSIX...&quot;
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                          <button
-                            onClick={() => goToStep(2)}
-                            className="w-full sm:w-auto px-4 py-2.5 bg-secondary hover:bg-border rounded-lg text-sm text-foreground transition-colors"
-                          >
-                            Back to Step 2
-                          </button>
-                          <button
-                            onClick={openVSCode}
-                            className="w-full sm:w-auto px-4 py-2.5 bg-primary/10 hover:bg-primary/20 rounded-lg text-sm text-primary transition-colors"
-                          >
-                            Open VS Code
-                          </button>
-                          <button
-                            onClick={() => {
-                              setVerifyStartedAt(null)
-                              setConnected(false)
-                              setReceivingData(false)
-                              setStep(2)
-                              setTimeout(() => setStep(3), 0)
-                            }}
-                            className="w-full sm:w-auto px-4 py-2.5 bg-secondary hover:bg-border rounded-lg text-sm text-foreground transition-colors"
-                          >
-                            <RefreshCw className="w-4 h-4 inline mr-2" />
-                            Retry Check
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
+                    </ResultState>
+                  )}
+                </StepCard>
               )}
             </AnimatePresence>
-          </div>
+          </section>
         </div>
 
         <div className="mt-8 text-center">
           <button
             onClick={() => { localStorage.setItem('onboarding_skipped', 'true'); window.location.href = '/dashboard' }}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground"
           >
-            Skip to Dashboard →
+            Skip to dashboard
           </button>
         </div>
       </main>
     </div>
   )
 }
+
+function StepCard({ icon, title, subtitle, children }: { icon: React.ReactNode; title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 18 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -18 }}
+      transition={{ duration: 0.24 }}
+      className="signal-panel p-5 sm:p-7"
+    >
+      <div className="mb-6 flex items-start gap-4">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-md bg-foreground text-background">{icon}</div>
+        <div>
+          <h2 className="font-sans text-xl font-semibold">{title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+      <div className="space-y-5">{children}</div>
+    </motion.div>
+  )
+}
+
+function InstructionList({ items }: { items: string[] }) {
+  return (
+    <div className="grid gap-2" data-gsap-stagger>
+      {items.map((text, index) => (
+        <div key={text} className="flex items-start gap-3 rounded-md border border-border bg-background/65 p-3" data-gsap-item>
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-accent font-mono text-xs font-semibold text-foreground">{index + 1}</span>
+          <p className="text-sm leading-relaxed text-muted-foreground">{text}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ResultState({ icon, title, text, children }: { icon: React.ReactNode; title: string; text: string; children: React.ReactNode }) {
+  return (
+    <div className="py-6 text-center">
+      <div className="mx-auto mb-5 flex size-20 items-center justify-center rounded-lg border border-border bg-background">{icon}</div>
+      <h3 className="font-display text-3xl">{title}</h3>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">{text}</p>
+      <div className="mt-6 flex justify-center">{children}</div>
+    </div>
+  )
+}
+

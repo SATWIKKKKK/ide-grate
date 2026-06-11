@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
 import {
   ArrowRight,
   BarChart3,
@@ -13,7 +11,9 @@ import {
   KeyRound,
   LayoutDashboard,
   Lock,
+  Radio,
   TerminalSquare,
+  Timer,
   Zap,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -21,233 +21,210 @@ import Link from 'next/link';
 import Logo from './Logo';
 import ContributionGraph from './ContributionGraph';
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
-};
+const featureCards = [
+  { icon: Timer, title: 'Session ledger', text: 'Track focused editor time, live sessions, pauses, and daily totals without manual logging.' },
+  { icon: BarChart3, title: 'Coding signal', text: 'See activity heatmaps, language mix, project distribution, and weekly rhythm from real heartbeats.' },
+  { icon: Zap, title: 'Goals and momentum', text: 'Set daily or weekly goals, watch progress fill in, and keep streaks tied to actual work.' },
+  { icon: EyeOff, title: 'Private telemetry', text: 'The extension sends metadata only: time, language, platform, and anonymized project hash.' },
+];
 
-const stagger = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
-};
+const setupSteps = [
+  { icon: Download, title: 'Install', text: 'Download the VSIX and install it from the VS Code Extensions menu.' },
+  { icon: KeyRound, title: 'Connect', text: 'Generate your account API key and paste it into the command palette action.' },
+  { icon: Radio, title: 'Verify', text: 'Open the dashboard and confirm live heartbeats, sessions, and daily totals.' },
+];
+
+function LoggedInHero() {
+  return (
+    <section className="signal-container flex min-h-[calc(100vh-4rem)] items-center py-16">
+      <div className="mx-auto max-w-2xl text-center" data-gsap="fade-up">
+        <div className="mb-8 flex justify-center">
+          <Logo size="lg" />
+        </div>
+        <p className="signal-kicker justify-center">session active</p>
+        <h1 className="mt-3 text-4xl sm:text-5xl">Your signal is ready.</h1>
+        <p className="mx-auto mt-5 max-w-xl text-muted-foreground">
+          Open your dashboard, finish the extension setup, or tune how your public profile shares your coding activity.
+        </p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link href="/dashboard" className="signal-button">
+            <LayoutDashboard className="size-4" />
+            Dashboard
+            <ArrowRight className="size-4" />
+          </Link>
+          <Link href="/onboarding" className="signal-button signal-button-secondary">
+            Setup guide
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Hero() {
   const { data: session } = useSession();
 
-  if (session) {
-    return (
-      <section className="min-h-[calc(100vh-4rem)] px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-background">
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="max-w-xl mx-auto text-center"
-        >
-          <motion.div variants={fadeUp} className="mb-6 flex justify-center">
-            <Logo size="lg" />
-          </motion.div>
-          <motion.h1 variants={fadeUp} className="text-3xl sm:text-4xl font-display font-normal mb-4 text-foreground">
-            You are in.
-          </motion.h1>
-          <motion.p variants={fadeUp} className="text-base text-muted-foreground mb-8">
-            Open your dashboard, finish setup, or adjust how your profile is shared.
-          </motion.p>
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row justify-center gap-3">
-            <Link href="/dashboard" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-medium transition-colors">
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/onboarding" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 text-foreground border border-border rounded-full font-medium transition-colors">
-              Setup guide
-            </Link>
-          </motion.div>
-        </motion.div>
-      </section>
-    );
-  }
-
-  const footerLinks = [
-    { href: '/signup', label: 'Dashboard' },
-    { href: '/signup', label: 'Setup guide' },
-    { href: '/signup', label: 'Settings' },
-    { href: '/login', label: 'Sign in' },
-  ];
-
-  const features = [
-    { icon: Clock, title: 'Session timeline', text: 'See today’s sessions, live timer state, and tracked duration in one place.' },
-    { icon: BarChart3, title: 'Contribution graph', text: 'Build a GitHub-style activity map from actual editor time instead of commit frequency.' },
-    { icon: Zap, title: 'Productivity score', text: 'Track consistency, focus, session quality, and daily progress without manual logs.' },
-    { icon: Code2, title: 'Language mix', text: 'Understand where your coding hours go across TypeScript, Python, CSS, and more.' },
-    { icon: KeyRound, title: 'API-key setup', text: 'Use a per-account key so VS Code can send heartbeats securely to your profile.' },
-    { icon: EyeOff, title: 'No code access', text: 'The extension sends metadata such as time, language, platform, and anonymized project hash.' },
-  ];
+  if (session) return <LoggedInHero />;
 
   return (
-    <div className="page-shell relative selection:bg-accent/20">
-      <section className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="max-w-7xl mx-auto min-h-[calc(100vh-5.5rem)] grid grid-cols-1 lg:grid-cols-[0.86fr_1.14fr] gap-5 lg:gap-8 items-center"
-        >
-          <motion.header variants={fadeUp} className="text-left">
-            
-            
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-normal text-foreground leading-tight tracking-normal mb-5">
-              Track real coding activity.
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">
-              vs-integrate turns editor heartbeats into sessions, focus time, streaks, language mix, and daily progress without reading your source code.
-            </p>
-            <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <Link href="/signup" className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-medium transition-colors">
-                Start tracking <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="#how-it-works" className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-secondary hover:bg-secondary/80 text-foreground border border-border rounded-full font-medium transition-colors">
-                See setup
-              </Link>
-            </div>
-            <div className="mt-7 grid grid-cols-3 gap-3 max-w-lg">
-              {[
-                ['0 code', 'content read'],
-                ['VSIX', 'install flow'],
-                ['Live', 'session timer'],
-              ].map(([value, label]) => (
-                <div key={value} className="muted-panel rounded-lg p-3">
-                  <p className="text-lg font-medium text-primary leading-none">{value}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">{label}</p>
-                </div>
-              ))}
-            </div>
-          </motion.header>
-
-          <motion.section variants={fadeUp} className="relative w-full min-w-0 rounded-xl app-surface overflow-hidden">
-            <div className="p-3 sm:p-4 lg:p-5 relative">
-              <div className="absolute inset-0 opacity-[0.035] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-              <div className="relative z-10 w-full bg-card/80 p-3 sm:p-4 rounded-lg border border-border">
-                <ContributionGraph />
-                <div className="hidden md:flex absolute right-4 bottom-4 flex-col items-start gap-1">
-                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="text-primary/60 -rotate-12 mb-1">
-                    <path d="M5 35 Q 20 5 35 15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
-                    <path d="M28 12 L 36 15 L 32 23" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="text-sm font-medium text-foreground bg-card px-3 py-1.5 rounded-lg border border-border shadow-sm whitespace-nowrap">
-                    Live editor heartbeats.
-                  </span>
-                </div>
+    <div className="page-shell selection:bg-accent/40">
+      <section className="signal-container grid min-h-[calc(100vh-4rem)] grid-cols-1 items-center gap-8 py-10 lg:grid-cols-[0.88fr_1.12fr] lg:py-14">
+        <header className="min-w-0" data-gsap="fade-up">
+          <p className="signal-kicker">
+            <Code2 className="size-4 text-primary" />
+            VS Code activity, not commit theatre
+          </p>
+          <h1 className="mt-5 max-w-3xl text-[clamp(3rem,8vw,6.9rem)] leading-[0.88]">
+            Track real coding activity.
+          </h1>
+          <p className="signal-copy mt-6 max-w-xl">
+            vs-integrate turns editor heartbeats into sessions, focus time, streaks, language mix, and daily progress without reading your source code.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href="/signup" className="signal-button">
+              Start tracking
+              <ArrowRight className="size-4" />
+            </Link>
+            <Link href="#how-it-works" className="signal-button signal-button-secondary">
+              See setup
+            </Link>
+          </div>
+          <div className="mt-8 grid max-w-lg grid-cols-3 gap-2" data-gsap-stagger>
+            {[
+              ['No code', 'content collected'],
+              ['VSIX', 'install flow'],
+              ['Live', 'heartbeat status'],
+            ].map(([value, label]) => (
+              <div key={value} className="muted-panel p-3" data-gsap-item>
+                <p className="font-mono text-sm font-semibold text-primary">{value}</p>
+                <p className="mt-1 text-[11px] leading-tight text-muted-foreground">{label}</p>
               </div>
+            ))}
+          </div>
+        </header>
+
+        <section className="signal-panel relative min-w-0 overflow-hidden p-3 sm:p-4" data-gsap="fade-up" aria-label="Dashboard preview">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--color-accent),var(--color-accent-2),var(--color-accent-3))]" />
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground">today's signal</p>
+                <p className="font-mono text-2xl font-semibold text-foreground">editor heartbeats</p>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-accent px-2.5 py-1 text-xs font-semibold text-foreground">
+                <span className="size-2 rounded-full bg-primary" />
+                live-ready
+              </span>
             </div>
-          </motion.section>
-        </motion.div>
+            <ContributionGraph />
+          </div>
+        </section>
       </section>
 
-      <section id="features" className="scroll-mt-24 px-4 sm:px-6 lg:px-8 py-14 border-t border-border bg-background/70">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-8">
-            <h2 className="text-2xl sm:text-3xl font-normal mb-3">What you get after connecting VS Code</h2>
-            <p className="text-muted-foreground">The dashboard focuses on behavior you can act on: how long you stayed focused, what you worked in, and whether your routine is improving.</p>
+      <section id="features" className="border-t border-border bg-background/65 py-16 sm:py-20">
+        <div className="signal-container">
+          <div className="mb-8 max-w-2xl" data-gsap="fade-up">
+            <p className="signal-kicker">dashboard signals</p>
+            <h2 className="mt-3 text-3xl sm:text-5xl">Built for people who actually work in the editor.</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((item) => {
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" data-gsap-stagger>
+            {featureCards.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="app-card p-5">
-                  <Icon className="w-5 h-5 text-primary mb-4" />
-                  <h3 className="text-base font-medium mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
-                </div>
+                <article key={item.title} className="app-card p-5" data-gsap-item>
+                  <Icon className="mb-6 size-5 text-primary" />
+                  <h3 className="font-sans text-base font-semibold leading-snug">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.text}</p>
+                </article>
               );
             })}
           </div>
         </div>
       </section>
 
-      <section id="how-it-works" className="scroll-mt-24 px-4 sm:px-6 lg:px-8 py-14 bg-secondary/35 border-t border-border">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-8 lg:gap-12 items-start">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-normal mb-3">Set up once, then code normally.</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                The onboarding flow downloads the extension, generates your API key, and verifies that heartbeats are arriving. After that, your dashboard updates as you work.
-              </p>
-              <Link href="/signup" className="mt-6 inline-flex items-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-colors">
-                Create account <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { icon: Download, title: 'Install', text: 'Download the VSIX and install it from the VS Code Extensions menu.' },
-                { icon: TerminalSquare, title: 'Connect', text: 'Paste your API key through the VS Integrate command palette action.' },
-                { icon: CheckCircle2, title: 'Verify', text: 'Open the dashboard and confirm live tracking, sessions, and daily totals.' },
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.title} className="app-card p-5">
-                    <span className="inline-flex w-8 h-8 items-center justify-center rounded-lg bg-primary/10 text-primary font-medium text-sm mb-4">{index + 1}</span>
-                    <Icon className="w-5 h-5 text-primary mb-3" />
-                    <h3 className="font-medium mb-2">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
-                  </div>
-                );
-              })}
-            </div>
+      <section id="how-it-works" className="border-t border-border py-16 sm:py-20">
+        <div className="signal-container grid grid-cols-1 gap-8 lg:grid-cols-[0.78fr_1.22fr]">
+          <div data-gsap="fade-up">
+            <p className="signal-kicker">setup flow</p>
+            <h2 className="mt-3 text-3xl sm:text-5xl">Set up once. Code normally.</h2>
+            <p className="mt-5 text-muted-foreground">
+              The onboarding flow downloads the extension, generates your API key, and verifies that heartbeats are arriving.
+            </p>
+            <Link href="/signup" className="signal-button mt-7">
+              Create account
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" data-gsap-stagger>
+            {setupSteps.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.title} className="app-card p-5" data-gsap-item>
+                  <span className="mb-5 inline-flex size-8 items-center justify-center rounded-md bg-foreground font-mono text-sm font-semibold text-background">
+                    {index + 1}
+                  </span>
+                  <Icon className="mb-4 size-5 text-primary" />
+                  <h3 className="font-sans font-semibold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.text}</p>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section id="privacy" className="scroll-mt-24 px-4 sm:px-6 lg:px-8 py-14 border-t border-border">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="app-card p-6">
-            <Lock className="w-5 h-5 text-primary mb-4" />
-            <h2 className="text-2xl font-normal mb-3">Private by default</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              vs-integrate is built for activity analytics, not surveillance. It does not collect file contents, keystroke text, file names, repository paths, or source code.
+      <section id="privacy" className="border-t border-border bg-background/70 py-16 sm:py-20">
+        <div className="signal-container grid grid-cols-1 gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <article className="signal-panel p-6 sm:p-8" data-gsap="fade-up">
+            <Lock className="mb-6 size-6 text-primary" />
+            <p className="signal-kicker">privacy boundary</p>
+            <h2 className="mt-3 text-3xl sm:text-5xl">Analytics, not surveillance.</h2>
+            <p className="mt-5 text-muted-foreground">
+              vs-integrate tracks activity metadata only. It does not collect source code, file contents, keystrokes, file names, or repository paths.
             </p>
-          </div>
-          <div className="app-card p-6">
-            <h3 className="font-medium mb-4">Tracked signals</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
+          </article>
+          <article className="signal-panel p-6 sm:p-8" data-gsap-stagger>
+            <h3 className="font-sans text-lg font-semibold">Tracked signals</h3>
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {['Session duration', 'Programming language', 'Platform', 'Anonymized project hash', 'Daily contribution totals', 'Goal progress'].map((item) => (
-                <div key={item} className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground" data-gsap-item>
+                  <CheckCircle2 className="size-4 shrink-0 text-primary" />
                   <span>{item}</span>
                 </div>
               ))}
             </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="border-t border-border py-16 sm:py-20">
+        <div className="signal-container text-center" data-gsap="fade-up">
+          <p className="signal-kicker justify-center">ready when your editor is</p>
+          <h2 className="mx-auto mt-3 max-w-3xl text-3xl sm:text-5xl">Let the dashboard tell the truth about your coding rhythm.</h2>
+          <div className="mt-8 flex justify-center">
+            <Link href="/signup" className="signal-button">
+              Get started
+              <ArrowRight className="size-4" />
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="px-4 sm:px-6 lg:px-8 py-14 bg-secondary/40 border-t border-border">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-normal mb-3">Ready when your editor is.</h2>
-          <p className="text-muted-foreground mb-6">Create an account, connect the extension, and let the dashboard tell the truth about your coding rhythm.</p>
-          <Link href="/signup" className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-colors">
-            Get started <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
-      <footer className="border-t border-border px-4 sm:px-6 lg:px-8 py-8 bg-background">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-6">
+      <footer className="border-t border-border bg-background py-8">
+        <div className="signal-container flex flex-col justify-between gap-5 md:flex-row md:items-center">
           <div>
             <Logo size="sm" />
-            <p className="text-sm text-muted-foreground mt-2">Track real coding activity without exposing code.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Track real coding activity without exposing code.</p>
           </div>
-          <div className="flex flex-wrap gap-3 sm:gap-5 text-sm">
-            {footerLinks.map((link) => (
-              <Link key={link.label} href={link.href} className="text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
-                {link.label}
-              </Link>
-            ))}
+          <div className="flex flex-wrap gap-4 text-sm font-semibold text-muted-foreground">
+            <Link href="/signup" className="hover:text-foreground">Dashboard</Link>
+            <Link href="/signup" className="hover:text-foreground">Setup guide</Link>
+            <Link href="/signup" className="hover:text-foreground">Settings</Link>
+            <Link href="/login" className="hover:text-foreground">Sign in</Link>
           </div>
         </div>
       </footer>
     </div>
   );
 }
+

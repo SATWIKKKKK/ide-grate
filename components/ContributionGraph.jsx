@@ -143,12 +143,12 @@ export default function ContributionGraph() {
   const contributions = contributionData ? getContributionGrid() : [];
   
   const getColor = (level) => {
-    if (level === 0) return 'bg-secondary';
-    if (level === 1) return 'bg-primary/25';
-    if (level === 2) return 'bg-primary/70';
-    if (level === 3) return 'bg-primary/85';
-    if (level === 4) return 'bg-primary';
-    return 'bg-primary';
+    if (level === 0) return 'bg-[var(--color-paper-3)]';
+    if (level === 1) return 'bg-[color-mix(in_oklch,var(--color-accent)_22%,var(--color-paper-3))]';
+    if (level === 2) return 'bg-[color-mix(in_oklch,var(--color-accent)_48%,var(--color-paper-3))]';
+    if (level === 3) return 'bg-[color-mix(in_oklch,var(--color-accent)_72%,var(--color-paper-3))]';
+    if (level === 4) return 'bg-[var(--color-accent)]';
+    return 'bg-[var(--color-accent)]';
   };
 
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -162,7 +162,7 @@ export default function ContributionGraph() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-gsap="fade-up">
       {/* keyframes are defined globally in app/globals.css; use CSS vars per-square for duration/delay */}
       
       <div ref={scrollRef} className="heatmap-scroll flex gap-2 items-start overflow-x-auto pb-3">
@@ -170,7 +170,7 @@ export default function ContributionGraph() {
        
 
         {/* Contribution grid */}
-        <div className="flex gap-1">
+        <div className="flex gap-1" data-gsap-stagger>
           {contributions.map((week, weekIdx) => (
             <motion.div
               key={weekIdx}
@@ -178,6 +178,7 @@ export default function ContributionGraph() {
               animate={{ opacity: 1 }}
               transition={{ delay: weekIdx * 0.01 }}
               className="flex flex-col gap-1"
+              data-gsap-item
             >
               {week.map((day, dayIdx) => {
                 const squareStyle = day.level > 0 ? { '--glitter-duration': `${day.animDuration}s`, '--glitter-delay': `${day.animDelay}s` } : {};
@@ -185,7 +186,7 @@ export default function ContributionGraph() {
                 return (
                   <div
                     key={`${weekIdx}-${dayIdx}`}
-                    className={`w-3 h-3 rounded-sm ${getColor(day.level)} cursor-pointer border border-border hover:border-primary hover:scale-125 transition-all ${day.level > 0 ? 'animate-glitter' : ''}`}
+                    className={`w-3 h-3 rounded-[3px] ${getColor(day.level)} cursor-pointer border border-border hover:border-primary hover:scale-125 transition-all ${day.level > 0 ? 'animate-glitter' : ''}`}
                     style={squareStyle}
                     title={`${day.date}: ${day.hours.toFixed(1)}h coding`}
                   />
@@ -200,20 +201,21 @@ export default function ContributionGraph() {
       <div className="flex items-center gap-3 mt-6 text-xs text-muted-foreground">
         <span>Less</span>
         <div className="flex gap-1">
-          <div className="w-3 h-3 bg-secondary rounded-sm" />
-          <div className="w-3 h-3 bg-primary/25 rounded-sm" />
-          <div className="w-3 h-3 bg-primary/70 rounded-sm" />
-          <div className="w-3 h-3 bg-primary/85 rounded-sm" />
-          <div className="w-3 h-3 bg-primary rounded-sm" />
+          <div className="w-3 h-3 bg-[var(--color-paper-3)] rounded-[3px]" />
+          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-accent)_22%,var(--color-paper-3))] rounded-[3px]" />
+          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-accent)_48%,var(--color-paper-3))] rounded-[3px]" />
+          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-accent)_72%,var(--color-paper-3))] rounded-[3px]" />
+          <div className="w-3 h-3 bg-[var(--color-accent)] rounded-[3px]" />
         </div>
         <span>More</span>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8" data-gsap-stagger>
         <motion.div
           whileHover={{ y: -5 }}
-          className="bg-secondary/60 rounded-lg p-4 border border-border hover:border-primary/50 transition-all"
+          className="app-card p-4"
+          data-gsap-item
         >
           <p className="text-muted-foreground text-xs mb-1">Total Hours</p>
           <p className="text-2xl font-medium text-primary">
@@ -224,7 +226,8 @@ export default function ContributionGraph() {
 
         <motion.div
           whileHover={{ y: -5 }}
-          className="bg-secondary/60 rounded-lg p-4 border border-border hover:border-primary/50 transition-all"
+          className="app-card p-4"
+          data-gsap-item
         >
           <p className="text-muted-foreground text-xs mb-1">Active Days</p>
           <p className="text-2xl font-medium text-primary">
@@ -235,7 +238,8 @@ export default function ContributionGraph() {
 
         <motion.div
           whileHover={{ y: -5 }}
-          className="bg-secondary/60 rounded-lg p-4 border border-border hover:border-primary/50 transition-all"
+          className="app-card p-4"
+          data-gsap-item
         >
           <p className="text-muted-foreground text-xs mb-1">Avg. Daily</p>
           <p className="text-2xl font-medium text-primary">
