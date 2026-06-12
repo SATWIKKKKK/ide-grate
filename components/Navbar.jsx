@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, LayoutDashboard, LogOut, Menu, Settings, UserRound, X } from 'lucide-react';
+import { Bell, BookOpen, LayoutDashboard, LogOut, Menu, Settings, UserRound, X } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -45,22 +45,22 @@ export default function Navbar() {
   const isActive = (href) => pathname === href || (href.startsWith('/#') && pathname === '/');
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-[var(--color-paper-glass)] backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 h-16 border-b border-border bg-[var(--color-paper-glass)] backdrop-blur-xl">
       <div className="signal-container">
         <div className="flex h-16 items-center justify-between gap-3">
           <Link href={session ? '/dashboard' : '/'} className="inline-flex shrink-0 rounded-md">
             <Logo size="sm" />
           </Link>
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden h-full items-end gap-8 md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-md px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+                className={`flex h-full items-end border-b-2 px-1 pb-4 font-mono text-sm font-medium transition-colors whitespace-nowrap ${
                   isActive(link.href)
-                    ? 'bg-accent text-foreground'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
                 }`}
               >
                 {link.label}
@@ -78,16 +78,23 @@ export default function Navbar() {
             </button>
 
             {session ? (
+              <>
+              <button
+                className="hidden size-10 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:inline-flex"
+                aria-label="Notifications"
+              >
+                <Bell className="size-5" />
+              </button>
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowUserMenu((v) => !v)}
-                  className="flex items-center gap-2 rounded-md border border-border bg-background/80 p-1 pr-2 text-sm font-semibold text-foreground transition-colors hover:border-primary/50"
+                  className="flex items-center gap-2 rounded-full border border-border bg-card p-1 pr-3 font-mono text-sm font-medium text-foreground transition-colors hover:border-primary"
                   aria-label="Open account menu"
                 >
                   {session.user?.image ? (
-                    <img src={session.user.image} alt="" className="size-8 rounded-full border border-border object-cover" />
+                    <img src={session.user.image} alt="" className="size-7 rounded-full border border-border object-cover" />
                   ) : (
-                    <span className="flex size-8 items-center justify-center rounded-full bg-foreground text-background">
+                    <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-background">
                       {session.user?.name?.[0] || session.user?.email?.[0] || '?'}
                     </span>
                   )}
@@ -139,6 +146,7 @@ export default function Navbar() {
                   )}
                 </AnimatePresence>
               </div>
+              </>
             ) : (
               <div className="hidden items-center gap-2 md:flex">
                 <Link href="/login" className="signal-button signal-button-secondary min-h-10 px-3 text-sm">

@@ -41,20 +41,20 @@ export function AuthShell({
       ]
 
   return (
-    <div className="page-shell min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl grid-cols-1 items-center gap-5 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[1.02fr_0.9fr]">
-        <section className="hidden min-h-[40rem] flex-col justify-between overflow-hidden rounded-lg border border-border bg-foreground p-8 text-background shadow-2xl lg:flex" data-gsap="fade-up">
+    <div className="page-shell flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="hidden min-h-[46rem] flex-col justify-between overflow-hidden rounded-lg border border-primary bg-[var(--color-inverse)] p-10 text-[var(--color-inverse-text)] shadow-2xl lg:flex" data-gsap="fade-up">
           <Link href="/" className="inline-flex rounded-md">
             <Logo size="md" tone="inverted" />
           </Link>
           <div>
-            <p className="font-mono text-xs font-semibold text-[var(--color-accent-3)]">
+            <p className="font-mono text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-primary-muted)]">
               {isSignup ? 'create your signal ledger' : 'welcome back to the signal'}
             </p>
-            <h1 className="mt-4 max-w-lg text-5xl text-background">
+            <h1 className="mt-4 max-w-xl text-5xl leading-[1.05] text-[var(--color-primary-text)]">
               {isSignup ? 'Turn coding hours into a useful record.' : 'Pick up the thread from your last session.'}
             </h1>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-background/68">
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-[var(--color-inverse-text)]/82">
               {isSignup
                 ? 'Connect VS Code once, then let sessions, streaks, languages, and goals fill in automatically.'
                 : 'Sign in to inspect live session time, recent activity, goals, and privacy controls from one calm dashboard.'}
@@ -62,29 +62,29 @@ export function AuthShell({
           </div>
           <div className="grid grid-cols-3 gap-3" data-gsap-stagger>
             {proof.map(([value, label]) => (
-              <div key={value} className="rounded-md border border-background/15 bg-background/8 p-3" data-gsap-item>
-                <p className="text-sm font-semibold text-background">{value}</p>
-                <p className="mt-1 text-[11px] text-background/58">{label}</p>
+              <div key={value} className="rounded-sm border border-[var(--color-inverse-text)]/18 bg-[var(--color-inverse-text)]/5 p-4" data-gsap-item>
+                <p className="font-semibold text-[var(--color-primary-text)]">{value}</p>
+                <p className="mt-1 font-mono text-xs lowercase text-[var(--color-inverse-text)]/62">{label}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="w-full max-w-md mx-auto" data-gsap="fade-up">
+        <section className="mx-auto w-full max-w-[480px]" data-gsap="fade-up">
           <Link href="/" className="mb-7 flex items-center justify-center lg:hidden">
             <Logo size="xl" />
           </Link>
-          <div className="signal-panel overflow-hidden">
-            <div className="border-b border-border p-6 text-center">
-              <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-md bg-foreground text-background">
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="border-b border-border bg-[var(--color-surface-bright)] p-8 text-center">
+              <div className="mx-auto mb-5 flex size-12 items-center justify-center rounded-sm bg-primary text-primary-foreground">
                 {isSignup ? <Radio className="size-5" /> : <Code2 className="size-5" />}
               </div>
               <h1 className="font-display text-3xl">{title}</h1>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
+              <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-muted-foreground">{subtitle}</p>
             </div>
             {children}
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+          <div className="mt-4 flex flex-wrap justify-center gap-2 text-[11px] text-muted-foreground">
             {[
               { icon: Shield, label: 'No code access' },
               { icon: CheckCircle2, label: 'Private by default' },
@@ -92,9 +92,9 @@ export function AuthShell({
             ].map((item) => {
               const Icon = item.icon
               return (
-                <div key={item.label} className="flex items-center justify-center gap-1 rounded-md border border-border bg-background/65 p-2">
-                  <Icon className="size-3 text-primary" />
-                  <span className="truncate">{item.label}</span>
+                <div key={item.label} className="flex items-center justify-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 font-mono">
+                  <Icon className="size-3 text-muted-foreground" />
+                  <span>{item.label}</span>
                 </div>
               )
             })}

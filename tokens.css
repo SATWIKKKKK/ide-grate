@@ -1,34 +1,50 @@
-/* Hallmark · macrostructure: Product Workbench · tone: Signal Studio · anchor hue: green
- * Hallmark · pre-emit critique: P5 H4 E4 S5 R5 V4
- * design-system: design.md · motion: GSAP restrained reveals
+/* Hallmark · macrostructure: Product Workbench · tone: Monochrome Logic · anchor hue: black
+ * Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4
+ * design-system: design.md · motion: restrained transform/opacity
  */
 :root {
-  --color-paper: oklch(97.8% 0.012 92);
-  --color-paper-2: oklch(94.8% 0.017 92);
-  --color-paper-3: oklch(90.2% 0.021 92);
-  --color-paper-glass: oklch(98% 0.01 92 / 0.78);
-  --color-ink: oklch(17% 0.018 245);
-  --color-ink-2: oklch(36% 0.02 245);
-  --color-muted: oklch(54% 0.018 245);
-  --color-rule: oklch(82% 0.02 92);
-  --color-rule-2: oklch(74% 0.025 92);
-  --color-accent: oklch(49% 0.155 154);
-  --color-accent-2: oklch(58% 0.145 214);
-  --color-accent-3: oklch(68% 0.145 74);
-  --color-accent-soft: oklch(91% 0.055 154);
-  --color-accent-ink: oklch(98.5% 0.01 92);
-  --color-danger: oklch(56% 0.18 28);
-  --color-danger-soft: oklch(92% 0.045 28);
-  --color-focus: oklch(56% 0.18 214);
-  --color-chart-1: oklch(49% 0.155 154);
-  --color-chart-2: oklch(58% 0.145 214);
-  --color-chart-3: oklch(68% 0.145 74);
-  --color-chart-4: oklch(50% 0.12 286);
-  --color-chart-5: oklch(55% 0.15 28);
+  --color-surface: #f9f9fa;
+  --color-surface-dim: #dadadb;
+  --color-surface-bright: #f9f9fa;
+  --color-surface-lowest: #ffffff;
+  --color-surface-low: #f3f3f4;
+  --color-surface-container: #eeeeef;
+  --color-surface-high: #e8e8e9;
+  --color-surface-highest: #e2e2e3;
+  --color-ink: #1a1c1d;
+  --color-ink-2: #4c4546;
+  --color-muted: #5d5f5f;
+  --color-rule: #cfc4c5;
+  --color-rule-2: #7e7576;
+  --color-inverse: #2f3132;
+  --color-inverse-text: #f0f1f2;
+  --color-primary: #000000;
+  --color-primary-text: #ffffff;
+  --color-primary-container: #1b1b1b;
+  --color-primary-muted: #848484;
+  --color-live: #16a34a;
+  --color-live-soft: #dcfce7;
+  --color-danger: #ba1a1a;
+  --color-danger-soft: #ffdad6;
+  --color-focus: #000000;
+  --color-paper: var(--color-surface);
+  --color-paper-2: var(--color-surface-low);
+  --color-paper-3: var(--color-surface-highest);
+  --color-paper-glass: rgb(255 255 255 / 0.82);
+  --color-accent: var(--color-primary);
+  --color-accent-2: var(--color-muted);
+  --color-accent-3: var(--color-live);
+  --color-accent-soft: var(--color-surface-container);
+  --color-accent-ink: var(--color-primary-text);
+  --color-chart-1: #000000;
+  --color-chart-2: #4c4546;
+  --color-chart-3: #7e7576;
+  --color-chart-4: #c6c6c7;
+  --color-chart-5: #e2e2e3;
 
-  --font-display: var(--font-display), "Newsreader", Georgia, serif;
-  --font-body: var(--font-sans), "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-mono-ui: var(--font-mono), "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-display: "Libre Caslon Text", Georgia, serif;
+  --font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono-ui: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
@@ -37,34 +53,33 @@
   --space-md: 1.5rem;
   --space-lg: 2rem;
   --space-xl: 3rem;
-  --space-2xl: 4.5rem;
-  --space-3xl: 7rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-base: 1rem;
+  --text-base: 0.9375rem;
   --text-md: 1.125rem;
-  --text-lg: 1.375rem;
-  --text-xl: 1.75rem;
-  --text-2xl: 2.25rem;
+  --text-lg: 1.5rem;
+  --text-xl: 2rem;
+  --text-2xl: 2.5rem;
   --text-3xl: 3rem;
-  --text-display-s: clamp(2.4rem, 5vw, 4.5rem);
-  --text-display: clamp(3rem, 7vw, 6.75rem);
+  --text-display-s: clamp(2rem, 4vw, 3rem);
+  --text-display: clamp(2rem, 5.4vw, 4rem);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.32, 0, 0.67, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-fast: 140ms;
-  --dur-base: 220ms;
-  --dur-slow: 520ms;
+  --dur-fast: 100ms;
+  --dur-base: 140ms;
+  --dur-slow: 240ms;
 
   --rule-hair: 1px;
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-pill: 999px;
-  --shadow-panel: 0 20px 55px oklch(20% 0.02 245 / 0.09);
-  --shadow-soft: 0 12px 28px oklch(20% 0.02 245 / 0.08);
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-pill: 9999px;
+  --shadow-panel: 0 20px 50px rgb(26 28 29 / 0.06);
+  --shadow-soft: 0 10px 28px rgb(26 28 29 / 0.05);
 }
-

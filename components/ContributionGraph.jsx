@@ -144,11 +144,11 @@ export default function ContributionGraph() {
   
   const getColor = (level) => {
     if (level === 0) return 'bg-[var(--color-paper-3)]';
-    if (level === 1) return 'bg-[color-mix(in_oklch,var(--color-accent)_22%,var(--color-paper-3))]';
-    if (level === 2) return 'bg-[color-mix(in_oklch,var(--color-accent)_48%,var(--color-paper-3))]';
-    if (level === 3) return 'bg-[color-mix(in_oklch,var(--color-accent)_72%,var(--color-paper-3))]';
-    if (level === 4) return 'bg-[var(--color-accent)]';
-    return 'bg-[var(--color-accent)]';
+    if (level === 1) return 'bg-[color-mix(in_oklch,var(--color-live)_22%,var(--color-paper-3))]';
+    if (level === 2) return 'bg-[color-mix(in_oklch,var(--color-live)_48%,var(--color-paper-3))]';
+    if (level === 3) return 'bg-[color-mix(in_oklch,var(--color-live)_72%,var(--color-paper-3))]';
+    if (level === 4) return 'bg-[var(--color-live)]';
+    return 'bg-[var(--color-live)]';
   };
 
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -186,7 +186,7 @@ export default function ContributionGraph() {
                 return (
                   <div
                     key={`${weekIdx}-${dayIdx}`}
-                    className={`w-3 h-3 rounded-[3px] ${getColor(day.level)} cursor-pointer border border-border hover:border-primary hover:scale-125 transition-all ${day.level > 0 ? 'animate-glitter' : ''}`}
+                  className={`w-3 h-3 rounded-[1px] ${getColor(day.level)} cursor-pointer border border-border hover:border-primary hover:scale-125 transition-all ${day.level > 0 ? 'animate-glitter' : ''}`}
                     style={squareStyle}
                     title={`${day.date}: ${day.hours.toFixed(1)}h coding`}
                   />
@@ -202,10 +202,10 @@ export default function ContributionGraph() {
         <span>Less</span>
         <div className="flex gap-1">
           <div className="w-3 h-3 bg-[var(--color-paper-3)] rounded-[3px]" />
-          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-accent)_22%,var(--color-paper-3))] rounded-[3px]" />
-          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-accent)_48%,var(--color-paper-3))] rounded-[3px]" />
-          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-accent)_72%,var(--color-paper-3))] rounded-[3px]" />
-          <div className="w-3 h-3 bg-[var(--color-accent)] rounded-[3px]" />
+          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-live)_22%,var(--color-paper-3))] rounded-[1px]" />
+          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-live)_48%,var(--color-paper-3))] rounded-[1px]" />
+          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-live)_72%,var(--color-paper-3))] rounded-[1px]" />
+          <div className="w-3 h-3 bg-[var(--color-live)] rounded-[1px]" />
         </div>
         <span>More</span>
       </div>
@@ -218,7 +218,7 @@ export default function ContributionGraph() {
           data-gsap-item
         >
           <p className="text-muted-foreground text-xs mb-1">Total Hours</p>
-          <p className="text-2xl font-medium text-primary">
+          <p className="text-2xl font-medium text-[var(--color-live)]">
             {stats?.totalHours || 0}h
           </p>
           <p className="text-xs text-muted-foreground mt-2">This year</p>
@@ -230,7 +230,7 @@ export default function ContributionGraph() {
           data-gsap-item
         >
           <p className="text-muted-foreground text-xs mb-1">Active Days</p>
-          <p className="text-2xl font-medium text-primary">
+          <p className="text-2xl font-medium text-[var(--color-live)]">
             {stats?.activeDays || 0}
           </p>
           <p className="text-xs text-muted-foreground mt-2">Days coded</p>
@@ -242,7 +242,7 @@ export default function ContributionGraph() {
           data-gsap-item
         >
           <p className="text-muted-foreground text-xs mb-1">Avg. Daily</p>
-          <p className="text-2xl font-medium text-primary">
+          <p className="text-2xl font-medium text-[var(--color-live)]">
             {stats?.avgHoursPerDay || 0}h
           </p>
           <p className="text-xs text-muted-foreground mt-2">Per active day</p>

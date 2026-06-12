@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
+import AppFooter from '@/components/AppFooter'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import {
  AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -87,19 +88,19 @@ function invalidateCache(key?: string) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const LANGUAGE_COLORS: Record<string, string> = {
- typescript: '#3178c6', javascript: '#f7df1e', python: '#3572A5', rust: '#dea584',
- go: '#00ADD8', java: '#b07219', cpp: '#f34b7d', c: '#555555', csharp: '#239120',
- ruby: '#CC342D', php: '#4F5D95', swift: '#FA7343', kotlin: '#A97BFF',
- html: '#e34c26', css: '#563d7c', scss: '#c6538c', vue: '#41b883',
- svelte: '#ff3e00', dart: '#00B4AB', lua: '#000080', shell: '#89e051',
- sql: '#e38c00', graphql: '#e10098', dockerfile: '#384d54',
- typescriptreact: '#3178c6', javascriptreact: '#f7df1e',
- r: '#198CE7', scala: '#c22d40', elixir: '#6e4a7e', haskell: '#5e5086',
- perl: '#0298c3', objective_c: '#438eff', powershell: '#012456',
+ typescriptreact: '#000000', typescript: '#5d5f5f', javascriptreact: '#7e7576',
+ css: '#46464e', python: '#616363', javascript: '#c6c6c7',
+ html: '#1a1c1d', scss: '#4c4546', vue: '#5d5f5f', svelte: '#7e7576',
+ rust: '#1a1c1d', go: '#4c4546', java: '#5d5f5f', cpp: '#7e7576',
+ c: '#616363', csharp: '#46464e', ruby: '#4c4546', php: '#616363',
+ swift: '#5d5f5f', kotlin: '#7e7576', dart: '#4c4546', lua: '#616363',
+ shell: '#5d5f5f', sql: '#7e7576', graphql: '#4c4546', dockerfile: '#616363',
+ r: '#5d5f5f', scala: '#7e7576', elixir: '#4c4546', haskell: '#616363',
+ perl: '#5d5f5f', objective_c: '#7e7576', powershell: '#4c4546',
 }
 
 function getLangColor(lang: string): string {
- return LANGUAGE_COLORS[lang.toLowerCase()] || '#6366f1'
+ return LANGUAGE_COLORS[lang.toLowerCase()] || '#5d5f5f'
 }
 
 function formatTimer(seconds: number): string {
@@ -572,7 +573,7 @@ export default function DashboardPage() {
  const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', '']
 
  return (
- <div className="page-shell min-h-screen text-foreground">
+ <div className="page-shell flex min-h-screen flex-col text-foreground">
  <Navbar />
 
  {/* Connection status toast */}
@@ -585,7 +586,7 @@ export default function DashboardPage() {
  className={`fixed top-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-lg backdrop-blur-md text-sm font-medium text-center ${
  connectionToast.type === 'success'
  ? 'bg-primary/10 border-primary/30 text-primary'
- : 'bg-destructive/10 border-red-500/30 text-destructive'
+ : 'bg-[var(--color-danger-soft)] border-destructive/30 text-destructive'
  }`}
  >
  {connectionToast.message}
@@ -593,37 +594,37 @@ export default function DashboardPage() {
  )}
  </AnimatePresence>
 
- <main className="dashboard-shell pt-6 sm:pt-8 pb-12" data-gsap-stagger>
+ <main className="dashboard-shell flex-1 py-14 sm:py-16" data-gsap-stagger>
  {/* Header */}
  <motion.div
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
- className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
+ className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"
  data-gsap-item
  >
- <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
+ <div className="flex min-w-0 items-center gap-6 sm:w-auto">
  {session.user?.image && (
- <img src={session.user.image} alt="" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full ring-2 ring-ring/30 mt-1 shrink-0" />
+ <img src={session.user.image} alt="" className="mt-1 hidden h-16 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm md:block" />
  )}
  <div className="min-w-0">
- <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">
- Welcome back, <span className="text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
+ <h1 className="text-[clamp(2.5rem,5vw,4rem)] leading-none">
+ Welcome back, <span className="font-mono font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
  </h1>
- <p className="text-muted-foreground text-xs sm:text-sm mt-0.5 truncate">
+ <p className="mt-2 text-base text-muted-foreground">
  {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today` : 'Start coding to see your stats'}
  </p>
  </div>
  </div>
 
  {/* Connection status */}
- <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+ <div className="flex shrink-0 flex-wrap items-center gap-3">
  <div
- className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium cursor-default ${
+ className={`flex cursor-default items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-xs ${
  connectionStatus.connected
  ? connectionStatus.active
- ? 'bg-primary/15 text-primary border border-primary/30'
- : 'bg-primary/10 text-primary border border-primary/30'
- : 'bg-destructive/10 text-destructive border border-red-500/30'
+ ? 'border-border bg-card text-primary'
+ : 'border-border bg-card text-primary'
+ : 'border-destructive/30 bg-[var(--color-danger-soft)] text-destructive'
  }`}
  title={
  connectionStatus.connected
@@ -636,7 +637,7 @@ export default function DashboardPage() {
  <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
  connectionStatus.connected
  ? connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary'
- : 'bg-red-400'
+ : 'bg-destructive'
  }`} />
  {connectionStatus.connected ? (connectionStatus.active ? 'Connected' : 'Connected') : 'Disconnected'}
  </div>
@@ -644,7 +645,7 @@ export default function DashboardPage() {
  <button
  onClick={confirmDisconnect}
  disabled={disconnecting}
- className="px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-destructive/10 border border-red-500/30 text-destructive hover:bg-destructive/20 active:scale-95 transition-all disabled:opacity-60"
+ className="rounded-full border border-destructive/30 bg-card px-3 py-1.5 text-xs font-medium text-destructive transition-all hover:bg-[var(--color-danger-soft)] active:scale-95 disabled:opacity-60"
  >
  {disconnecting ? 'Disconnecting...' : 'Disconnect'}
  </button>
@@ -1048,8 +1049,8 @@ export default function DashboardPage() {
  onClick={e => e.stopPropagation()}
  >
  <div className="p-4 sm:p-6 text-center">
- <div className="w-12 h-12 rounded-full bg-orange-500/15 flex items-center justify-center mx-auto mb-4">
- <WifiOff className="w-6 h-6 text-orange-400" />
+ <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+ <WifiOff className="w-6 h-6 text-primary" />
  </div>
  <h3 className="text-lg font-semibold mb-2">Tracking Disconnected</h3>
  <p className="text-sm text-muted-foreground mb-1">Your API key has been revoked or is missing.</p>
@@ -1079,7 +1080,7 @@ export default function DashboardPage() {
  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8" data-gsap-stagger>
  {[
  { key: 'totalHours', label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `${stats?.activeDays || 0} active days` },
- { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, iconClass: 'text-orange-400', glowClass: 'bg-orange-500/5', hoverClass: 'hover:border-orange-500/30', sub: `Best: ${stats?.longestStreak || 0}d` },
+ { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `Best: ${stats?.longestStreak || 0}d` },
  { key: 'today', label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `Score: ${stats?.productivityScore || 0}/100` },
  { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, iconClass: 'text-[var(--color-accent-2)]', glowClass: 'bg-[color-mix(in_oklch,var(--color-accent-2)_10%,transparent)]', hoverClass: 'hover:border-[var(--color-accent-2)]', sub: `${stats?.totalSessions || 0} sessions` },
  ].map((stat, i) => (
@@ -1185,8 +1186,8 @@ export default function DashboardPage() {
  <div className="p-4 sm:p-6">
  <div className="flex items-center justify-between mb-5">
  <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
- <Flame className="w-5 h-5 text-orange-400" />
+ <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
+ <Flame className="w-5 h-5 text-primary" />
  </div>
  <div>
  <h3 className="text-lg font-semibold">Streak Details</h3>
@@ -1198,12 +1199,12 @@ export default function DashboardPage() {
  </button>
  </div>
  <div className="grid grid-cols-2 gap-3 mb-4">
- <div className="bg-orange-500/5 border border-orange-500/15 rounded-xl p-4 text-center">
- <p className="text-3xl font-bold text-orange-400">{stats?.currentStreak || 0}<span className="text-lg">d</span></p>
+ <div className="bg-secondary/50 border border-border rounded-xl p-4 text-center">
+ <p className="text-3xl font-bold text-primary">{stats?.currentStreak || 0}<span className="text-lg">d</span></p>
  <p className="text-xs text-muted-foreground mt-1">Current Streak</p>
  </div>
  <div className="bg-secondary/50 rounded-xl p-4 text-center">
- <p className="text-3xl font-bold text-yellow-400">{stats?.longestStreak || 0}<span className="text-lg">d</span></p>
+ <p className="text-3xl font-bold text-primary">{stats?.longestStreak || 0}<span className="text-lg">d</span></p>
  <p className="text-xs text-muted-foreground mt-1">Longest Streak</p>
  </div>
  </div>
@@ -1436,7 +1437,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="text-lg font-semibold flex items-center gap-2">
+ <h2 className="flex items-center gap-2 text-3xl">
  <BarChart3 className="w-4 h-4 text-primary" />
  Top Languages
  </h2>
@@ -1484,7 +1485,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="text-lg font-semibold flex items-center gap-2">
+ <h2 className="flex items-center gap-2 text-3xl">
  <FolderGit2 className="w-4 h-4 text-primary" />
  Project Breakdown
  </h2>
@@ -1565,7 +1566,7 @@ export default function DashboardPage() {
  className="app-card p-5 mb-8"
  data-gsap="fade-up"
  >
- <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+ <h2 className="mb-6 flex items-center gap-2 text-3xl">
  <TrendingUp className="w-4 h-4 text-primary" />
  Weekly Activity
  </h2>
@@ -1603,7 +1604,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="text-lg font-semibold flex items-center gap-2">
+ <h2 className="flex items-center gap-2 text-3xl">
  <TrendingUp className="w-4 h-4 text-primary" />
  30-Day Coding Trend
  </h2>
@@ -1660,7 +1661,7 @@ export default function DashboardPage() {
  className="lg:col-span-2 app-card p-5"
  data-gsap="fade-up"
  >
- <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+ <h2 className="mb-4 flex items-center gap-2 text-3xl">
  <Globe2 className="w-4 h-4 text-primary" />
  Language Mix
  </h2>
@@ -1721,7 +1722,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
- <h2 className="text-lg font-semibold flex items-center gap-2">
+ <h2 className="flex items-center gap-2 text-3xl">
  <BarChart3 className="w-4 h-4 text-primary" />
  Daily Hours
  </h2>
@@ -1782,7 +1783,7 @@ export default function DashboardPage() {
  className="app-card p-5"
  data-gsap="fade-up"
  >
- <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+ <h2 className="mb-6 flex items-center gap-2 text-3xl">
  <Zap className="w-4 h-4 text-[var(--color-accent-3)]" />
  Productivity Breakdown
  </h2>
@@ -1824,8 +1825,8 @@ export default function DashboardPage() {
  className="app-card p-5 mb-8"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="text-lg font-semibold flex items-center gap-2">
- <Target className="w-4 h-4 text-amber-400" />
+ <h2 className="flex items-center gap-2 text-3xl">
+ <Target className="w-4 h-4 text-primary" />
  Goals
  </h2>
  <button
@@ -1915,7 +1916,7 @@ export default function DashboardPage() {
  <div className="flex items-center justify-between mb-2">
  <div className="flex items-center gap-2">
  {goal.achieved ? (
- <Trophy className="w-4 h-4 text-amber-400" />
+ <Trophy className="w-4 h-4 text-primary" />
  ) : (
  <Target className="w-4 h-4 text-muted-foreground" />
  )}
@@ -1967,7 +1968,7 @@ export default function DashboardPage() {
  transition={{ delay: 0.52 }}
  className="app-card p-5 mb-8"
  >
- <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+ <h2 className="mb-6 flex items-center gap-2 text-3xl">
  <Trophy className="w-4 h-4 text-primary" />
  Achievements
  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-auto">
@@ -2026,10 +2027,10 @@ export default function DashboardPage() {
  transition={{ delay: 0.52 }}
  className="app-card p-5 mb-8"
  >
- <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
- <Trophy className="w-4 h-4 text-amber-400" />
+ <h2 className="mb-6 flex items-center gap-2 text-3xl">
+ <Trophy className="w-4 h-4 text-primary" />
  Rewards
- <span className="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full ml-auto">
+ <span className="text-xs bg-secondary text-primary px-2 py-0.5 rounded-full ml-auto border border-border">
  {goals.filter(g => g.achieved).length} earned
  </span>
  </h2>
@@ -2061,8 +2062,8 @@ export default function DashboardPage() {
  transition={{ delay: 0.55 }}
  className="app-card p-5"
  >
- <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
- <Trophy className="w-4 h-4 text-amber-400" />
+ <h2 className="mb-6 flex items-center gap-2 text-3xl">
+ <Trophy className="w-4 h-4 text-primary" />
  Productivity Score
  </h2>
  <div className="flex flex-col sm:flex-row items-center gap-6">
@@ -2092,7 +2093,7 @@ export default function DashboardPage() {
  <div className="flex-1 space-y-2">
  {[
  { label: 'Hours Today', value: `${formatHours(stats?.hoursToday || 0)} / 4h`, pct: Math.min(100, ((stats?.hoursToday || 0) / 4) * 100), color: 'bg-primary' },
- { label: 'Streak Bonus', value: `${stats?.currentStreak || 0} / 30 days`, pct: Math.min(100, ((stats?.currentStreak || 0) / 30) * 100), color: 'bg-orange-500' },
+ { label: 'Streak Bonus', value: `${stats?.currentStreak || 0} / 30 days`, pct: Math.min(100, ((stats?.currentStreak || 0) / 30) * 100), color: 'bg-primary' },
  { label: 'Consistency', value: 'This week', pct: Math.min(100, ((stats?.weeklyBreakdown?.filter(h => h > 0).length || 0) / 7) * 100), color: 'bg-primary' },
  ].map(item => (
  <div key={item.label}>
@@ -2114,6 +2115,7 @@ export default function DashboardPage() {
  </div>
  </motion.div>
  </main>
+ <AppFooter />
  </div>
  )
 }

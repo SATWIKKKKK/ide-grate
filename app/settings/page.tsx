@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
+import AppFooter from '@/components/AppFooter'
 
 interface UserSettings {
  username: string | null
@@ -305,29 +306,29 @@ export default function SettingsPage() {
 
  // ── Render ──────────────────────────────────────────────────────────────────
  return (
- <div className="page-shell min-h-screen text-foreground">
+ <div className="page-shell flex min-h-screen flex-col text-foreground">
  <Navbar />
 
- <main className="dashboard-shell max-w-5xl pt-6 sm:pt-8 pb-12" data-gsap-stagger>
+ <main className="signal-container flex-1 py-14 sm:py-16" data-gsap-stagger>
  {/* Header */}
  <motion.div
  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
- className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+ className="mb-12 flex flex-col items-start gap-6 sm:flex-row sm:items-center"
  data-gsap-item
  >
- <div className="flex items-center gap-4 flex-1">
+ <div className="flex flex-1 items-center gap-6">
  {session.user?.image ? (
- <img src={session.user.image} alt="" className="w-14 h-14 rounded-full ring-2 ring-ring/30 shrink-0" />
+ <img src={session.user.image} alt="" className="h-24 w-24 shrink-0 rounded-lg border-2 border-border object-cover" />
  ) : (
- <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-foreground text-xl font-bold shrink-0">
+ <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-border bg-secondary text-4xl font-bold text-foreground">
  {session.user?.name?.[0] || session.user?.email?.[0] || '?'}
  </div>
  )}
  <div>
- <h1 className="text-3xl sm:text-5xl">{session.user?.name || 'Settings'}</h1>
- <p className="text-muted-foreground text-sm">{session.user?.email}</p>
+ <h1 className="text-[clamp(3rem,6vw,4.5rem)] leading-none">{session.user?.name || 'Settings'}</h1>
+ <p className="mt-3 text-lg text-muted-foreground">{session.user?.email}</p>
  {accountCreatedAt && (
- <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-1">
+ <p className="mt-2 flex items-center gap-1 font-mono text-sm text-muted-foreground">
  <Calendar className="w-3 h-3" />
  Member since {new Date(accountCreatedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
  </p>
@@ -353,7 +354,7 @@ export default function SettingsPage() {
  {stats && (
  <motion.div
  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
- className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6"
+ className="mb-12 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
  data-gsap-stagger
  >
  {[
@@ -367,22 +368,22 @@ export default function SettingsPage() {
  <motion.div
  key={s.label}
  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.08 + i * 0.04 }}
- className={`app-card p-3 sm:p-4 transition-colors ${s.border}`}
+ className={`app-card p-8 transition-colors ${s.border}`}
  data-gsap-item
  >
- <div className="flex items-center gap-2 mb-2">
- <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
- <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
+ <div className="mb-6 flex items-center gap-3">
+ <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary">
+ <s.icon className="h-4 w-4 text-muted-foreground" />
  </div>
- <span className="text-xs text-muted-foreground leading-tight">{s.label}</span>
+ <span className="font-mono text-sm text-muted-foreground">{s.label}</span>
  </div>
- <p className={`font-mono text-xl sm:text-2xl font-semibold ${s.color}`}>{s.value}</p>
+ <p className="font-display text-5xl text-primary">{s.value}</p>
  </motion.div>
  ))}
  </motion.div>
  )}
 
- <div className="space-y-5">
+ <div className="space-y-8">
  {/* Profile */}
  <Section title="Profile" icon={<User className="w-4 h-4 text-primary" />} delay={0.1}>
  <div className="p-5 sm:p-6 space-y-4">
@@ -689,6 +690,7 @@ export default function SettingsPage() {
  </motion.div>
  </div>
  </main>
+ <AppFooter />
 
  {/* ─── Modals ─────────────────────────────────────────────────────────── */}
  <AnimatePresence>
@@ -762,9 +764,9 @@ function Section({
  className="signal-panel overflow-hidden transition-colors"
  data-gsap="fade-up"
  >
- <div className="px-5 sm:px-6 py-4 border-b border-border flex items-center gap-2.5 bg-background/55">
+ <div className="flex items-center gap-3 border-b border-border bg-card px-6 py-5">
  {icon}
- <h2 className="font-sans text-base sm:text-lg font-semibold">{title}</h2>
+ <h2 className="text-3xl">{title}</h2>
  </div>
  {children}
  </motion.div>
@@ -776,7 +778,7 @@ function ToggleRow({
 }: { label: string; description: string; value: boolean; onChange: () => void; disabled?: boolean }) {
  return (
  <div
- className={`flex items-center justify-between px-5 sm:px-6 py-3.5 transition-all ${
+ className={`flex items-center justify-between px-6 py-5 transition-all ${
  disabled
  ? 'opacity-40'
  : value
@@ -786,19 +788,19 @@ function ToggleRow({
  onClick={disabled ? undefined : onChange}
  >
  <div className="flex-1 min-w-0 pr-4">
- <p className={`text-sm font-medium transition-colors ${value && !disabled ? 'text-foreground' : 'text-foreground'}`}>{label}</p>
- <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>
+ <p className={`font-semibold transition-colors ${value && !disabled ? 'text-foreground' : 'text-foreground'}`}>{label}</p>
+ <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
  </div>
  <button
  onClick={e => { e.stopPropagation(); if (!disabled) onChange() }}
  disabled={disabled}
- className={`relative shrink-0 w-11 h-6 rounded-full transition-all ${
- value ? 'bg-primary shadow-sm' : 'bg-secondary border border-border'
+ className={`relative h-6 w-11 shrink-0 rounded-full transition-all ${
+ value ? 'bg-primary' : 'border border-border bg-secondary'
  } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
  aria-checked={value}
  role="switch"
  >
- <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-background rounded-full shadow-sm transition-transform ${value ? 'translate-x-5' : ''}`} />
+ <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full border border-border bg-card transition-transform ${value ? 'translate-x-5' : ''}`} />
  </button>
  </div>
  )

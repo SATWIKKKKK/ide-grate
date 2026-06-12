@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
+import AppFooter from '@/components/AppFooter'
 import { ACHIEVEMENTS } from '@/lib/achievements'
 
 interface ProfileData {
@@ -96,7 +97,7 @@ export default function PublicProfile() {
   const joinDate = new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
   return (
-    <div className="page-shell min-h-screen text-foreground">
+    <div className="page-shell flex min-h-screen flex-col text-foreground">
       <header className="border-b border-border bg-[var(--color-paper-glass)] backdrop-blur-xl">
         <div className="signal-container flex items-center justify-between py-4">
           <Link href="/" className="inline-flex items-center gap-2">
@@ -110,7 +111,7 @@ export default function PublicProfile() {
         </div>
       </header>
 
-      <main className="signal-container py-8 sm:py-12">
+      <main className="signal-container flex-1 py-14 sm:py-16">
         <section className="signal-panel overflow-hidden" data-gsap="fade-up">
           <div className="grid grid-cols-1 gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="flex items-start gap-5">
@@ -125,7 +126,7 @@ export default function PublicProfile() {
               </div>
               <div className="min-w-0">
                 <p className="signal-kicker">@{username}</p>
-                <h1 className="mt-2 text-4xl sm:text-6xl">{user.name || username}</h1>
+                <h1 className="mt-2 text-[clamp(3rem,6vw,4.5rem)] leading-none">{user.name || username}</h1>
                 {user.bio && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{user.bio}</p>}
                 <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <CalendarIcon className="size-3.5" />
@@ -214,6 +215,7 @@ export default function PublicProfile() {
           </div>
         </section>
       </main>
+      <AppFooter />
     </div>
   )
 }
@@ -272,4 +274,3 @@ function PublicContributionGraph({ contributions }: { contributions: Record<stri
     </div>
   )
 }
-
