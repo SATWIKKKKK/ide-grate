@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireServerUser } from "@/lib/serverAuth"
+import { IDE_OPTIONS, validateIdeParam } from "@/lib/ide-config"
 
-// GET /api/connection-status - Lightweight check if VS Code extension is connected
+// GET /api/connection-status - Lightweight check if editor integrations are connected.
 export async function GET(request: NextRequest) {
   try {
     const sessionUser = await requireServerUser()
-    if (!sessionUser?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const { searchParams } = new URL(request.url)
+    const requestedIde = searchParams.get("ide")
+    const ide = validateIdeParam(requestedIde)
+    if (requestedIde && !ide) {
+      return NextResponse.json({ error: "Unsupported IDE" }, { status: 400 })
     }
 
-    // Check if user has an API key
     const user = await prisma.user.findUnique({
       where: { id: sessionUser.id },
       select: { apiKey: true },
@@ -23,55 +28,76 @@ export async function GET(request: NextRequest) {
         hasApiKey: false,
         hasActivity: false,
         lastActivityAt: null,
+        totalSessions: 0,
+        totalHours: 0,
+        ide: ide || "combined",
+        integrations: [],
         message: "No API key generated yet",
       })
     }
 
-    // Check for recent activity (within last 5 minutes = actively connected)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-    const [recentActivity, latestActivity, totalSessions, stats] = await Promise.all([
+    const where = { userId: sessionUser.id, ...(ide ? { ide } : {}) }
+    const [recentActivity, latestActivity, totalSessions, stats, setups, ideActivities] = await Promise.all([
       prisma.activity.findFirst({
-        where: {
-          userId: sessionUser.id,
-          endTime: { gte: fiveMinutesAgo },
-        },
+        where: { ...where, endTime: { gte: fiveMinutesAgo } },
         orderBy: { endTime: "desc" },
         select: { endTime: true },
       }),
       prisma.activity.findFirst({
-        where: { userId: sessionUser.id },
+        where,
         orderBy: { endTime: "desc" },
         select: { endTime: true },
       }),
-      prisma.activity.count({
-        where: { userId: sessionUser.id },
-      }),
+      prisma.activity.count({ where }),
       prisma.userStats.findUnique({
         where: { userId: sessionUser.id },
         select: { totalHours: true, lastActiveDate: true },
       }),
+      prisma.userIdeSetup.findMany({
+        where: { userId: sessionUser.id, ...(ide ? { ide } : {}) },
+        select: { ide: true, isActive: true, lastHeartbeat: true, connectedAt: true },
+      }),
+      prisma.activity.findMany({
+        where: { userId: sessionUser.id },
+        select: { ide: true, endTime: true },
+        orderBy: { endTime: "desc" },
+        take: 100,
+      }),
     ])
 
-    // connection_test heartbeats only update UserStats.lastActiveDate, not Activity records
-    // so we also check lastActiveDate to detect fresh connections
-    const recentConnectionTest = stats?.lastActiveDate && stats.lastActiveDate >= fiveMinutesAgo
+    const setupActive = setups.some((setup) => setup.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo)
+    const recentConnectionTest = !ide && stats?.lastActiveDate && stats.lastActiveDate >= fiveMinutesAgo
+    const isActive = Boolean(recentActivity || setupActive || recentConnectionTest)
 
-    const isActive = !!recentActivity || !!recentConnectionTest
+    const integrations = IDE_OPTIONS.map((definition) => {
+      const setup = setups.find((item) => item.ide === definition.id)
+      const latestForIde = ideActivities.find((activity) => activity.ide === definition.id)
+      return {
+        id: definition.id,
+        name: definition.shortName,
+        color: definition.color,
+        isSetup: Boolean(setup?.isActive),
+        active: Boolean(setup?.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo),
+        lastHeartbeat: setup?.lastHeartbeat?.toISOString() || null,
+        lastActivityAt: latestForIde?.endTime?.toISOString() || null,
+      }
+    })
 
     return NextResponse.json({
-      connected: true, // has API key = extension is configured & tracking
-      active: isActive, // recent heartbeat = actively coding right now
+      connected: true,
+      active: isActive,
       hasApiKey: true,
-      hasActivity: totalSessions > 0 || !!recentConnectionTest,
-      lastActivityAt: latestActivity?.endTime || stats?.lastActiveDate || null,
+      hasActivity: totalSessions > 0 || isActive,
+      isSetup: ide ? setups.some((setup) => setup.isActive) : setups.length > 0,
+      ide: ide || "combined",
+      lastActivityAt: latestActivity?.endTime || setups[0]?.lastHeartbeat || stats?.lastActiveDate || null,
       totalSessions,
       totalHours: stats?.totalHours || 0,
+      integrations,
     })
   } catch (error) {
     console.error("Error checking connection status:", error)
-    return NextResponse.json(
-      { error: "Failed to check connection status" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to check connection status" }, { status: 500 })
   }
 }

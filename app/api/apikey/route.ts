@@ -73,9 +73,19 @@ export async function DELETE(request: NextRequest) {
         select: { monthlyData: true },
       })
       const md = (stats?.monthlyData as Record<string, unknown>) || {}
+      const sessionBoundaryByIde = {
+        ...(md.sessionBoundaryByIde as Record<string, boolean> || {}),
+        vscode: true,
+        cursor: true,
+        antigravity: true,
+        jetbrains: true,
+        zed: true,
+        neovim: true,
+        sublime: true,
+      }
       await prisma.userStats.update({
         where: { userId: sessionUser.id },
-        data: { monthlyData: { ...md, sessionBoundary: true } },
+        data: { monthlyData: { ...md, sessionBoundary: true, sessionBoundaryByIde } },
       })
     } catch { /* non-critical */ }
 

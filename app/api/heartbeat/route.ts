@@ -1,57 +1,88 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
 import prisma from "@/lib/prisma"
+import { IDE_CONFIG, type IdeId, isIdeId } from "@/lib/ide-config"
 
 function asJsonObject(value: unknown): Record<string, Prisma.InputJsonValue | null> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
   return value as Record<string, Prisma.InputJsonValue | null>
 }
 
-// POST /api/heartbeat - Receive heartbeat from VS Code extension
+function parseHeartbeatIde(value: unknown): IdeId | null {
+  if (value === undefined || value === null || value === "") return "vscode"
+  const candidate = String(value).toLowerCase()
+  return isIdeId(candidate) ? candidate : null
+}
+
+function extractApiKey(request: NextRequest, body: Record<string, unknown>) {
+  const auth = request.headers.get("authorization") || ""
+  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : ""
+  return bearer || (typeof body.apiKey === "string" ? body.apiKey : "")
+}
+
+async function findUserByApiKey(apiKey: string) {
+  return prisma.user.findFirst({
+    where: {
+      OR: [
+        { apiKey },
+        { ideSetups: { some: { apiKey, isActive: true } } },
+      ],
+    },
+  })
+}
+
+async function markIdeConnected(userId: string, ide: IdeId, now: Date) {
+  await prisma.userIdeSetup.upsert({
+    where: { userId_ide: { userId, ide } },
+    update: {
+      isActive: true,
+      lastHeartbeat: now,
+      label: IDE_CONFIG[ide].shortName,
+    },
+    create: {
+      userId,
+      ide,
+      label: IDE_CONFIG[ide].shortName,
+      isActive: true,
+      connectedAt: now,
+      lastHeartbeat: now,
+    },
+  })
+}
+
+// POST /api/heartbeat - Receive heartbeat from editor integrations.
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { 
-      apiKey, 
-      timestamp, 
-      language, 
-      project, 
-      file,
-      isIdle = false,
-      type, // 'connection_test' for initial connection verification
-      timezoneOffset,
-      localDate,
-    } = body
+    const body = await request.json() as Record<string, unknown>
+    const ide = parseHeartbeatIde(body.ide)
+    if (!ide) {
+      return NextResponse.json({ error: "Unsupported IDE" }, { status: 400 })
+    }
 
+    const apiKey = extractApiKey(request, body)
+    if (!apiKey) {
+      return NextResponse.json({ error: "API key is required" }, { status: 401 })
+    }
+
+    const user = await findUserByApiKey(apiKey)
+    if (!user) {
+      return NextResponse.json({ error: "Invalid API key" }, { status: 401 })
+    }
+
+    const now = new Date(typeof body.timestamp === "string" || typeof body.timestamp === "number" ? body.timestamp : Date.now())
+    const language = typeof body.language === "string" ? body.language : "unknown"
+    const file = typeof body.file === "string" ? body.file : ""
+    const isIdle = Boolean(body.isIdle)
+    const type = typeof body.type === "string" ? body.type : ""
+    const timezoneOffset = typeof body.timezoneOffset === "number" ? body.timezoneOffset : null
+    const localDate = typeof body.localDate === "string" ? body.localDate : null
     const languageBreakdown = normalizeLanguageBreakdown(body.languageBreakdown)
 
-    // Validate API key
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "API key is required" },
-        { status: 401 }
-      )
-    }
+    await markIdeConnected(user.id, ide, now)
 
-    // Find user by API key
-    const user = await prisma.user.findFirst({
-      where: { 
-        apiKey: apiKey 
-      },
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "Invalid API key" },
-        { status: 401 }
-      )
-    }
-
-    // Connection test: validate key and return without creating activity
-    if (type === 'connection_test') {
-      // Store timezone offset if provided
-      const updateData: Record<string, unknown> = { lastActiveDate: new Date() }
-      if (typeof timezoneOffset === 'number') {
+    if (type === "connection_test") {
+      const updateData: Record<string, Prisma.InputJsonValue | Date | number> = { lastActiveDate: now }
+      if (timezoneOffset !== null) {
         const existingStats = await prisma.userStats.findUnique({
           where: { userId: user.id },
           select: { monthlyData: true },
@@ -59,7 +90,7 @@ export async function POST(request: NextRequest) {
         const md = asJsonObject(existingStats?.monthlyData)
         updateData.monthlyData = { ...md, timezoneOffset }
       }
-      // Update lastActiveDate in UserStats so the frontend can detect connectivity
+
       await prisma.userStats.upsert({
         where: { userId: user.id },
         update: updateData,
@@ -69,50 +100,53 @@ export async function POST(request: NextRequest) {
           totalSessions: 0,
           longestStreak: 0,
           currentStreak: 0,
-          lastActiveDate: new Date(),
-          monthlyData: typeof timezoneOffset === 'number' ? { timezoneOffset } : {},
+          lastActiveDate: now,
+          monthlyData: timezoneOffset !== null ? { timezoneOffset } : {},
         },
       })
-      return NextResponse.json({ 
-        success: true, 
+
+      return NextResponse.json({
+        success: true,
         message: "Connection verified",
         userId: user.id,
+        ide,
       })
     }
 
-    const now = new Date(timestamp || Date.now())
-    // Use localDate from extension if available, otherwise compute from timezoneOffset, fallback to UTC
     let todayStr: string
-    if (typeof localDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(localDate)) {
+    if (localDate && /^\d{4}-\d{2}-\d{2}$/.test(localDate)) {
       todayStr = localDate
-    } else if (typeof timezoneOffset === 'number') {
+    } else if (timezoneOffset !== null) {
       const localTime = new Date(now.getTime() - timezoneOffset * 60000)
-      todayStr = localTime.toISOString().split('T')[0]
+      todayStr = localTime.toISOString().split("T")[0]
     } else {
-      todayStr = now.toISOString().split('T')[0]
+      todayStr = now.toISOString().split("T")[0]
     }
     const today = new Date(todayStr)
+    const HEARTBEAT_INTERVAL = 30
     let startedNewSession = false
+    let activityDuration = HEARTBEAT_INTERVAL
 
-    // Check if there's a sessionBoundary flag (set on manual disconnect)
     const userStats = await prisma.userStats.findUnique({
       where: { userId: user.id },
       select: { monthlyData: true },
     })
     const monthlyData = asJsonObject(userStats?.monthlyData)
-    const hasSessionBoundary = !!monthlyData.sessionBoundary
+    const sessionBoundaryByIde = asPlainRecord(monthlyData.sessionBoundaryByIde)
+    const hasSessionBoundary = Boolean(sessionBoundaryByIde[ide] ?? (ide === "vscode" ? monthlyData.sessionBoundary : false))
 
-    // Get or create today's contribution record
     const dailyContribution = await prisma.dailyContribution.upsert({
       where: {
-        userId_date: {
+        userId_date_ide: {
           userId: user.id,
           date: today,
+          ide,
         },
       },
       update: {},
       create: {
         userId: user.id,
+        ide,
         date: today,
         hours: 0,
         sessions: 0,
@@ -120,95 +154,52 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Get last heartbeat for this user to calculate time diff
     const lastActivity = await prisma.activity.findFirst({
-      where: { userId: user.id },
-      orderBy: { endTime: 'desc' },
+      where: { userId: user.id, ide },
+      orderBy: { endTime: "desc" },
     })
 
-    const HEARTBEAT_INTERVAL = 30 // seconds - expected heartbeat interval
-    
-    let activityDuration = HEARTBEAT_INTERVAL // Default to one heartbeat interval
-    
+    const createActivity = async (duration = HEARTBEAT_INTERVAL) => prisma.activity.create({
+      data: {
+        userId: user.id,
+        ide,
+        startTime: now,
+        endTime: now,
+        duration,
+        language,
+        fileType: file ? file.split(".").pop() : null,
+        extensions: [],
+        idleTime: isIdle ? duration : 0,
+        projectHash: typeof body.projectHash === "string" ? body.projectHash : null,
+        projectName: typeof body.project === "string" ? body.project : null,
+        platform: typeof body.platform === "string" ? body.platform : null,
+      },
+    })
+
     if (lastActivity) {
-      // Check if this is the first heartbeat on a new day (session carrying over from previous day)
-      // Compare using local dates (same timezone as todayStr) not UTC
       let lastActivityLocalDate: string
-      if (typeof timezoneOffset === 'number') {
+      if (timezoneOffset !== null) {
         const localEndTime = new Date(lastActivity.endTime.getTime() - timezoneOffset * 60000)
-        lastActivityLocalDate = localEndTime.toISOString().split('T')[0]
+        lastActivityLocalDate = localEndTime.toISOString().split("T")[0]
       } else {
-        lastActivityLocalDate = lastActivity.endTime.toISOString().split('T')[0]
+        lastActivityLocalDate = lastActivity.endTime.toISOString().split("T")[0]
       }
       const isNewDay = lastActivityLocalDate !== todayStr && !hasSessionBoundary
 
-      // Only start a new session if manually disconnected (sessionBoundary flag)
       if (hasSessionBoundary) {
-        // Manual disconnect happened — start new session
         startedNewSession = true
-        await prisma.activity.create({
-          data: {
-            userId: user.id,
-            startTime: now,
-            endTime: now,
-            duration: HEARTBEAT_INTERVAL,
-            language: language || 'unknown',
-            fileType: file ? file.split('.').pop() : null,
-            extensions: [],
-            idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
-            projectHash: body.projectHash || null,
-            projectName: body.project || null,
-            platform: body.platform || null,
-          },
-        })
-        
-        // Increment session count for today
+        await createActivity()
         await prisma.dailyContribution.update({
           where: { id: dailyContribution.id },
-          data: {
-            sessions: { increment: 1 },
-          },
-        })
-
-        // Clear the sessionBoundary flag
-        const nextMonthlyData: Record<string, Prisma.InputJsonValue | null> = { ...monthlyData, sessionBoundary: false }
-        if (typeof timezoneOffset === 'number') {
-          nextMonthlyData.timezoneOffset = timezoneOffset
-        } else if (typeof monthlyData.timezoneOffset === 'number') {
-          nextMonthlyData.timezoneOffset = monthlyData.timezoneOffset
-        }
-
-        await prisma.userStats.update({
-          where: { userId: user.id },
-          data: {
-            monthlyData: nextMonthlyData,
-          },
+          data: { sessions: { increment: 1 } },
         })
       } else {
-        // Check if the project changed — if so, start a new activity record
-        const currentProjectHash = body.projectHash || null
-        const lastProjectHash = lastActivity.projectHash || null
-        const projectChanged = currentProjectHash !== lastProjectHash
+        const currentProjectHash = typeof body.projectHash === "string" ? body.projectHash : null
+        const projectChanged = currentProjectHash !== (lastActivity.projectHash || null)
 
         if (projectChanged) {
-          // Project switched — create a new activity for the new project
-          await prisma.activity.create({
-            data: {
-              userId: user.id,
-              startTime: now,
-              endTime: now,
-              duration: HEARTBEAT_INTERVAL,
-              language: language || 'unknown',
-              fileType: file ? file.split('.').pop() : null,
-              extensions: [],
-              idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
-              projectHash: currentProjectHash,
-              projectName: body.project || null,
-              platform: body.platform || null,
-            },
-          })
+          await createActivity()
         } else {
-          // Same project — extend existing session
           await prisma.activity.update({
             where: { id: lastActivity.id },
             data: {
@@ -219,10 +210,7 @@ export async function POST(request: NextRequest) {
             },
           })
         }
-        activityDuration = HEARTBEAT_INTERVAL
 
-        // If this is the first heartbeat of a new day with a continuing session,
-        // ensure today's contribution has at least 1 session (carried over)
         if (isNewDay && dailyContribution.sessions === 0) {
           await prisma.dailyContribution.update({
             where: { id: dailyContribution.id },
@@ -231,38 +219,22 @@ export async function POST(request: NextRequest) {
         }
       }
     } else {
-      // First activity ever - create new session
       startedNewSession = true
-      await prisma.activity.create({
-        data: {
-          userId: user.id,
-          startTime: now,
-          endTime: now,
-          duration: HEARTBEAT_INTERVAL,
-          language: language || 'unknown',
-          fileType: file ? file.split('.').pop() : null,
-          extensions: [],
-          idleTime: isIdle ? HEARTBEAT_INTERVAL : 0,
-          projectHash: body.projectHash || null,
-          projectName: body.project || null,
-          platform: body.platform || null,
-        },
-      })
-      
-      // Increment session count
+      await createActivity()
       await prisma.dailyContribution.update({
         where: { id: dailyContribution.id },
-        data: {
-          sessions: { increment: 1 },
-        },
+        data: { sessions: { increment: 1 } },
       })
     }
 
-    // Always update lastActiveDate so connection-status detects connectivity
-    // even when the user is idle (VS Code is still open and sending heartbeats)
-    const upsertMonthlyData = typeof timezoneOffset === 'number'
-      ? { ...monthlyData, timezoneOffset, sessionBoundary: false }
-      : { ...monthlyData, sessionBoundary: false }
+    const nextSessionBoundaryByIde = { ...sessionBoundaryByIde, [ide]: false }
+    const upsertMonthlyData = {
+      ...monthlyData,
+      sessionBoundary: ide === "vscode" ? false : monthlyData.sessionBoundary,
+      sessionBoundaryByIde: nextSessionBoundaryByIde,
+      ...(timezoneOffset !== null ? { timezoneOffset } : {}),
+    }
+
     await prisma.userStats.upsert({
       where: { userId: user.id },
       update: {
@@ -277,26 +249,17 @@ export async function POST(request: NextRequest) {
         longestStreak: 0,
         currentStreak: 0,
         lastActiveDate: now,
-        monthlyData: typeof timezoneOffset === 'number' ? { timezoneOffset } : {},
+        monthlyData: timezoneOffset !== null ? { timezoneOffset, sessionBoundaryByIde: nextSessionBoundaryByIde } : { sessionBoundaryByIde: nextSessionBoundaryByIde },
       },
     })
 
-    // Update daily hours (only count non-idle time)
     if (!isIdle) {
       const hoursToAdd = activityDuration / 3600
-
-      // Update hours and add language to today's languages list
-      const existingLangs = (dailyContribution.languages as string[]) || []
-      const updatedLangs = language && !existingLangs.includes(language)
-        ? [...existingLangs, language]
-        : existingLangs
-
-      // Track project hash
-      const projectHash = body.projectHash
-      const existingProjects = (dailyContribution.projects as string[]) || []
-      const updatedProjects = projectHash && !existingProjects.includes(projectHash)
-        ? [...existingProjects, projectHash]
-        : existingProjects
+      const existingLangs = Array.isArray(dailyContribution.languages) ? dailyContribution.languages as string[] : []
+      const updatedLangs = language && !existingLangs.includes(language) ? [...existingLangs, language] : existingLangs
+      const projectHash = typeof body.projectHash === "string" ? body.projectHash : null
+      const existingProjects = Array.isArray(dailyContribution.projects) ? dailyContribution.projects as string[] : []
+      const updatedProjects = projectHash && !existingProjects.includes(projectHash) ? [...existingProjects, projectHash] : existingProjects
 
       await prisma.dailyContribution.update({
         where: { id: dailyContribution.id },
@@ -307,114 +270,110 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Increment total hours and update streak (lastActiveDate already updated above)
       await prisma.userStats.update({
         where: { userId: user.id },
         data: { totalHours: { increment: hoursToAdd } },
       })
 
-      // Persist streak calculations so they survive disconnects
       if (startedNewSession) {
-        try {
-          const recentContribs = await prisma.dailyContribution.findMany({
-            where: { userId: user.id, hours: { gt: 0 } },
-            orderBy: { date: 'desc' },
-            take: 365,
-            select: { date: true },
-          })
-          const dates = recentContribs.map(c => new Date(c.date).toISOString().split('T')[0]).sort().reverse()
-          if (dates.length > 0) {
-            const streakYesterday = new Date(todayStr)
-            streakYesterday.setDate(streakYesterday.getDate() - 1)
-            const yesterdayStr = streakYesterday.toISOString().split('T')[0]
-            let currentStreak = 0
-            let checkDate = dates[0] === todayStr || dates[0] === yesterdayStr ? new Date(dates[0]) : null
-            if (checkDate) {
-              const dateSet = new Set(dates)
-              while (dateSet.has(checkDate.toISOString().split('T')[0])) {
-                currentStreak++
-                checkDate.setDate(checkDate.getDate() - 1)
-              }
-            }
-            let longestStreak = 1, streak = 1
-            const allDates = [...dates].reverse()
-            for (let i = 1; i < allDates.length; i++) {
-              const diffDays = (new Date(allDates[i]).getTime() - new Date(allDates[i - 1]).getTime()) / 86400000
-              streak = diffDays === 1 ? streak + 1 : 1
-              longestStreak = Math.max(longestStreak, streak)
-            }
-            await prisma.userStats.update({
-              where: { userId: user.id },
-              data: {
-                currentStreak,
-                longestStreak: Math.max(longestStreak, currentStreak),
-              },
-            })
-          }
-        } catch { /* non-critical streak update */ }
+        await updateStreaks(user.id, todayStr)
       }
 
-      // Persist per-language cumulative totals from extension map.
       if (Object.keys(languageBreakdown).length > 0) {
-        await updateLanguageTotalsFromSnapshot(user.id, languageBreakdown)
-      } else if (language && language !== 'unknown') {
-        await incrementSingleLanguageFallback(user.id, language, HEARTBEAT_INTERVAL)
+        await updateLanguageTotalsFromSnapshot(user.id, ide, languageBreakdown)
+      } else if (language && language !== "unknown") {
+        await incrementSingleLanguageFallback(user.id, ide, language, HEARTBEAT_INTERVAL)
       }
     }
 
-    // Store project hash → repoUrl mapping if provided
-    if (body.repoUrl && body.projectHash) {
-      try {
-        const userStats = await prisma.userStats.findUnique({
-          where: { userId: user.id },
-          select: { monthlyData: true },
-        })
-        const monthlyData = (userStats?.monthlyData as Record<string, unknown>) || {}
-        const projectRepos = (monthlyData.projectRepos as Record<string, string>) || {}
-        if (!projectRepos[body.projectHash] || projectRepos[body.projectHash] !== body.repoUrl) {
-          projectRepos[body.projectHash] = body.repoUrl
-          await prisma.userStats.update({
-            where: { userId: user.id },
-            data: { monthlyData: { ...monthlyData, projectRepos } },
-          })
-        }
-      } catch { /* non-critical */ }
+    if (typeof body.repoUrl === "string" && typeof body.projectHash === "string") {
+      await storeProjectRepo(user.id, body.projectHash, body.repoUrl)
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Heartbeat recorded" 
+      message: "Heartbeat recorded",
+      ide,
     })
   } catch (error) {
     console.error("Error processing heartbeat:", error)
-    return NextResponse.json(
-      { error: "Failed to process heartbeat" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to process heartbeat" }, { status: 500 })
   }
 }
 
 function normalizeLanguageBreakdown(value: unknown): Record<string, number> {
-  if (!value || typeof value !== 'object') return {}
+  if (!value || typeof value !== "object") return {}
   const normalized: Record<string, number> = {}
   Object.entries(value as Record<string, unknown>).forEach(([language, seconds]) => {
     const key = language.toLowerCase().trim()
-    if (!key || key === 'unknown') return
-    if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return
+    if (!key || key === "unknown") return
+    if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds < 0) return
     normalized[key] = seconds
   })
   return normalized
 }
 
-async function updateLanguageTotalsFromSnapshot(userId: string, snapshot: Record<string, number>) {
+function asPlainRecord(value: unknown): Record<string, Prisma.InputJsonValue | null> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
+  return value as Record<string, Prisma.InputJsonValue | null>
+}
+
+async function updateStreaks(userId: string, todayStr: string) {
+  try {
+    const recentContribs = await prisma.dailyContribution.findMany({
+      where: { userId, hours: { gt: 0 } },
+      orderBy: { date: "desc" },
+      take: 365,
+      select: { date: true },
+    })
+    const dates = Array.from(new Set(recentContribs.map((c) => new Date(c.date).toISOString().split("T")[0]))).sort().reverse()
+    if (dates.length === 0) return
+
+    const streakYesterday = new Date(todayStr)
+    streakYesterday.setDate(streakYesterday.getDate() - 1)
+    const yesterdayStr = streakYesterday.toISOString().split("T")[0]
+    let currentStreak = 0
+    let checkDate = dates[0] === todayStr || dates[0] === yesterdayStr ? new Date(dates[0]) : null
+    if (checkDate) {
+      const dateSet = new Set(dates)
+      while (dateSet.has(checkDate.toISOString().split("T")[0])) {
+        currentStreak++
+        checkDate.setDate(checkDate.getDate() - 1)
+      }
+    }
+
+    let longestStreak = 1
+    let streak = 1
+    const allDates = [...dates].reverse()
+    for (let i = 1; i < allDates.length; i++) {
+      const diffDays = (new Date(allDates[i]).getTime() - new Date(allDates[i - 1]).getTime()) / 86400000
+      streak = diffDays === 1 ? streak + 1 : 1
+      longestStreak = Math.max(longestStreak, streak)
+    }
+    await prisma.userStats.update({
+      where: { userId },
+      data: {
+        currentStreak,
+        longestStreak: Math.max(longestStreak, currentStreak),
+      },
+    })
+  } catch {
+    // Non-critical: analytics can be recomputed by read routes.
+  }
+}
+
+async function updateLanguageTotalsFromSnapshot(userId: string, ide: IdeId, snapshot: Record<string, number>) {
   const stats = await prisma.userStats.findUnique({
     where: { userId },
     select: { topLanguages: true, monthlyData: true },
   })
 
-  const monthlyData = (stats?.monthlyData as Record<string, unknown>) || {}
-  const previousSnapshot = normalizeLanguageBreakdown(monthlyData.languageSnapshot)
+  const monthlyData = asJsonObject(stats?.monthlyData)
+  const snapshotsByIde = asPlainRecord(monthlyData.languageSnapshotsByIde)
+  const previousSnapshot = normalizeLanguageBreakdown(snapshotsByIde[ide])
   const totals = parseLanguageTotals(stats?.topLanguages)
+  const totalsByIde = asPlainRecord(monthlyData.languageTotalsByIde)
+  const ideTotals = parseLanguageTotals(totalsByIde[ide])
 
   Object.entries(snapshot).forEach(([language, currentSeconds]) => {
     const previousSeconds = previousSnapshot[language] || 0
@@ -422,6 +381,7 @@ async function updateLanguageTotalsFromSnapshot(userId: string, snapshot: Record
     const secondsToAdd = delta >= 0 ? delta : currentSeconds
     if (secondsToAdd > 0) {
       totals[language] = (totals[language] || 0) + secondsToAdd
+      ideTotals[language] = (ideTotals[language] || 0) + secondsToAdd
     }
   })
 
@@ -431,69 +391,102 @@ async function updateLanguageTotalsFromSnapshot(userId: string, snapshot: Record
       topLanguages: totals,
       monthlyData: {
         ...monthlyData,
-        languageSnapshot: snapshot,
+        languageSnapshot: ide === "vscode" ? snapshot : monthlyData.languageSnapshot,
+        languageSnapshotsByIde: { ...snapshotsByIde, [ide]: snapshot },
+        languageTotalsByIde: { ...totalsByIde, [ide]: ideTotals },
       },
     },
   })
 }
 
-async function incrementSingleLanguageFallback(userId: string, language: string, secondsToAdd: number) {
+async function incrementSingleLanguageFallback(userId: string, ide: IdeId, language: string, secondsToAdd: number) {
   const stats = await prisma.userStats.findUnique({
     where: { userId },
-    select: { topLanguages: true },
+    select: { topLanguages: true, monthlyData: true },
   })
 
   const totals = parseLanguageTotals(stats?.topLanguages)
+  const monthlyData = asJsonObject(stats?.monthlyData)
+  const totalsByIde = asPlainRecord(monthlyData.languageTotalsByIde)
+  const ideTotals = parseLanguageTotals(totalsByIde[ide])
   const key = language.toLowerCase()
   totals[key] = (totals[key] || 0) + secondsToAdd
+  ideTotals[key] = (ideTotals[key] || 0) + secondsToAdd
 
   await prisma.userStats.update({
     where: { userId },
-    data: { topLanguages: totals },
+    data: {
+      topLanguages: totals,
+      monthlyData: {
+        ...monthlyData,
+        languageTotalsByIde: { ...totalsByIde, [ide]: ideTotals },
+      },
+    },
   })
 }
 
 function parseLanguageTotals(raw: unknown): Record<string, number> {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {}
   const out: Record<string, number> = {}
   Object.entries(raw as Record<string, unknown>).forEach(([language, seconds]) => {
-    if (typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0) {
+    if (typeof seconds === "number" && Number.isFinite(seconds) && seconds > 0) {
       out[language.toLowerCase()] = seconds
     }
   })
   return out
 }
 
-// GET /api/heartbeat/status - Check if VS Code tracking is working
+async function storeProjectRepo(userId: string, projectHash: string, repoUrl: string) {
+  try {
+    const userStats = await prisma.userStats.findUnique({
+      where: { userId },
+      select: { monthlyData: true },
+    })
+    const monthlyData = asJsonObject(userStats?.monthlyData)
+    const projectRepos = asPlainRecord(monthlyData.projectRepos) as Record<string, string>
+    if (projectRepos[projectHash] === repoUrl) return
+    projectRepos[projectHash] = repoUrl
+    await prisma.userStats.update({
+      where: { userId },
+      data: { monthlyData: { ...monthlyData, projectRepos } },
+    })
+  } catch {
+    // Non-critical display enrichment.
+  }
+}
+
+// GET /api/heartbeat/status - Check if editor tracking is working.
 export async function GET(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key')
-  
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "API key required in x-api-key header" },
-      { status: 401 }
-    )
+  const apiKey = request.headers.get("x-api-key") || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+  const { searchParams } = new URL(request.url)
+  const ideParam = searchParams.get("ide")
+  const ide = ideParam ? parseHeartbeatIde(ideParam) : null
+
+  if (ideParam && !ide) {
+    return NextResponse.json({ error: "Unsupported IDE" }, { status: 400 })
   }
 
-  const user = await prisma.user.findFirst({
-    where: { apiKey },
-  })
+  if (!apiKey) {
+    return NextResponse.json({ error: "API key required in x-api-key header or Bearer auth" }, { status: 401 })
+  }
 
+  const user = await findUserByApiKey(apiKey)
   if (!user) {
-    return NextResponse.json(
-      { error: "Invalid API key" },
-      { status: 401 }
-    )
+    return NextResponse.json({ error: "Invalid API key" }, { status: 401 })
   }
 
   const lastActivity = await prisma.activity.findFirst({
-    where: { userId: user.id },
-    orderBy: { endTime: 'desc' },
+    where: {
+      userId: user.id,
+      ...(ide ? { ide } : {}),
+    },
+    orderBy: { endTime: "desc" },
   })
 
   return NextResponse.json({
     connected: true,
     userId: user.id,
+    ide: ide || "combined",
     lastActivityAt: lastActivity?.endTime || null,
   })
 }

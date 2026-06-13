@@ -1,0 +1,6 @@
+[
+  {
+    "caption": "Cadence: Test Connection",
+    "command": "cadence_test_connection"
+  }
+]

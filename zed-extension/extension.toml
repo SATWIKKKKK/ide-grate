@@ -1,0 +1,7 @@
+id = "cadence"
+name = "Cadence"
+version = "0.1.0"
+schema_version = 1
+authors = ["Cadence"]
+description = "Cadence setup helper for Zed with documented companion CLI telemetry."
+repository = "https://github.com/SATWIKKKKK/ide-grate"

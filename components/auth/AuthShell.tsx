@@ -56,7 +56,7 @@ export function AuthShell({
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-[var(--color-inverse-text)]/82">
               {isSignup
-                ? 'Connect VS Code once, then let sessions, streaks, languages, and goals fill in automatically.'
+                ? 'Connect your editor stack once, then let sessions, streaks, languages, and goals fill in automatically.'
                 : 'Sign in to inspect live session time, recent activity, goals, and privacy controls from one calm dashboard.'}
             </p>
           </div>

@@ -69,8 +69,8 @@ body {
 body {
   min-height: 100vh;
   background:
-    linear-gradient(90deg, rgb(0 0 0 / 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, rgb(0 0 0 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(180deg, var(--grid-line) 1px, transparent 1px),
     var(--color-surface);
   background-size: 64px 64px;
   background-position: center top;
@@ -139,8 +139,8 @@ body::selection {
   .page-shell {
     min-height: 100vh;
     background:
-      linear-gradient(90deg, rgb(0 0 0 / 0.05) 1px, transparent 1px),
-      linear-gradient(180deg, rgb(0 0 0 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(180deg, var(--grid-line) 1px, transparent 1px),
       var(--color-surface);
     background-size: 64px 64px;
     background-position: center top;

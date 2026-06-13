@@ -1,0 +1,23 @@
+<idea-plugin>
+  <id>app.cadence.jetbrains</id>
+  <name>Cadence</name>
+  <vendor email="support@example.com">Cadence</vendor>
+  <description>Track real coding activity from JetBrains IDEs and send debounced heartbeats to Cadence.</description>
+
+  <depends>com.intellij.modules.platform</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService serviceImplementation="app.cadence.jetbrains.CadenceHeartbeatService" />
+    <applicationConfigurable instance="app.cadence.jetbrains.CadenceConfigurable" displayName="Cadence" />
+  </extensions>
+
+  <projectListeners>
+    <listener class="app.cadence.jetbrains.CadenceActivityListener" topic="com.intellij.openapi.editor.event.DocumentListener" />
+  </projectListeners>
+
+  <actions>
+    <action id="Cadence.TestConnection" class="app.cadence.jetbrains.CadenceTestConnectionAction" text="Test Connection" description="Send a Cadence connection test">
+      <add-to-group group-id="ToolsMenu" anchor="last" />
+    </action>
+  </actions>
+</idea-plugin>

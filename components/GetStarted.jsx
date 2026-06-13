@@ -20,17 +20,17 @@ function CopyButton({ text }) {
 }
 
 function InstallTabs() {
-  const siteUrl = 'https://vs-integrate.vercel.app'
+  const siteUrl = ''
 
   return (
     <div className="space-y-3">
-      <a href={`${siteUrl}/api/download/vsix`} download="vs-integrate-extension.vsix" className="signal-button w-full">
+      <a href={`${siteUrl}/api/download/vsix`} download="cadence-extension.vsix" className="signal-button w-full">
         <Download className="size-4" />
         Download .vsix file
       </a>
       <div className="space-y-2">
         {[
-          'Open VS Code and go to Extensions.',
+          'Open VS Code, Cursor, or Antigravity extensions.',
           'Choose Install from VSIX from the menu.',
           'Select the downloaded .vsix file.',
         ].map((text, i) => (
@@ -48,24 +48,24 @@ export default function GetStarted() {
   const steps = [
     {
       icon: Download,
-      title: 'Install the VS Code extension',
-      description: 'Download the .vsix file and install it in VS Code.',
+      title: 'Install an editor integration',
+      description: 'Use the VSIX for VS Code-family editors or a native plugin for your editor.',
       custom: 'install-tabs',
     },
     {
       icon: Key,
       title: 'Generate and set API key',
-      description: 'Sign in, generate an API key, and save it through the VS Integrate command.',
+      description: 'Sign in, generate an API key, and save it through the Cadence setup path.',
       commands: [
-        'Ctrl+Shift+P -> VS Integrate: Set API Key',
+        'Open Dashboard -> Setup',
         'Paste your API key',
-        'Endpoint: https://vs-integrate.vercel.app/api/heartbeat',
+        'Endpoint: /api/heartbeat',
       ],
     },
     {
       icon: Settings,
       title: 'Start coding',
-      description: 'Open any file in VS Code. The dashboard updates as heartbeats arrive.',
+      description: 'Open any file in a connected editor. The dashboard updates as heartbeats arrive.',
       commands: [],
     },
   ]
@@ -76,7 +76,7 @@ export default function GetStarted() {
         <div className="mb-12" data-gsap="fade-up">
           <p className="signal-kicker">setup</p>
           <h2 className="mt-3 text-3xl sm:text-5xl">Get started without ceremony.</h2>
-          <p className="mt-4 max-w-2xl text-muted-foreground">Install the VS Code extension and start tracking activity in minutes.</p>
+          <p className="mt-4 max-w-2xl text-muted-foreground">Install an editor integration and start tracking activity in minutes.</p>
         </div>
 
         <div className="space-y-4" data-gsap-stagger>
@@ -110,4 +110,3 @@ export default function GetStarted() {
     </section>
   )
 }
-

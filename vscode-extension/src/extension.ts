@@ -15,6 +15,25 @@ let lastLanguageSwitchAt: number = Date.now();
 let lastLanguageId: string = 'unknown';
 let isWindowFocused: boolean = true;
 const DEFAULT_API_ENDPOINT = 'https://vs-integrate.vercel.app/api/heartbeat';
+type IdeId = 'vscode' | 'cursor' | 'antigravity';
+
+function detectIde(): IdeId {
+    const appName = (vscode.env.appName || '').toLowerCase();
+    if (appName.includes('cursor')) {
+        return 'cursor';
+    }
+    if (appName.includes('antigravity')) {
+        return 'antigravity';
+    }
+    return 'vscode';
+}
+
+function getProductLabel(): string {
+    const ide = detectIde();
+    if (ide === 'cursor') return 'Cursor';
+    if (ide === 'antigravity') return 'Antigravity';
+    return 'VS Code';
+}
 
 function normalizeApiEndpoint(input: string): string {
     const trimmed = input.trim().replace(/\/+$/, '');
@@ -34,7 +53,7 @@ function normalizeApiEndpoint(input: string): string {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('VS Integrate extension is now active');
+    console.log(`Cadence extension is now active in ${getProductLabel()}`);
     lastLanguageId = getCurrentLanguageId();
     lastLanguageSwitchAt = Date.now();
 
@@ -62,18 +81,18 @@ export function activate(context: vscode.ExtensionContext) {
                                 );
                             }
                             vscode.window.showInformationMessage(
-                                '✅ VS Integrate connected! Your coding activity will now be tracked.'
+                                'Cadence connected. Your coding activity will now be tracked.'
                             );
                             startTracking();
                             // Send a connection test heartbeat immediately
                             try {
                                 await sendConnectionTest();
                                 vscode.window.showInformationMessage(
-                                    '✅ Connection verified — you\'re all set!'
+                                    'Connection verified. You are all set.'
                                 );
                             } catch {
                                 vscode.window.showWarningMessage(
-                                    '⚠️ API key saved, but connection test failed. Check your endpoint.'
+                                    'API key saved, but connection test failed. Check your endpoint.'
                                 );
                             }
                         } catch (err) {
@@ -217,6 +236,7 @@ async function sendHeartbeat(): Promise<void> {
 
     const payload = {
         apiKey: config.apiKey,
+        ide: detectIde(),
         timestamp: Date.now(),
         language: editor?.document.languageId || 'unknown',
         languageBreakdown: { ...languageTimeMap },
@@ -269,6 +289,7 @@ async function sendConnectionTest(): Promise<void> {
     const connNow = new Date();
     const payload = {
         apiKey: config.apiKey,
+        ide: detectIde(),
         timestamp: Date.now(),
         type: 'connection_test',
         platform: os.platform(),
@@ -303,6 +324,7 @@ function postData(urlString: string, data: any): Promise<any> {
             path: url.pathname,
             method: 'POST',
             headers: {
+                'Authorization': `Bearer ${data.apiKey || ''}`,
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData)
             }
@@ -339,20 +361,20 @@ function updateStatusBar(status?: string) {
     const config = getConfig();
     
     if (!config.apiKey) {
-        statusBarItem.text = '$(debug-disconnect) VS Integrate: No API Key';
+        statusBarItem.text = '$(debug-disconnect) Cadence: No API Key';
         statusBarItem.tooltip = 'Click to set your API key';
     } else if (status === 'Disconnected') {
-        statusBarItem.text = '$(debug-disconnect) VS Integrate: Disconnected';
+        statusBarItem.text = '$(debug-disconnect) Cadence: Disconnected';
         statusBarItem.tooltip = 'API key has been disconnected. Reconnect to resume tracking.';
     } else if (status === 'Error') {
-        statusBarItem.text = '$(alert) VS Integrate: Connection Error';
+        statusBarItem.text = '$(alert) Cadence: Connection Error';
         statusBarItem.tooltip = 'Failed to connect to server. Check your API endpoint.';
     } else if (status === 'Idle') {
-        statusBarItem.text = '$(clock) VS Integrate: Idle';
+        statusBarItem.text = '$(clock) Cadence: Idle';
         statusBarItem.tooltip = 'Tracking paused - you appear to be idle';
     } else {
-        statusBarItem.text = '$(pulse) VS Integrate: Tracking';
-        statusBarItem.tooltip = 'Tracking your coding activity';
+        statusBarItem.text = `$(pulse) Cadence: ${getProductLabel()}`;
+        statusBarItem.tooltip = `Tracking ${getProductLabel()} coding activity`;
     }
     
     statusBarItem.show();
@@ -372,7 +394,7 @@ async function handleManualDisconnect() {
     hasShownDisconnectedNotice = true;
 
     const selection = await vscode.window.showWarningMessage(
-        'API key has been disconnected, please reconnect for VS Code tracking.',
+        `API key has been disconnected, please reconnect for ${getProductLabel()} tracking.`,
         'Reconnect Now',
         'Open Dashboard'
     );
@@ -386,7 +408,7 @@ async function handleManualDisconnect() {
 
 async function setApiKey() {
     const apiKey = await vscode.window.showInputBox({
-        prompt: 'Enter your VS Integrate API Key',
+        prompt: 'Enter your Cadence API Key',
         placeHolder: 'vsi_xxxxxxxxxxxx',
         password: false,
         ignoreFocusOut: true
@@ -396,7 +418,7 @@ async function setApiKey() {
         const config = vscode.workspace.getConfiguration('vsIntegrate');
         const currentEndpoint = normalizeApiEndpoint(config.get<string>('apiEndpoint') || DEFAULT_API_ENDPOINT);
         const endpointInput = await vscode.window.showInputBox({
-            prompt: 'Enter your VS Integrate site URL or heartbeat endpoint',
+            prompt: 'Enter your Cadence site URL or heartbeat endpoint',
             placeHolder: 'https://your-site.com or http://localhost:3001/api/heartbeat',
             value: currentEndpoint,
             ignoreFocusOut: true,
@@ -408,7 +430,7 @@ async function setApiKey() {
 
         await config.update('apiKey', apiKey, vscode.ConfigurationTarget.Global);
         await config.update('apiEndpoint', normalizeApiEndpoint(endpointInput), vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage('API Key saved! Tracking will start now.');
+        vscode.window.showInformationMessage('Cadence API key saved. Tracking will start now.');
         startTracking();
     }
 }
@@ -418,8 +440,8 @@ function showStatus() {
     const timeSinceActivity = Math.round((Date.now() - lastActivityTime) / 1000);
     
     const message = config.apiKey 
-        ? `VS Integrate is ${isTracking ? 'tracking' : 'not tracking'}.\nLast activity: ${timeSinceActivity}s ago\nEndpoint: ${config.apiEndpoint}`
-        : 'VS Integrate needs an API key. Get one from your dashboard.';
+        ? `Cadence is ${isTracking ? 'tracking' : 'not tracking'} ${getProductLabel()}.\nLast activity: ${timeSinceActivity}s ago\nEndpoint: ${config.apiEndpoint}`
+        : 'Cadence needs an API key. Get one from your dashboard.';
     
     vscode.window.showInformationMessage(message, 'Set API Key', 'Open Dashboard').then((selection: string | undefined) => {
         if (selection === 'Set API Key') {

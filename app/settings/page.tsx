@@ -449,8 +449,8 @@ export default function SettingsPage() {
  </div>
  </Section>
 
- {/* VS Code Connection */}
- <Section title="VS Code Connection" icon={<Code2 className="w-4 h-4 text-primary" />} delay={0.15}>
+ {/* Editor Connection */}
+ <Section title="Editor Connections" icon={<Code2 className="w-4 h-4 text-primary" />} delay={0.15}>
  <div className="p-5 sm:p-6 space-y-4">
  {/* Live connection badge */}
  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border ${
@@ -465,9 +465,9 @@ export default function SettingsPage() {
  <div>
  <p className={`text-sm font-medium ${connection?.connected ? 'text-primary' : 'text-muted-foreground'}`}>
  {connection?.connected
- ? 'VS Code Connected & Tracking'
+ ? 'Cadence Connected & Tracking'
  : connection?.hasApiKey
- ? 'Not Connected — Open VS Code to start tracking'
+ ? 'Not Connected — open a configured editor to start tracking'
  : 'Not Connected'}
  </p>
  {connection?.connected && (
@@ -477,7 +477,7 @@ export default function SettingsPage() {
  <p className="text-xs text-muted-foreground mt-0.5">
  {connection?.lastActivityAt
  ? `Last active: ${new Date(connection.lastActivityAt).toLocaleString()}`
- : 'No heartbeats yet — install the VS Code extension'}
+ : 'No heartbeats yet — install an editor integration'}
  </p>
  )}
  {!connection?.connected && !connection?.hasApiKey && (
@@ -511,10 +511,10 @@ export default function SettingsPage() {
  <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl">
  <p className="text-xs text-primary font-medium mb-1">How to connect:</p>
  <ol className="text-[11px] text-muted-foreground space-y-1 list-decimal list-inside">
- <li>Download the .vsix file (button below) and install it in VS Code</li>
- <li>In VS Code: Extensions (Ctrl+Shift+X) → ⋯ menu → &quot;Install from VSIX...&quot;</li>
- <li>Press <code className="text-primary bg-secondary px-1 rounded">Ctrl+Shift+P</code> → <code className="text-primary bg-secondary px-1 rounded">VS Integrate: Set API Key</code></li>
- <li>Paste your API key and set endpoint to: <code className="text-primary bg-secondary px-1 rounded">https://vs-integrate.vercel.app/api/heartbeat</code></li>
+ <li>Open the multi-IDE setup guide and choose your editor</li>
+ <li>Install the VSIX, native plugin, or companion path shown there</li>
+ <li>Paste your existing <code className="text-primary bg-secondary px-1 rounded">vsi_</code> API key</li>
+ <li>Use endpoint: <code className="text-primary bg-secondary px-1 rounded">/api/heartbeat</code></li>
  </ol>
  </div>
  {!apiKey && (
@@ -572,13 +572,13 @@ export default function SettingsPage() {
  {/* Setup steps */}
  <div className="bg-secondary/30 border border-border/40 rounded-xl p-4 space-y-2.5">
  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-3">
- <Terminal className="w-3.5 h-3.5 text-primary" /> How to connect VS Code
+ <Terminal className="w-3.5 h-3.5 text-primary" /> How to connect editors
  </p>
  {[
- 'Download the .vsix file using the button below',
- 'In VS Code: Extensions (Ctrl+Shift+X) \u2192 \u22ef menu \u2192 "Install from VSIX..." \u2192 select the file',
- 'Press Ctrl+Shift+P \u2192 type "VS Integrate: Set API Key" \u2192 paste your key',
- 'When prompted for endpoint, enter: https://vs-integrate.vercel.app/api/heartbeat',
+ 'Open Dashboard > Setup and choose an editor',
+ 'Install the VSIX, native plugin, or companion path for that editor',
+ 'Paste your Cadence API key in the integration settings',
+ 'When prompted for endpoint, enter: /api/heartbeat',
  'Status bar shows tracking state. Your dashboard updates as heartbeats arrive.',
  ].map((step, i) => (
  <div key={i} className="flex items-start gap-2.5">
@@ -589,7 +589,7 @@ export default function SettingsPage() {
  <div className="mt-3">
  <a
  href="/downloads/extension.vsix"
- download="vs-integrate-extension.vsix"
+ download="cadence-extension.vsix"
  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary rounded-lg text-xs text-primary-foreground font-medium transition-colors"
  >
  <Download className="w-3.5 h-3.5" />
@@ -640,10 +640,10 @@ export default function SettingsPage() {
  </div>
  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
  </Link>
- <Link href="/onboarding" className="group flex items-center justify-between px-5 sm:px-6 py-4 hover:bg-primary/5 border-l-2 border-transparent hover:border-primary transition-all">
+ <Link href="/dashboard/setup" className="group flex items-center justify-between px-5 sm:px-6 py-4 hover:bg-primary/5 border-l-2 border-transparent hover:border-primary transition-all">
  <div className="flex items-center gap-3">
  <Code2 className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
- <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">VS Code Extension Setup Guide</span>
+ <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">Multi-IDE Setup Guide</span>
  </div>
  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
  </Link>
@@ -700,7 +700,7 @@ export default function SettingsPage() {
  <AlertTriangle className="w-6 h-6 text-destructive" />
  </div>
  <h3 className="text-lg font-semibold text-center mb-2">Revoke API Key?</h3>
- <p className="text-muted-foreground text-center text-sm mb-6">VS Code will disconnect. Generate a new key to reconnect.</p>
+ <p className="text-muted-foreground text-center text-sm mb-6">Connected editor integrations will disconnect. Generate a new key to reconnect.</p>
  <div className="flex gap-3">
  <button onClick={() => setShowRevokeConfirm(false)} className="flex-1 px-4 py-3 bg-secondary hover:bg-secondary rounded-xl text-muted-foreground transition-colors">Cancel</button>
  <button onClick={revokeApiKey} disabled={apiKeyLoading}

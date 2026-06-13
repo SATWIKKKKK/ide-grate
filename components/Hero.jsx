@@ -15,12 +15,14 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Logo from './Logo';
 import ContributionGraph from './ContributionGraph';
+import IdeIcon from './IdeIcon';
+import { IDE_OPTIONS } from '@/lib/ide-config';
 
 const featureCards = [
-  { icon: Timer, title: 'Session ledger', text: 'Track focused editor time, live sessions, pauses, and daily totals without manual logging.' },
-  { icon: BarChart3, title: 'Coding signal', text: 'See activity heatmaps, language mix, project distribution, and weekly rhythm from real heartbeats.' },
-  { icon: Zap, title: 'Goals and momentum', text: 'Set daily or weekly goals, watch progress fill in, and keep streaks tied to actual work.' },
-  { icon: EyeOff, title: 'Private telemetry', text: 'The extension sends metadata only: time, language, platform, and anonymized project hash.' },
+  { icon: Timer, title: 'Multi-IDE sessions', text: 'Track focused editor time from VS Code, Cursor, Antigravity, JetBrains, Zed, Neovim, and Sublime Text.' },
+  { icon: BarChart3, title: 'Combined analytics', text: 'See one dashboard for the whole stack, then filter down to a single editor when you need detail.' },
+  { icon: Zap, title: 'Setup path', text: 'Use the existing VSIX where it fits, native plugins where available, and a companion path for Zed.' },
+  { icon: EyeOff, title: 'Privacy boundary', text: 'Cadence sends metadata only: time, language, platform, and anonymized project hash.' },
 ];
 
 function LoggedInHero() {
@@ -33,7 +35,7 @@ function LoggedInHero() {
         <p className="signal-kicker justify-center">session active</p>
         <h1 className="mt-3 text-4xl sm:text-5xl">Your signal is ready.</h1>
         <p className="mx-auto mt-5 max-w-xl text-muted-foreground">
-          Open your dashboard, finish the extension setup, or tune how your public profile shares your coding activity.
+          Open your dashboard, finish setup for your editors, or tune how your public profile shares your coding activity.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link href="/dashboard" className="signal-button">
@@ -41,7 +43,7 @@ function LoggedInHero() {
             Dashboard
             <ArrowRight className="size-4" />
           </Link>
-          <Link href="/onboarding" className="signal-button signal-button-secondary">
+          <Link href="/dashboard/setup" className="signal-button signal-button-secondary">
             Setup guide
           </Link>
         </div>
@@ -61,27 +63,27 @@ export default function Hero() {
         <header className="min-w-0" data-gsap="fade-up">
           <p className="signal-kicker">
             <Code2 className="size-4 text-[var(--color-live)]" />
-            VS Code activity, not commit theatre
+            Cadence Feature Stack
           </p>
           <h1 className="mt-5 max-w-3xl text-[clamp(3.25rem,7.2vw,4.5rem)] leading-[0.96]">
-            Track real coding activity.
+            Track real coding activity across your editors.
           </h1>
           <p className="signal-copy mt-6 max-w-xl">
-            vs-integrate turns editor heartbeats into sessions, focus time, streaks, language mix, and daily progress without reading your source code.
+            Cadence turns editor heartbeats into sessions, focus time, streaks, language mix, and daily progress without reading your source code.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/signup" className="signal-button px-6">
               Start tracking
               <ArrowRight className="size-4" />
             </Link>
-            <Link href="/onboarding" className="signal-button signal-button-secondary px-6">
+            <Link href="/dashboard/setup" className="signal-button signal-button-secondary px-6">
               See setup
             </Link>
           </div>
           <div className="mt-8 grid max-w-lg grid-cols-3 gap-2" data-gsap-stagger>
             {[
+              ['7 IDEs', 'first-class targets'],
               ['No code', 'content collected'],
-              ['VSIX', 'install flow'],
               ['Live', 'heartbeat status'],
             ].map(([value, label]) => (
               <div key={value} className="rounded-sm border border-border bg-card p-3" data-gsap-item>
@@ -98,6 +100,13 @@ export default function Hero() {
               <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">today&apos;s signal</p>
               <p className="font-mono text-xl font-bold text-foreground">editor heartbeats</p>
             </div>
+            <div className="hidden max-w-52 flex-wrap justify-end gap-1.5 sm:flex">
+              {IDE_OPTIONS.map((ide) => (
+                <span key={ide.id} title={ide.shortName}>
+                  <IdeIcon ide={ide.id} className="size-7" />
+                </span>
+              ))}
+            </div>
           </div>
           <ContributionGraph />
         </section>
@@ -107,7 +116,7 @@ export default function Hero() {
         <div className="signal-container">
           <div className="mb-12 max-w-2xl" data-gsap="fade-up">
             <p className="signal-kicker">dashboard signals</p>
-            <h2 className="mt-3 text-3xl sm:text-4xl">Built for people who actually work in the editor.</h2>
+            <h2 className="mt-3 text-3xl sm:text-4xl">Built for people who work across more than one editor.</h2>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-gsap-stagger>
             {featureCards.map((item) => {
@@ -131,7 +140,7 @@ export default function Hero() {
             <p className="signal-kicker">privacy boundary</p>
             <h2 className="mt-3 text-3xl sm:text-4xl">Analytics, not surveillance.</h2>
             <p className="mt-6 max-w-xl text-muted-foreground">
-              vs-integrate tracks activity metadata only. It does not collect source code, file contents, keystrokes, file names, or repository paths.
+              Cadence tracks activity metadata only. It does not collect source code, file contents, keystrokes, file names, or repository paths.
             </p>
           </article>
           <article className="app-card p-8" data-gsap-stagger>
@@ -150,7 +159,7 @@ export default function Hero() {
 
       <section className="border-t border-border py-24 text-center">
         <div className="signal-container" data-gsap="fade-up">
-          <p className="signal-kicker justify-center">ready when your editor is</p>
+          <p className="signal-kicker justify-center">ready when your editor stack is</p>
           <h2 className="mx-auto mt-4 max-w-3xl text-3xl sm:text-5xl">Let the dashboard tell the truth about your coding rhythm.</h2>
           <div className="mt-8 flex justify-center">
             <Link href="/signup" className="signal-button px-8">
@@ -169,7 +178,7 @@ export default function Hero() {
           </div>
           <nav className="flex flex-wrap gap-6 font-mono text-xs text-muted-foreground">
             <Link href="/signup" className="hover:text-foreground">Dashboard</Link>
-            <Link href="/onboarding" className="hover:text-foreground">Setup guide</Link>
+            <Link href="/dashboard/setup" className="hover:text-foreground">Setup guide</Link>
             <Link href="/settings" className="hover:text-foreground">Settings</Link>
             <Link href="/login" className="hover:text-foreground">Sign in</Link>
           </nav>

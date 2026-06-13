@@ -73,7 +73,7 @@ function SignUpContent() {
   const isFormValid = devEmail && devName && devPassword.length >= 8 && confirmPassword === devPassword
 
   return (
-    <AuthShell mode="signup" title="Create account" subtitle="Start tracking VS Code time, streaks, goals, and language stats.">
+    <AuthShell mode="signup" title="Create account" subtitle="Start tracking editor time, streaks, goals, and language stats.">
       <div className="p-6">
         {error && (
           <div className="mb-4 rounded-md border border-destructive/30 bg-[var(--color-danger-soft)] p-3 text-center text-sm text-destructive">
@@ -247,4 +247,3 @@ export default function SignUpPage() {
     </Suspense>
   )
 }
-

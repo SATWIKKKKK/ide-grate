@@ -65,6 +65,7 @@ model User {
   dailyContributions DailyContribution[]
   achievements  UserAchievement[]
   goals         UserGoal[]
+  ideSetups     UserIdeSetup[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -81,6 +82,7 @@ model VerificationToken {
 model Activity {
   id           String   @id @default(cuid())
   userId       String
+  ide          String   @default("vscode")
   startTime    DateTime
   endTime      DateTime
   duration     Int      // in seconds
@@ -98,6 +100,8 @@ model Activity {
   @@index([userId])
   @@index([startTime])
   @@index([userId, startTime])
+  @@index([userId, ide])
+  @@index([userId, ide, startTime])
 }
 
 model UserStats {
@@ -122,6 +126,7 @@ model DailyContribution {
   id        String   @id @default(cuid())
   date      DateTime @db.Date
   userId    String
+  ide       String   @default("vscode")
   hours     Float    @default(0)
   sessions  Int      @default(0)
   languages Json     @default("[]") // Array of languages used that day
@@ -130,10 +135,32 @@ model DailyContribution {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, date])
+  @@unique([userId, date, ide])
   @@index([userId])
   @@index([date])
   @@index([userId, date])
+  @@index([userId, ide])
+  @@index([userId, date, ide])
+}
+
+model UserIdeSetup {
+  id            String   @id @default(cuid())
+  userId        String
+  ide           String
+  label         String?
+  apiKey        String?  @unique
+  isActive      Boolean  @default(true)
+  connectedAt   DateTime @default(now())
+  lastHeartbeat DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ide])
+  @@index([userId])
+  @@index([userId, ide])
+  @@index([ide])
 }
 
 // Achievements system

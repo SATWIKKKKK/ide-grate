@@ -54,7 +54,7 @@ export default function PublicProfile() {
     if (username) fetchProfile()
     async function fetchProfile() {
       try {
-        const res = await fetch(`/api/profile/${username}`)
+        const res = await fetch(`/api/public/${username}`)
         if (res.status === 404) setError('User not found')
         else if (res.status === 403) setError('This profile is private')
         else if (res.ok) setProfile(await res.json())
@@ -211,7 +211,7 @@ export default function PublicProfile() {
           </h2>
           <p className="mb-3 text-sm text-muted-foreground">Add this to your GitHub README or website:</p>
           <div className="rounded-md border border-border bg-secondary p-3 font-mono text-xs text-muted-foreground break-all select-all">
-            {`![VS-Integrate Stats](${typeof window !== 'undefined' ? window.location.origin : ''}/api/widget/${username})`}
+            {`![Cadence Stats](${typeof window !== 'undefined' ? window.location.origin : ''}/api/widget/${username})`}
           </div>
         </section>
       </main>

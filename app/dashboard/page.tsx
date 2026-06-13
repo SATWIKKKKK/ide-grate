@@ -12,7 +12,10 @@ import {
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import AppFooter from '@/components/AppFooter'
+import IdeIcon from '@/components/IdeIcon'
+import IdeSelector from '@/components/IdeSelector'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
+import { IDE_CONFIG, type IdeId, type IdeSelection } from '@/lib/ide-config'
 import {
  AreaChart, Area, XAxis, YAxis, CartesianGrid,
  Tooltip as ReTooltip, ResponsiveContainer,
@@ -36,13 +39,15 @@ interface StatsData {
  topLanguages: { language: string; hours: number; percentage: number }[]
  weeklyBreakdown: number[]
  projects: { hash: string; name: string | null; hours: number; percentage: number; repoUrl?: string | null }[]
- todaySessions?: { startTime: string; endTime: string; duration: number }[]
+ todaySessions?: { ide?: string; startTime: string; endTime: string; duration: number }[]
+ ideBreakdown?: { id: string; name: string; color: string; hours: number; sessions: number; activeDays: number; isSetup: boolean; lastHeartbeat: string | null; lastActivityAt: string | null }[]
 }
 
 interface ContributionDay {
  hours: number
  sessions: number
  level: number
+ byIde?: Record<string, number>
 }
 
 interface GoalData {
@@ -151,7 +156,12 @@ function toLocalDateStr(d: Date): string {
 export default function DashboardPage() {
  const { data: session, status } = useSession()
  const router = useRouter()
- const contributionApiUrl = '/api/contributions?days=365'
+ const [selectedIde, setSelectedIde] = useState<IdeSelection>('combined')
+ const ideQuery = selectedIde === 'combined' ? '' : `ide=${selectedIde}`
+ const idePrefix = selectedIde === 'combined' ? 'combined' : IDE_CONFIG[selectedIde].shortName
+ const contributionApiUrl = `/api/contributions?days=365${ideQuery ? `&${ideQuery}` : ''}`
+ const statsApiUrl = `/api/stats/overview${ideQuery ? `?${ideQuery}` : ''}`
+ const connectionApiUrl = `/api/connection-status${ideQuery ? `?${ideQuery}` : ''}`
  const liveTimerStorageKey = `vsintegrate-live-start-${session?.user?.id || 'anonymous'}`
 
  // Data
@@ -163,6 +173,7 @@ export default function DashboardPage() {
  const [apiKey, setApiKey] = useState<string | null>(null)
  const [connectionStatus, setConnectionStatus] = useState<{
  connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null
+ integrations?: { id: string; active?: boolean; isSetup?: boolean; hours?: number }[]
  }>({ connected: false, active: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
  const [connectionReady, setConnectionReady] = useState(false)
 
@@ -192,18 +203,30 @@ export default function DashboardPage() {
  const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
  const sessionStartRef = useRef<Date | null>(null)
 
+ useEffect(() => {
+ if (typeof window === 'undefined') return
+ const stored = window.localStorage.getItem('cadence-selected-ide')
+ if (stored === 'combined' || stored === 'vscode' || stored === 'cursor' || stored === 'antigravity' || stored === 'jetbrains' || stored === 'zed' || stored === 'neovim' || stored === 'sublime') {
+ setSelectedIde(stored)
+ }
+ }, [])
+
+ useEffect(() => {
+ if (typeof window !== 'undefined') window.localStorage.setItem('cadence-selected-ide', selectedIde)
+ }, [selectedIde])
+
  // ─── Data fetching with caching ────────────────────────────────────────────
  const fetchAllData = useCallback(async () => {
  if (!session?.user) return
  setLoading(true)
 
  const [statsData, contribData, goalsData, achievementsData, keyData, connData] = await Promise.all([
- cachedFetch<StatsData>('stats', '/api/stats/overview'),
- cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', contributionApiUrl),
+ cachedFetch<StatsData>(`stats:${selectedIde}`, statsApiUrl),
+ cachedFetch<{ contributions: Record<string, ContributionDay> }>(`contributions:${selectedIde}`, contributionApiUrl),
  cachedFetch<{ goals: GoalData[] }>('goals', '/api/goals'),
  cachedFetch<{ achievements: AchievementData[]; totalUnlocked: number }>('achievements', '/api/achievements'),
  cachedFetch<{ apiKey: string | null }>('apikey', '/api/apikey'),
- cachedFetch<{ connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null }>('connection', '/api/connection-status'),
+ cachedFetch<{ connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null; integrations?: { id: string; active?: boolean; isSetup?: boolean }[] }>(`connection:${selectedIde}`, connectionApiUrl),
  ])
 
  if (statsData) setStats(statsData)
@@ -224,7 +247,7 @@ export default function DashboardPage() {
  }
 
  setLoading(false)
- }, [session, contributionApiUrl])
+ }, [session, contributionApiUrl, statsApiUrl, connectionApiUrl, selectedIde])
 
  // Poll connection status every 15s + refresh stats every ~60s when connected
  useEffect(() => {
@@ -232,7 +255,7 @@ export default function DashboardPage() {
  let pollCount = 0
  const poll = async () => {
  try {
- const res = await fetch('/api/connection-status')
+ const res = await fetch(connectionApiUrl)
  if (res.ok) {
  const data = await res.json()
  setConnectionStatus(data)
@@ -242,7 +265,7 @@ export default function DashboardPage() {
  if (data.connected) {
  setConnectionToast({
  show: true,
- message: 'VS Code is now connected and tracking!',
+ message: `${idePrefix} is now connected and tracking!`,
  type: 'success',
  })
  setShowReconnectPopup(false)
@@ -260,12 +283,12 @@ export default function DashboardPage() {
  prevConnected.current = data.connected
  pollCount++
  if (justReconnected || (pollCount % 4 === 0 && data.connected)) {
- invalidateCache('stats')
- invalidateCache('contributions')
+ invalidateCache(`stats:${selectedIde}`)
+ invalidateCache(`contributions:${selectedIde}`)
  invalidateCache('achievements')
  const [freshStats, freshContrib, freshAchievements] = await Promise.all([
- cachedFetch<StatsData>('stats', '/api/stats/overview'),
- cachedFetch<{ contributions: Record<string, ContributionDay> }>('contributions', contributionApiUrl),
+ cachedFetch<StatsData>(`stats:${selectedIde}`, statsApiUrl),
+ cachedFetch<{ contributions: Record<string, ContributionDay> }>(`contributions:${selectedIde}`, contributionApiUrl),
  cachedFetch<{ achievements: AchievementData[]; totalUnlocked: number }>('achievements', '/api/achievements'),
  ])
  if (freshStats) setStats(freshStats)
@@ -280,7 +303,7 @@ export default function DashboardPage() {
  }
  const interval = setInterval(poll, 15000)
  return () => clearInterval(interval)
- }, [session, contributionApiUrl])
+ }, [session, contributionApiUrl, statsApiUrl, connectionApiUrl, selectedIde, idePrefix])
 
  // Live session timer — persists across reload/signout, resets only on manual disconnect+reconnect
  useEffect(() => {
@@ -331,18 +354,18 @@ export default function DashboardPage() {
  }, [status, router])
 
  useEffect(() => {
- if (session?.user && !hasFetched.current) {
+ if (session?.user) {
  hasFetched.current = true
  fetchAllData()
  }
- }, [session, fetchAllData])
+ }, [session?.user?.id, selectedIde, fetchAllData])
 
- // Redirect first-time users to onboarding (no API key, no sessions)
+ // Redirect first-time users to setup (no API key, no sessions)
  useEffect(() => {
  if (loading || !connectionReady) return
  const skippedOnboarding = typeof window !== 'undefined' && localStorage.getItem('onboarding_skipped')
  if (!apiKey && !connectionStatus.hasApiKey && (stats?.totalSessions || 0) === 0 && !skippedOnboarding) {
- router.push('/onboarding')
+ router.push('/dashboard/setup')
  }
  }, [loading, connectionReady, apiKey, connectionStatus.hasApiKey, stats, router])
 
@@ -520,7 +543,7 @@ export default function DashboardPage() {
  ]
  }, [stats])
 
- // Period VS Code hours for timer section (use local dates)
+ // Period editor hours for timer section (use local dates)
  const periodHours = useMemo(() => {
  const now = new Date()
  const sumDays = (days: number) => {
@@ -574,7 +597,7 @@ export default function DashboardPage() {
 
  return (
  <div className="page-shell flex min-h-screen flex-col text-foreground">
- <Navbar />
+ <Navbar toolbarSlot={<IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={stats?.ideBreakdown || connectionStatus.integrations || []} />} />
 
  {/* Connection status toast */}
  <AnimatePresence>
@@ -595,6 +618,9 @@ export default function DashboardPage() {
  </AnimatePresence>
 
  <main className="dashboard-shell flex-1 py-14 sm:py-16" data-gsap-stagger>
+ <div className="mb-5 flex justify-end sm:hidden">
+ <IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={stats?.ideBreakdown || connectionStatus.integrations || []} />
+ </div>
  {/* Header */}
  <motion.div
  initial={{ opacity: 0, y: 20 }}
@@ -611,7 +637,7 @@ export default function DashboardPage() {
  Welcome back, <span className="font-mono font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
  </h1>
  <p className="mt-2 text-base text-muted-foreground">
- {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today` : 'Start coding to see your stats'}
+ {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today in ${idePrefix}` : `Start coding to see ${idePrefix} stats`}
  </p>
  </div>
  </div>
@@ -629,8 +655,8 @@ export default function DashboardPage() {
  title={
  connectionStatus.connected
  ? connectionStatus.active
- ? 'VS Code is actively sending heartbeats'
- : 'VS Code extension configured — tracking resumes when you code'
+ ? `${idePrefix} is actively sending heartbeats`
+ : `${idePrefix} configured — tracking resumes when you code`
  : 'No API key yet — generate one to start tracking'
  }
  >
@@ -639,7 +665,7 @@ export default function DashboardPage() {
  ? connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary'
  : 'bg-destructive'
  }`} />
- {connectionStatus.connected ? (connectionStatus.active ? 'Connected' : 'Connected') : 'Disconnected'}
+ {connectionStatus.connected ? `${idePrefix} connected` : `${idePrefix} disconnected`}
  </div>
  {apiKey && connectionStatus.connected && (
  <button
@@ -673,7 +699,7 @@ export default function DashboardPage() {
  <div>
  <h3 className="text-sm font-medium text-foreground">API Key</h3>
  <p className="text-xs text-muted-foreground">
- {apiKey ? 'Click to view • Used by VS Code extension to send heartbeats' : 'No key generated — click to create one'}
+ {apiKey ? 'Click to view • Used by Cadence integrations to send heartbeats' : 'No key generated — click to create one'}
  </p>
  </div>
  </div>
@@ -701,7 +727,7 @@ export default function DashboardPage() {
  <code className="text-xs font-mono text-primary break-all select-all">{apiKey}</code>
  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
  <span className="bg-secondary px-2 py-0.5 rounded">1. Copy this key</span>
- <span className="bg-secondary px-2 py-0.5 rounded">2. Open VS Code → Ctrl+Shift+P → "VS Integrate: Set API Key"</span>
+ <span className="bg-secondary px-2 py-0.5 rounded">2. Open setup and choose your editor</span>
  <span className="bg-secondary px-2 py-0.5 rounded">3. Paste key → tracking starts automatically</span>
  </div>
  </div>
@@ -711,7 +737,69 @@ export default function DashboardPage() {
  </div>
  </motion.div>
 
- {/* VS Code Live Timer */}
+ {stats?.ideBreakdown && stats.ideBreakdown.length > 0 && (
+ <motion.section
+ initial={{ opacity: 0, y: 20 }}
+ animate={{ opacity: 1, y: 0 }}
+ transition={{ delay: 0.08 }}
+ className="app-card mb-6 p-4 sm:p-5"
+ data-gsap-item
+ >
+ <div className="mb-4 flex items-center justify-between gap-3">
+ <div>
+ <p className="signal-kicker">{selectedIde === 'combined' ? 'Combined stack' : idePrefix}</p>
+ <h2 className="font-sans text-lg font-semibold">IDE activity breakdown</h2>
+ </div>
+ <Link href="/dashboard/setup" className="signal-button signal-button-secondary min-h-9 px-3 text-xs">
+ Setup
+ </Link>
+ </div>
+ <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+ {stats.ideBreakdown.map((item) => (
+ <button
+ type="button"
+ key={item.id}
+ onClick={() => setSelectedIde(item.id as IdeSelection)}
+ className={`rounded-md border p-3 text-left transition-colors hover:border-primary ${selectedIde === item.id ? 'border-primary bg-background' : 'border-border bg-secondary/45'}`}
+ >
+ <div className="flex items-center justify-between gap-3">
+ <span className="flex items-center gap-2 min-w-0">
+ <IdeIcon ide={item.id as IdeId} className="size-7" />
+ <span className="truncate text-sm font-semibold">{item.name}</span>
+ </span>
+ <span className={`size-2 rounded-full ${item.lastHeartbeat ? 'bg-[var(--color-live)]' : item.isSetup ? 'bg-muted-foreground' : 'bg-border'}`} />
+ </div>
+ <div className="mt-3 flex items-end justify-between gap-3">
+ <span className="font-mono text-xl font-semibold text-primary">{formatHoursShort(item.hours)}</span>
+ <span className="text-xs text-muted-foreground">{item.sessions} sessions</span>
+ </div>
+ </button>
+ ))}
+ </div>
+ </motion.section>
+ )}
+
+ {selectedIde !== 'combined' && stats && stats.totalSessions === 0 && (
+ <motion.div
+ initial={{ opacity: 0, y: 20 }}
+ animate={{ opacity: 1, y: 0 }}
+ className="mb-6 rounded-lg border border-border bg-secondary/50 p-4"
+ data-gsap-item
+ >
+ <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+ <div className="flex items-start gap-3">
+ <IdeIcon ide={selectedIde} className="size-9" />
+ <div>
+ <h2 className="font-sans text-base font-semibold">No {idePrefix} sessions yet</h2>
+ <p className="mt-1 text-sm text-muted-foreground">Combined activity is still available. Configure {idePrefix} when you want this panel to light up.</p>
+ </div>
+ </div>
+ <Link href="/dashboard/setup" className="signal-button min-h-10 shrink-0">Open setup</Link>
+ </div>
+ </motion.div>
+ )}
+
+ {/* Live Timer */}
  <motion.div
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
@@ -741,7 +829,7 @@ export default function DashboardPage() {
  </>
  : <>Connected • {connectionStatus.lastActivityAt
  ? `Last active ${new Date(connectionStatus.lastActivityAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
- : 'Waiting for VS Code activity'}</>
+ : `Waiting for ${idePrefix} activity`}</>
  }
  </span>
  </div>
@@ -780,7 +868,7 @@ export default function DashboardPage() {
  ? connectionStatus.active
  ? <span className="text-primary/70">Session time • Today&apos;s total: {formatHours(stats?.hoursToday || 0)}</span>
  : <span className="text-primary/70">Today&apos;s total: {formatHours(stats?.hoursToday || 0)} • Tracking resumes when you code</span>
- : <span className="text-destructive/80">Generate API key and connect VS Code to start tracking.</span>}
+ : <span className="text-destructive/80">Generate an API key and connect an editor to start tracking.</span>}
  </p>
  </div>
  </div>
@@ -818,7 +906,7 @@ export default function DashboardPage() {
  <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-primary' : 'text-foreground'}`}>
  {formatHours(periodHoursDisplay[timerFilter])}
  </p>
- <p className="text-[10px] text-muted-foreground mt-0.5">total in VS Code</p>
+ <p className="text-[10px] text-muted-foreground mt-0.5">total in {idePrefix}</p>
  </div>
  <div className={`rounded-lg p-3 text-center border ${
  connectionStatus.connected ? 'bg-primary/20 border-primary/15' : 'bg-secondary/50 border-border'
@@ -844,10 +932,10 @@ export default function DashboardPage() {
  <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
  <Terminal className="w-3.5 h-3.5 text-primary" /> Quick Install
  </p>
- <p className="text-[11px] text-muted-foreground mb-2">Download and install the VS Code extension:</p>
+ <p className="text-[11px] text-muted-foreground mb-2">Download the VSIX for VS Code-family editors:</p>
  <a
  href="/downloads/extension.vsix"
- download="vs-integrate-extension.vsix"
+ download="cadence-extension.vsix"
  className="w-full py-2.5 bg-primary hover:bg-primary rounded-lg text-primary-foreground text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
  onClick={e => e.stopPropagation()}
  >
@@ -856,7 +944,7 @@ export default function DashboardPage() {
  </a>
  <div className="mt-2 space-y-1">
  {[
- 'Open VS Code → Extensions (Ctrl+Shift+X)',
+ 'Open VS Code, Cursor, or Antigravity extensions',
  'Click ⋯ menu → "Install from VSIX..."',
  'Select the downloaded file',
  ].map((text, i) => (
@@ -867,7 +955,7 @@ export default function DashboardPage() {
  ))}
  </div>
  <p className="text-[10px] text-muted-foreground mt-2">
- Then generate an API key above and set it in VS Code (Ctrl+Shift+P → &quot;VS Integrate: Set API Key&quot;). Use endpoint: <code className="text-primary">https://vs-integrate.vercel.app/api/heartbeat</code>
+ Then generate an API key above and set it from the Cadence command palette action. Use endpoint: <code className="text-primary">/api/heartbeat</code>
  </p>
  </div>
  )}
@@ -963,7 +1051,7 @@ export default function DashboardPage() {
  <div className="text-center py-6 text-muted-foreground">
  <Timer className="w-8 h-8 mx-auto mb-2 opacity-40" />
  <p className="text-sm">No sessions recorded today</p>
- <p className="text-xs mt-1">Connect VS Code to start tracking</p>
+ <p className="text-xs mt-1">Connect an editor to start tracking</p>
  </div>
  )}
 
@@ -1008,7 +1096,7 @@ export default function DashboardPage() {
  </div>
  <h3 className="text-lg font-semibold mb-2">Disconnect Tracking?</h3>
  <p className="text-sm text-muted-foreground mb-1">This will end your current session and revoke your API key.</p>
- <p className="text-xs text-muted-foreground mb-5">You&apos;ll need to generate a new key and reconfigure VS Code to resume tracking.</p>
+ <p className="text-xs text-muted-foreground mb-5">You&apos;ll need to generate a new key and reconfigure your editor integrations to resume tracking.</p>
  <div className="flex flex-col min-[380px]:flex-row gap-3">
  <button
  onClick={() => setShowDisconnectConfirm(false)}
@@ -1054,7 +1142,7 @@ export default function DashboardPage() {
  </div>
  <h3 className="text-lg font-semibold mb-2">Tracking Disconnected</h3>
  <p className="text-sm text-muted-foreground mb-1">Your API key has been revoked or is missing.</p>
- <p className="text-xs text-muted-foreground mb-5">Follow the setup guide to generate a new key and reconnect VS Code to resume tracking your coding activity.</p>
+ <p className="text-xs text-muted-foreground mb-5">Follow the setup guide to generate a new key and reconnect your editor to resume tracking your coding activity.</p>
  <div className="flex flex-col min-[380px]:flex-row gap-3">
  <button
  onClick={() => setShowReconnectPopup(false)}
@@ -1063,7 +1151,7 @@ export default function DashboardPage() {
  Dismiss
  </button>
  <Link
- href="/onboarding"
+ href="/dashboard/setup"
  className="flex-1 py-2.5 bg-primary hover:bg-primary rounded-xl text-sm text-primary-foreground font-medium transition-colors flex items-center justify-center gap-1.5"
  >
  Setup Guide
@@ -1471,7 +1559,7 @@ export default function DashboardPage() {
  <div className="text-center py-8 text-muted-foreground">
  <Code2 className="w-8 h-8 mx-auto mb-2 opacity-40" />
  <p className="text-sm">No language data yet</p>
- <p className="text-xs mt-1">Start coding with VS Code connected</p>
+ <p className="text-xs mt-1">Start coding with an editor connected</p>
  </div>
  )}
  </motion.div>
@@ -1552,7 +1640,7 @@ export default function DashboardPage() {
  <div className="text-center py-8 text-muted-foreground">
  <FolderGit2 className="w-8 h-8 mx-auto mb-2 opacity-40" />
  <p className="text-sm">No project data yet</p>
- <p className="text-xs mt-1">Open projects in VS Code to track them</p>
+ <p className="text-xs mt-1">Open projects in a connected editor to track them</p>
  </div>
  )}
  </motion.div>

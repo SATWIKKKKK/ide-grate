@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireServerUser } from "@/lib/serverAuth"
+import { isIdeId } from "@/lib/ide-config"
 
 // GET /api/activities - Get user's activities
 export async function GET(request: NextRequest) {
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest) {
     const fromParam = searchParams.get("from")
     const toParam = searchParams.get("to")
     const days = parseInt(searchParams.get("days") || "30")
+    const ideParam = searchParams.get("ide")
+    const ide = ideParam ? ideParam.toLowerCase() : null
+    if (ideParam && !isIdeId(ide)) return NextResponse.json({ error: "Unsupported IDE" }, { status: 400 })
 
     let startDate: Date
     let endDate: Date | undefined
@@ -34,6 +38,7 @@ export async function GET(request: NextRequest) {
           gte: startDate,
           ...(endDate ? { lte: endDate } : {}),
         },
+        ...(ide ? { ide } : {}),
       },
       orderBy: {
         startTime: "desc",
@@ -59,6 +64,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { startTime, endTime, duration, language, fileType, extensions, idleTime } = body
+    const ide = body.ide ? String(body.ide).toLowerCase() : "vscode"
+    if (!isIdeId(ide)) return NextResponse.json({ error: "Unsupported IDE" }, { status: 400 })
 
     if (!startTime || !duration) {
       return NextResponse.json(
@@ -71,6 +78,7 @@ export async function POST(request: NextRequest) {
     const activity = await prisma.activity.create({
       data: {
         userId: sessionUser.id,
+        ide,
         startTime: new Date(startTime),
         endTime: new Date(endTime || new Date()),
         duration: parseInt(duration),
@@ -88,9 +96,10 @@ export async function POST(request: NextRequest) {
 
     await prisma.dailyContribution.upsert({
       where: {
-        userId_date: {
+        userId_date_ide: {
           userId: sessionUser.id,
           date: activityDate,
+          ide,
         },
       },
       update: {
@@ -100,6 +109,7 @@ export async function POST(request: NextRequest) {
       },
       create: {
         userId: sessionUser.id,
+        ide,
         date: activityDate,
         hours,
         sessions: 1,

@@ -7,8 +7,10 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from './Logo';
+import ThemeToggle from './ThemeToggle';
 
-export default function Navbar() {
+export default function Navbar(props) {
+  const { toolbarSlot = null } = props || {};
   const { data: session } = useSession();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -33,7 +35,7 @@ export default function Navbar() {
   const navLinks = session
     ? [
         { href: '/dashboard', label: 'Dashboard' },
-        { href: '/onboarding', label: 'Setup' },
+        { href: '/dashboard/setup', label: 'Setup' },
         { href: '/settings', label: 'Settings' },
       ]
     : [
@@ -69,6 +71,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-2">
+            {toolbarSlot && <div className="hidden sm:block">{toolbarSlot}</div>}
+            <ThemeToggle />
             <button
               onClick={() => setShowMobileMenu((v) => !v)}
               className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-background/70 text-muted-foreground transition-colors hover:text-foreground md:hidden"
@@ -118,7 +122,7 @@ export default function Navbar() {
                         {[
                           { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
                           { href: '/settings', label: 'Settings', icon: Settings },
-                          { href: '/onboarding', label: 'Setup guide', icon: BookOpen },
+                          { href: '/dashboard/setup', label: 'Setup guide', icon: BookOpen },
                         ].map((item) => {
                           const Icon = item.icon;
                           return (

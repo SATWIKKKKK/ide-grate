@@ -32,7 +32,12 @@ export default withAuth(
         }
         
         // Allow public API routes (profile, widget, download, auth debug)
-        if (pathname.startsWith('/api/profile/') || pathname.startsWith('/api/widget/')) {
+        if (
+          pathname.startsWith('/api/profile/') ||
+          pathname.startsWith('/api/public/') ||
+          pathname.startsWith('/api/og/') ||
+          pathname.startsWith('/api/widget/')
+        ) {
           return true
         }
 

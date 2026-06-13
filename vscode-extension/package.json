@@ -1,8 +1,8 @@
 {
   "name": "vs-integrate-tracker",
-  "displayName": "VS Integrate - Coding Activity Tracker",
-  "description": "Track your coding activity and visualize it with beautiful contribution graphs on vs-integrate. Monitor coding hours, languages, streaks, and productivity.",
-  "version": "0.1.1",
+  "displayName": "Cadence - Coding Activity Tracker",
+  "description": "Track real coding activity from VS Code, Cursor, and Antigravity, then visualize sessions, languages, streaks, and productivity in Cadence.",
+  "version": "0.2.0",
   "publisher": "vsintegrate",
   "license": "MIT",
   "repository": {
@@ -43,24 +43,24 @@
     "commands": [
       {
         "command": "vs-integrate.setApiKey",
-        "title": "VS Integrate: Set API Key"
+        "title": "Cadence: Set API Key"
       },
       {
         "command": "vs-integrate.showStatus",
-        "title": "VS Integrate: Show Status"
+        "title": "Cadence: Show Status"
       },
       {
         "command": "vs-integrate.openDashboard",
-        "title": "VS Integrate: Open Dashboard"
+        "title": "Cadence: Open Dashboard"
       }
     ],
     "configuration": {
-      "title": "VS Integrate",
+      "title": "Cadence",
       "properties": {
         "vsIntegrate.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Your VS Integrate API key (get it from your dashboard)"
+          "description": "Your Cadence API key (existing vsi_ keys are supported)"
         },
         "vsIntegrate.apiEndpoint": {
           "type": "string",

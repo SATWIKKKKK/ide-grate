@@ -1,0 +1,6 @@
+{
+  "api_key": "",
+  "endpoint": "https://vs-integrate.vercel.app/api/heartbeat",
+  "debounce_ms": 30000,
+  "idle_timeout": 120
+}

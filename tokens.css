@@ -41,6 +41,7 @@
   --color-chart-3: #7e7576;
   --color-chart-4: #c6c6c7;
   --color-chart-5: #e2e2e3;
+  --grid-line: rgb(0 0 0 / 0.05);
 
   --font-display: "Libre Caslon Text", Georgia, serif;
   --font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -82,4 +83,48 @@
   --radius-pill: 9999px;
   --shadow-panel: 0 20px 50px rgb(26 28 29 / 0.06);
   --shadow-soft: 0 10px 28px rgb(26 28 29 / 0.05);
+}
+
+.dark {
+  --color-surface: #111315;
+  --color-surface-dim: #060708;
+  --color-surface-bright: #191c1f;
+  --color-surface-lowest: #16191b;
+  --color-surface-low: #1b1f22;
+  --color-surface-container: #22272a;
+  --color-surface-high: #2a3034;
+  --color-surface-highest: #333a3f;
+  --color-ink: #f1f3f4;
+  --color-ink-2: #d7dcdf;
+  --color-muted: #a7afb5;
+  --color-rule: #3a4248;
+  --color-rule-2: #6f7b84;
+  --color-inverse: #f1f3f4;
+  --color-inverse-text: #111315;
+  --color-primary: #f1f3f4;
+  --color-primary-text: #111315;
+  --color-primary-container: #e5e8ea;
+  --color-primary-muted: #a7afb5;
+  --color-live: #4ade80;
+  --color-live-soft: #13351f;
+  --color-danger: #ffb4ab;
+  --color-danger-soft: #3b1714;
+  --color-focus: #f1f3f4;
+  --color-paper: var(--color-surface);
+  --color-paper-2: var(--color-surface-low);
+  --color-paper-3: var(--color-surface-highest);
+  --color-paper-glass: rgb(17 19 21 / 0.82);
+  --color-accent: var(--color-primary);
+  --color-accent-2: var(--color-muted);
+  --color-accent-3: var(--color-live);
+  --color-accent-soft: var(--color-surface-container);
+  --color-accent-ink: var(--color-primary-text);
+  --color-chart-1: #f1f3f4;
+  --color-chart-2: #a7afb5;
+  --color-chart-3: #6f7b84;
+  --color-chart-4: #3a4248;
+  --color-chart-5: #22272a;
+  --grid-line: rgb(255 255 255 / 0.06);
+  --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.34);
+  --shadow-soft: 0 10px 28px rgb(0 0 0 / 0.24);
 }
