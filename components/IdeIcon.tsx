@@ -1,4 +1,11 @@
-import { Code2, Cuboid, FileCode2, Keyboard, TerminalSquare } from "lucide-react"
+import {
+  siCursor,
+  siGoogle,
+  siJetbrains,
+  siNeovim,
+  siSublimetext,
+  siZedindustries,
+} from "simple-icons"
 import { IDE_CONFIG, type IdeId } from "@/lib/ide-config"
 
 type Props = {
@@ -6,25 +13,51 @@ type Props = {
   className?: string
 }
 
+type IconDef = {
+  title: string
+  path: string
+  viewBox?: string
+  hex?: string
+}
+
+const vscodeIcon: IconDef = {
+  title: "Visual Studio Code",
+  hex: "007ACC",
+  viewBox: "0 0 24 24",
+  path:
+    "M23.15 2.587 18.21.21a1.494 1.494 0 0 0-1.705.29L7.06 9.122 2.947 6.002a.994.994 0 0 0-1.27.057L.327 7.291a1 1 0 0 0-.002 1.476L3.899 12 .325 15.233a1 1 0 0 0 .002 1.476l1.35 1.232a.994.994 0 0 0 1.27.057l4.113-3.12 9.444 8.622a1.494 1.494 0 0 0 1.705.29l4.94-2.377A1.5 1.5 0 0 0 24 20.06V3.94a1.5 1.5 0 0 0-.85-1.353ZM18 16.93 10.838 12 18 7.07v9.86Z",
+}
+
+const iconMap: Record<IdeId, IconDef> = {
+  vscode: vscodeIcon,
+  cursor: siCursor,
+  antigravity: { ...siGoogle, title: "Google Antigravity" },
+  jetbrains: siJetbrains,
+  zed: siZedindustries,
+  neovim: siNeovim,
+  sublime: siSublimetext,
+}
+
 export default function IdeIcon({ ide, className = "size-5" }: Props) {
-  const color = IDE_CONFIG[ide].color
-  const Icon = ide === "jetbrains"
-    ? Cuboid
-    : ide === "zed"
-      ? Keyboard
-      : ide === "neovim"
-        ? TerminalSquare
-        : ide === "sublime"
-          ? FileCode2
-          : Code2
+  const config = IDE_CONFIG[ide]
+  const icon = iconMap[ide]
+  const color = icon.hex ? `#${icon.hex.replace(/^#/, "")}` : config.color
 
   return (
     <span
       className={`inline-flex items-center justify-center rounded-sm border border-border bg-card ${className}`}
-      style={{ color }}
+      title={icon.title}
       aria-hidden="true"
     >
-      <Icon className="size-[70%]" strokeWidth={2.2} />
+      <svg
+        viewBox={icon.viewBox || "0 0 24 24"}
+        className="size-[72%]"
+        role="img"
+        focusable="false"
+        aria-label={icon.title}
+      >
+        <path fill={color} d={icon.path} />
+      </svg>
     </span>
   )
 }

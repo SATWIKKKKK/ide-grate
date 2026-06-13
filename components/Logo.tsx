@@ -2,10 +2,10 @@ type LogoSize = 'sm' | 'md' | 'lg' | 'xl';
 type LogoTone = 'default' | 'inverted';
 
 const sizes: Record<LogoSize, { mark: string; text: string }> = {
-  sm: { mark: 'size-2', text: 'text-xl' },
-  md: { mark: 'size-2.5', text: 'text-2xl' },
-  lg: { mark: 'size-3', text: 'text-4xl' },
-  xl: { mark: 'size-3.5', text: 'text-5xl' },
+  sm: { mark: 'size-1.5', text: 'text-base' },
+  md: { mark: 'size-2', text: 'text-xl' },
+  lg: { mark: 'size-2.5', text: 'text-2xl' },
+  xl: { mark: 'size-3', text: 'text-3xl' },
 };
 
 export default function Logo({ size = 'sm', tone = 'default' }: { size?: LogoSize; tone?: LogoTone }) {

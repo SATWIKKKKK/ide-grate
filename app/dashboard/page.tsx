@@ -633,7 +633,7 @@ export default function DashboardPage() {
  <img src={session.user.image} alt="" className="mt-1 hidden h-16 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm md:block" />
  )}
  <div className="min-w-0">
- <h1 className="text-[clamp(2.5rem,5vw,4rem)] leading-none">
+ <h1 className="font-sans text-xl font-semibold leading-tight sm:text-2xl">
  Welcome back, <span className="font-mono font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
  </h1>
  <p className="mt-2 text-base text-muted-foreground">
@@ -858,7 +858,7 @@ export default function DashboardPage() {
  </span>
  )}
  </div>
- <p className={`text-3xl min-[380px]:text-4xl sm:text-5xl font-mono font-bold tracking-normal tabular-nums break-words ${
+ <p className={`text-xl min-[380px]:text-2xl sm:text-3xl font-mono font-bold tracking-normal tabular-nums break-words ${
  connectionStatus.connected ? 'text-primary' : 'text-muted-foreground'
  }`}>
  {connectionStatus.connected ? formatTimer(liveSeconds) : '0:00:00'}
@@ -1187,7 +1187,7 @@ export default function DashboardPage() {
  <span className="text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</span>
  <stat.icon className={`w-4 h-4 ${stat.iconClass} opacity-70`} />
  </div>
- <p className="text-2xl sm:text-3xl font-bold tracking-tight">{stat.value}</p>
+ <p className="text-xl sm:text-2xl font-bold tracking-tight">{stat.value}</p>
  <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
  </div>
  </motion.div>
@@ -1288,11 +1288,11 @@ export default function DashboardPage() {
  </div>
  <div className="grid grid-cols-2 gap-3 mb-4">
  <div className="bg-secondary/50 border border-border rounded-xl p-4 text-center">
- <p className="text-3xl font-bold text-primary">{stats?.currentStreak || 0}<span className="text-lg">d</span></p>
+ <p className="text-2xl font-bold text-primary">{stats?.currentStreak || 0}<span className="text-base">d</span></p>
  <p className="text-xs text-muted-foreground mt-1">Current Streak</p>
  </div>
  <div className="bg-secondary/50 rounded-xl p-4 text-center">
- <p className="text-3xl font-bold text-primary">{stats?.longestStreak || 0}<span className="text-lg">d</span></p>
+ <p className="text-2xl font-bold text-primary">{stats?.longestStreak || 0}<span className="text-base">d</span></p>
  <p className="text-xs text-muted-foreground mt-1">Longest Streak</p>
  </div>
  </div>
@@ -1332,7 +1332,7 @@ export default function DashboardPage() {
  </button>
  </div>
  <div className="bg-primary/5 border border-primary/15 rounded-xl p-5 text-center mb-4">
- <p className="text-4xl font-bold text-primary">{formatHours(stats?.hoursToday || 0)}</p>
+ <p className="text-2xl font-bold text-primary">{formatHours(stats?.hoursToday || 0)}</p>
  <p className="text-xs text-muted-foreground mt-1">Coded today</p>
  </div>
  <div className="space-y-3">
@@ -1422,7 +1422,7 @@ export default function DashboardPage() {
  >
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
  <div>
- <h2 className="text-lg font-semibold">Contribution Graph</h2>
+ <h2 className="font-sans text-base font-semibold">Contribution Graph</h2>
  <p className="text-xs text-muted-foreground mt-0.5">{stats?.activeDays || 0} active days in the selected period</p>
  </div>
  {/* Filter bar */}
@@ -1525,7 +1525,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="flex items-center gap-2 text-3xl">
+ <h2 className="flex items-center gap-2 font-sans text-base font-semibold">
  <BarChart3 className="w-4 h-4 text-primary" />
  Top Languages
  </h2>
@@ -1573,7 +1573,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="flex items-center gap-2 text-3xl">
+ <h2 className="flex items-center gap-2 font-sans text-base font-semibold">
  <FolderGit2 className="w-4 h-4 text-primary" />
  Project Breakdown
  </h2>
@@ -1654,7 +1654,7 @@ export default function DashboardPage() {
  className="app-card p-5 mb-8"
  data-gsap="fade-up"
  >
- <h2 className="mb-6 flex items-center gap-2 text-3xl">
+ <h2 className="mb-6 flex items-center gap-2 font-sans text-base font-semibold">
  <TrendingUp className="w-4 h-4 text-primary" />
  Weekly Activity
  </h2>
@@ -1692,7 +1692,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="flex items-center gap-2 text-3xl">
+ <h2 className="flex items-center gap-2 font-sans text-base font-semibold">
  <TrendingUp className="w-4 h-4 text-primary" />
  30-Day Coding Trend
  </h2>
@@ -1749,7 +1749,7 @@ export default function DashboardPage() {
  className="lg:col-span-2 app-card p-5"
  data-gsap="fade-up"
  >
- <h2 className="mb-4 flex items-center gap-2 text-3xl">
+ <h2 className="mb-4 flex items-center gap-2 font-sans text-base font-semibold">
  <Globe2 className="w-4 h-4 text-primary" />
  Language Mix
  </h2>
@@ -1810,7 +1810,7 @@ export default function DashboardPage() {
  data-gsap="fade-up"
  >
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
- <h2 className="flex items-center gap-2 text-3xl">
+ <h2 className="flex items-center gap-2 font-sans text-base font-semibold">
  <BarChart3 className="w-4 h-4 text-primary" />
  Daily Hours
  </h2>
@@ -1871,7 +1871,7 @@ export default function DashboardPage() {
  className="app-card p-5"
  data-gsap="fade-up"
  >
- <h2 className="mb-6 flex items-center gap-2 text-3xl">
+ <h2 className="mb-6 flex items-center gap-2 font-sans text-base font-semibold">
  <Zap className="w-4 h-4 text-[var(--color-accent-3)]" />
  Productivity Breakdown
  </h2>
@@ -1913,7 +1913,7 @@ export default function DashboardPage() {
  className="app-card p-5 mb-8"
  >
  <div className="flex items-center justify-between mb-4">
- <h2 className="flex items-center gap-2 text-3xl">
+ <h2 className="flex items-center gap-2 font-sans text-base font-semibold">
  <Target className="w-4 h-4 text-primary" />
  Goals
  </h2>
@@ -2056,7 +2056,7 @@ export default function DashboardPage() {
  transition={{ delay: 0.52 }}
  className="app-card p-5 mb-8"
  >
- <h2 className="mb-6 flex items-center gap-2 text-3xl">
+ <h2 className="mb-6 flex items-center gap-2 font-sans text-base font-semibold">
  <Trophy className="w-4 h-4 text-primary" />
  Achievements
  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-auto">
@@ -2115,7 +2115,7 @@ export default function DashboardPage() {
  transition={{ delay: 0.52 }}
  className="app-card p-5 mb-8"
  >
- <h2 className="mb-6 flex items-center gap-2 text-3xl">
+ <h2 className="mb-6 flex items-center gap-2 font-sans text-base font-semibold">
  <Trophy className="w-4 h-4 text-primary" />
  Rewards
  <span className="text-xs bg-secondary text-primary px-2 py-0.5 rounded-full ml-auto border border-border">
@@ -2150,7 +2150,7 @@ export default function DashboardPage() {
  transition={{ delay: 0.55 }}
  className="app-card p-5"
  >
- <h2 className="mb-6 flex items-center gap-2 text-3xl">
+ <h2 className="mb-6 flex items-center gap-2 font-sans text-base font-semibold">
  <Trophy className="w-4 h-4 text-primary" />
  Productivity Score
  </h2>
@@ -2175,7 +2175,7 @@ export default function DashboardPage() {
  />
  </svg>
  <div className="absolute inset-0 flex items-center justify-center">
- <span className="text-3xl font-bold">{stats?.productivityScore || 0}</span>
+ <span className="text-2xl font-bold">{stats?.productivityScore || 0}</span>
  </div>
  </div>
  <div className="flex-1 space-y-2">
