@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     return new Response(JSON.stringify(exportData, null, 2), {
       headers: {
         "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="vs-integrate-data-${new Date().toISOString().split('T')[0]}.json"`,
+        "Content-Disposition": `attachment; filename="cadence-data-${new Date().toISOString().split('T')[0]}.json"`,
       },
     })
   } catch (error) {

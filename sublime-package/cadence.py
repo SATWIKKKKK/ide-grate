@@ -28,7 +28,7 @@ def project_hash(window):
 def send_heartbeat(view, connection_test=False):
     cfg = settings()
     api_key = cfg.get("api_key", "")
-    endpoint = cfg.get("endpoint", "https://vs-integrate.vercel.app/api/heartbeat")
+    endpoint = cfg.get("endpoint", "https://cadence.vercel.app/api/heartbeat")
     if not api_key:
         sublime.status_message("Cadence API key is not configured")
         return

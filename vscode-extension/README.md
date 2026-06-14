@@ -6,7 +6,7 @@ Cadence tracks real editor activity from the VS Code extension host family. The 
 - `antigravity` when it includes `antigravity`
 - `vscode` otherwise
 
-Existing command IDs, settings keys, `vsi_` API keys, and endpoint URLs remain compatible.
+Cadence command IDs and settings use the `cadence.*` namespace.
 
 ## Features
 
@@ -21,17 +21,17 @@ Existing command IDs, settings keys, `vsi_` API keys, and endpoint URLs remain c
 1. Open Cadence Dashboard > Setup.
 2. Download the VSIX and install it in VS Code, Cursor, or Antigravity.
 3. Run `Cadence: Set API Key`.
-4. Paste your `vsi_` API key and heartbeat endpoint.
+4. Paste your Cadence API key and heartbeat endpoint.
 5. Run `Cadence: Test Connection`, then verify the selected editor on the Cadence setup page.
 
 ## Configuration
 
 | Setting | Description |
 | --- | --- |
-| `vsIntegrate.apiKey` | Your Cadence API key. Existing `vsi_` keys are supported. |
-| `vsIntegrate.apiEndpoint` | Site URL or full `/api/heartbeat` endpoint. |
-| `vsIntegrate.heartbeatInterval` | Heartbeat interval in seconds. |
-| `vsIntegrate.idleTimeout` | Seconds before the editor is considered idle. |
+| `cadence.apiKey` | Your Cadence API key. |
+| `cadence.apiEndpoint` | Site URL or full `/api/heartbeat` endpoint. |
+| `cadence.heartbeatInterval` | Heartbeat interval in seconds. |
+| `cadence.idleTimeout` | Seconds before the editor is considered idle. |
 
 ## Building
 
@@ -39,4 +39,11 @@ Existing command IDs, settings keys, `vsi_` API keys, and endpoint URLs remain c
 cd vscode-extension
 npm install
 npm run compile
+npx @vscode/vsce package --no-dependencies
+```
+
+From the repository root, install the packaged extension with:
+
+```bash
+code --install-extension .\cadence.vsix --force
 ```

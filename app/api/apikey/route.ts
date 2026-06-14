@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     // Generate a secure random API key
-    const apiKey = `vsi_${crypto.randomBytes(32).toString('hex')}`
+    const apiKey = `cad_${crypto.randomBytes(32).toString('hex')}`
 
     // Update user with new API key
     await prisma.user.update({

@@ -260,7 +260,7 @@ export default function SettingsPage() {
  const url = URL.createObjectURL(blob)
  const a = document.createElement('a')
  a.href = url
- a.download = 'vs-integrate-data.json'
+ a.download = 'cadence-data.json'
  a.click()
  URL.revokeObjectURL(url)
  }
@@ -513,7 +513,7 @@ export default function SettingsPage() {
  <ol className="text-[11px] text-muted-foreground space-y-1 list-decimal list-inside">
  <li>Open the multi-IDE setup guide and choose your editor</li>
  <li>Install the VSIX, native plugin, or companion path shown there</li>
- <li>Paste your existing <code className="text-primary bg-secondary px-1 rounded">vsi_</code> API key</li>
+ <li>Paste your Cadence API key</li>
  <li>Use endpoint: <code className="text-primary bg-secondary px-1 rounded">/api/heartbeat</code></li>
  </ol>
  </div>
@@ -588,12 +588,12 @@ export default function SettingsPage() {
  ))}
  <div className="mt-3">
  <a
- href="/downloads/extension.vsix"
- download="cadence-extension.vsix"
+ href="/api/download/vsix"
+ download="cadence.vsix"
  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary rounded-lg text-xs text-primary-foreground font-medium transition-colors"
  >
  <Download className="w-3.5 h-3.5" />
- Download .vsix Extension
+ Download cadence.vsix
  </a>
  </div>
  </div>

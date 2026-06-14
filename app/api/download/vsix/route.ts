@@ -12,19 +12,19 @@ export async function GET(request: NextRequest) {
 
   // Try to serve from public folder directly with proper headers
   try {
-    const filePath = join(process.cwd(), 'public', 'downloads', 'extension.vsix')
+    const filePath = join(process.cwd(), 'public', 'downloads', 'cadence.vsix')
     const fileBuffer = await readFile(filePath)
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': 'application/octet-stream',
-        'Content-Disposition': 'attachment; filename="vs-integrate-extension.vsix"',
+        'Content-Disposition': 'attachment; filename="cadence.vsix"',
         'Content-Length': fileBuffer.length.toString(),
       },
     })
   } catch {
     // Fallback: redirect to GitHub releases
     return NextResponse.redirect(
-      'https://github.com/SATWIKKKKK/ide-grate/raw/main/public/downloads/extension.vsix'
+      'https://github.com/SATWIKKKKK/ide-grate/raw/main/public/downloads/cadence.vsix'
     )
   }
 }

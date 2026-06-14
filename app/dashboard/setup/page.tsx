@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { AlertCircle, CheckCircle2, KeyRound, RefreshCw } from 'lucide-react'
+import { AlertCircle, ArrowRight, CheckCircle2, KeyRound, RefreshCw } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import AppFooter from '@/components/AppFooter'
 import IdeIcon from '@/components/IdeIcon'
 import IdeSelector from '@/components/IdeSelector'
 import IdeSetupPanel from '@/components/IdeSetupPanel'
 import { IDE_CONFIG, IDE_OPTIONS, isIdeId, type IdeId, type IdeSelection } from '@/lib/ide-config'
+import { getIdeSetupGuide } from '@/lib/ide-setup-guides'
 
 type SetupRow = {
   id: IdeId
@@ -35,6 +36,7 @@ export default function DashboardSetupPage() {
 
   const selectedIde = selected === 'combined' ? 'vscode' : selected
   const selectedRow = rows.find((row) => row.id === selectedIde)
+  const selectedGuide = useMemo(() => getIdeSetupGuide(selectedIde), [selectedIde])
 
   const statuses = useMemo(() => rows.map((row) => ({
     id: row.id,
@@ -173,7 +175,7 @@ export default function DashboardSetupPage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="signal-kicker">Integrations</p>
-                <h2 className="font-sans text-lg font-semibold">Seven first-class targets</h2>
+                <h2 className="font-sans text-lg font-semibold">Seven Cadence targets</h2>
               </div>
               <div className="sm:hidden">
                 <IdeSelector value={selected} onChange={setSelected} statuses={statuses} includeCombined={false} />
@@ -222,6 +224,38 @@ export default function DashboardSetupPage() {
                 })}
               </div>
             )}
+
+            <div className="mt-5 rounded-xl border border-border bg-background/70 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <IdeIcon ide={selectedIde} className="size-9" />
+                  <div className="min-w-0">
+                    <p className="signal-kicker">selected setup path</p>
+                    <h3 className="font-sans text-base font-semibold">{IDE_CONFIG[selectedIde].shortName}</h3>
+                  </div>
+                </div>
+                <p className="max-w-md text-xs leading-relaxed text-muted-foreground">{selectedGuide.summary}</p>
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-4">
+                {selectedGuide.steps.map((step, index) => (
+                  <div key={`${selectedIde}-${step.title}`} className="relative">
+                    {index < selectedGuide.steps.length - 1 && (
+                      <ArrowRight className="absolute -right-4 top-9 z-10 hidden size-5 text-primary/70 lg:block" />
+                    )}
+                    <div className="h-full rounded-lg border border-border bg-secondary/55 p-3">
+                      <div className="mb-3 flex items-center gap-2">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                          {index + 1}
+                        </span>
+                        <p className="font-sans text-sm font-semibold">{step.title}</p>
+                      </div>
+                      <p className="text-xs leading-relaxed text-muted-foreground">{step.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <aside className="space-y-3" data-gsap="fade-up">

@@ -66,7 +66,7 @@ providers.push(
             email: credentials.email,
             name: credentials.name || credentials.email.split("@")[0],
             password: hashedPassword,
-            apiKey: `vsi_${crypto.randomBytes(32).toString("hex")}`,
+            apiKey: `cad_${crypto.randomBytes(32).toString("hex")}`,
           },
         })
 

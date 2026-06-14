@@ -1,4 +1,4 @@
-# VS-Integrate - Track Your Real Coding Activity
+# Cadence - Track Your Real Coding Activity
 
 A full-stack Next.js application that visualizes your VS Code coding activity with GitHub-style contribution graphs, streaks, and productivity insights.
 
@@ -52,7 +52,7 @@ cp .env.example .env.local
 
 3. Update `.env.local` with your configuration:
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/vsintegrate"
+DATABASE_URL="postgresql://user:password@localhost:5432/cadence"
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 
@@ -90,7 +90,7 @@ npm run compile
 
 3. Configure:
    - Sign in to the dashboard and generate an API key
-   - In VS Code: `Ctrl+Shift+P` → "VS Integrate: Set API Key"
+   - In VS Code: `Ctrl+Shift+P` -> "Cadence: Set API Key"
 
 ## Project Structure
 

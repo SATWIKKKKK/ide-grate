@@ -24,15 +24,15 @@ function InstallTabs() {
 
   return (
     <div className="space-y-3">
-      <a href={`${siteUrl}/api/download/vsix`} download="cadence-extension.vsix" className="signal-button w-full">
+      <a href={`${siteUrl}/api/download/vsix`} download="cadence.vsix" className="signal-button w-full">
         <Download className="size-4" />
-        Download .vsix file
+        Download cadence.vsix
       </a>
       <div className="space-y-2">
         {[
           'Open VS Code, Cursor, or Antigravity extensions.',
           'Choose Install from VSIX from the menu.',
-          'Select the downloaded .vsix file.',
+          'Select the downloaded cadence.vsix file.',
         ].map((text, i) => (
           <div key={i} className="flex items-start gap-2.5 rounded-md border border-border bg-background/65 p-2">
             <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-accent font-mono text-[10px] font-semibold text-primary">{i + 1}</span>

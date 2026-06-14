@@ -11,14 +11,14 @@ Current public Zed extension capabilities do not expose reliable general buffer-
 
 ```bash
 python companion/cadence_zed_heartbeat.py \
-  --api-key vsi_your_key \
+  --api-key cad_your_key \
   --endpoint https://your-cadence-site.com/api/heartbeat
 ```
 
 Connection test:
 
 ```bash
-python companion/cadence_zed_heartbeat.py --api-key vsi_your_key --test
+python companion/cadence_zed_heartbeat.py --api-key cad_your_key --test
 ```
 
 Marketplace publishing/signing is separate release work.
