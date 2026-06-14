@@ -3,10 +3,8 @@
 import {
   ArrowRight,
   BarChart3,
-  CheckCircle2,
   EyeOff,
   LayoutDashboard,
-  Lock,
   Timer,
   Zap,
 } from 'lucide-react';
@@ -20,7 +18,7 @@ import { IDE_OPTIONS } from '@/lib/ide-config';
 const featureCards = [
   { icon: Timer, title: 'Multi-IDE sessions', text: 'Track focused editor time from VS Code, Cursor, Antigravity, JetBrains, Zed, Neovim, and Sublime Text.' },
   { icon: BarChart3, title: 'Combined analytics', text: 'See one dashboard for the whole stack, then filter down to a single editor when you need detail.' },
-  { icon: Zap, title: 'Setup path', text: 'Use the existing VSIX where it fits, native plugins where available, and a companion path for Zed.' },
+  { icon: Zap, title: 'One API key', text: 'Use one Cadence key across the VS Code-family package, native plugins, and the Zed companion path.' },
   { icon: EyeOff, title: 'Privacy boundary', text: 'Cadence sends metadata only: time, language, platform, and anonymized project hash.' },
 ];
 
@@ -58,9 +56,9 @@ export default function Hero() {
 
   return (
     <div className="page-shell">
-      <section className="signal-container grid min-h-[calc(100vh-4rem)] grid-cols-1 items-center gap-12 py-14 lg:grid-cols-[0.95fr_1.05fr] lg:py-20">
-        <header className="min-w-0 lg:pt-8" data-gsap="fade-up">
-          <h1 className="font-display max-w-3xl text-[clamp(3.25rem,7.2vw,4.5rem)] font-normal leading-[0.96]">
+      <section className="signal-container grid min-h-[calc(100vh-4rem)] grid-cols-1 items-center gap-12 py-14 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 lg:py-20">
+        <header className="min-w-0" data-gsap="fade-up">
+          <h1 className="font-display max-w-3xl text-4xl font-normal leading-[1.04] sm:text-5xl lg:text-5xl">
             Track real coding activity across your editors.
           </h1>
           <p className="signal-copy mt-6 max-w-xl">
@@ -75,32 +73,26 @@ export default function Hero() {
               See setup
             </Link>
           </div>
-          <div className="mt-8 grid max-w-lg grid-cols-3 gap-2" data-gsap-stagger>
-            {[
-              ['7 IDEs', 'first-class targets'],
-              ['No code', 'content collected'],
-              ['Live', 'heartbeat status'],
-            ].map(([value, label]) => (
-              <div key={value} className="rounded-sm border border-border bg-card p-3" data-gsap-item>
-                <p className="font-mono text-xs uppercase tracking-[0.05em] text-muted-foreground">{label}</p>
-                <p className="mt-2 font-mono text-sm font-semibold text-[var(--color-live)]">{value}</p>
-              </div>
-            ))}
+          <div className="mt-8 flex max-w-full flex-wrap items-center gap-2" aria-label="Supported editors">
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">works with -</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {IDE_OPTIONS.map((ide) => (
+                <span key={ide.id} className="group relative inline-flex" title={ide.shortName} aria-label={ide.shortName}>
+                  <span className="flex size-8 items-center justify-center rounded-full border border-border bg-card transition-colors hover:border-primary">
+                    <IdeIcon ide={ide.id} className="size-5" />
+                  </span>
+                  <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-popover px-2 py-1 font-mono text-[10px] text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                    {ide.shortName}
+                  </span>
+                </span>
+              ))}
+            </div>
           </div>
         </header>
 
         <section className="signal-panel min-w-0 p-6" data-gsap="fade-up" aria-label="Dashboard preview">
-          <div className="mb-4 flex items-start justify-between border-b border-border pb-4">
-            <div>
-              <p className="font-mono text-xl font-bold text-foreground">know your limits</p>
-            </div>
-            <div className="hidden max-w-52 flex-wrap justify-end gap-1.5 sm:flex">
-              {IDE_OPTIONS.map((ide) => (
-                <span key={ide.id} title={ide.shortName}>
-                  <IdeIcon ide={ide.id} className="size-7" />
-                </span>
-              ))}
-            </div>
+          <div className="mb-4 border-b border-border pb-4">
+            <p className="font-mono text-sm font-semibold uppercase tracking-[0.12em] text-foreground">YOUR CODE. YOUR CONTRIBUTIONS.</p>
           </div>
           <ContributionGraph />
         </section>
@@ -109,7 +101,7 @@ export default function Hero() {
       <section id="features" className="border-t border-border py-20">
         <div className="signal-container">
           <div className="mb-12 max-w-2xl" data-gsap="fade-up">
-            <p className="signal-kicker">dashboard signals</p>
+            <p className="signal-kicker">FEATURES</p>
             <h2 className="mt-3 font-display text-3xl font-normal sm:text-4xl">Built for people who work across more than one editor.</h2>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-gsap-stagger>
@@ -149,30 +141,6 @@ export default function Hero() {
               </article>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section id="privacy" className="border-t border-border py-20">
-        <div className="signal-container grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <article className="app-card p-8" data-gsap="fade-up">
-            <Lock className="mb-8 size-7 text-[var(--color-live)]" />
-            <p className="signal-kicker">privacy boundary</p>
-            <h2 className="mt-3 font-display text-3xl font-normal sm:text-4xl">Analytics, not surveillance.</h2>
-            <p className="mt-6 max-w-xl text-muted-foreground">
-              Cadence tracks activity metadata only. It does not collect source code, file contents, keystrokes, file names, or repository paths.
-            </p>
-          </article>
-          <article className="app-card p-8" data-gsap-stagger>
-            <h3 className="font-display text-3xl font-normal">Tracked signals</h3>
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {['Session duration', 'Programming language', 'Platform', 'Anonymized project hash', 'Daily contribution totals', 'Goal progress'].map((item) => (
-                <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground" data-gsap-item>
-                  <CheckCircle2 className="size-4 shrink-0 text-[var(--color-live)]" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </article>
         </div>
       </section>
 

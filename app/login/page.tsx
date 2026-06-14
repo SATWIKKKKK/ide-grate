@@ -53,23 +53,23 @@ function LoginContent() {
 
   return (
     <AuthShell mode="login" title="Welcome back" subtitle="Sign in to continue tracking your coding activity.">
-      <div className="p-4 sm:p-5">
+      <div className="p-3 sm:p-4">
         {(error || loginError) && (
-          <div className="mb-4 rounded-md border border-destructive/30 bg-[var(--color-danger-soft)] p-3 text-center text-sm text-destructive">
+          <div className="mb-3 rounded-md border border-destructive/30 bg-[var(--color-danger-soft)] p-2 text-center text-xs text-destructive">
             {error === 'OAuthAccountNotLinked'
               ? 'Linking your account. Please try signing in again.'
               : loginError || 'An error occurred during sign in. Please try again.'}
           </div>
         )}
 
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {oauthButtons.map(({ id, name, Icon }) => (
             <Button
               key={id}
               variant="outline"
               onClick={() => handleSignIn(id)}
               disabled={isLoading !== null}
-              className="h-9 w-full justify-center gap-3 bg-background"
+              className="h-8 w-full justify-center gap-2 bg-background text-xs sm:text-sm"
               title={`Sign in with ${name}`}
             >
               {isLoading === id ? (
@@ -84,7 +84,7 @@ function LoginContent() {
           ))}
         </div>
 
-        <div className="relative my-4">
+        <div className="relative my-3">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border" />
           </div>
@@ -93,14 +93,14 @@ function LoginContent() {
           </div>
         </div>
 
-        <form onSubmit={handleEmailLogin} className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-muted-foreground">Email</Label>
-            <Input id="email" type="email" value={devEmail} onChange={(e) => setDevEmail(e.target.value)} placeholder="you@example.com" required className="h-10" />
+        <form onSubmit={handleEmailLogin} className="space-y-2.5">
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
+            <Input id="email" type="email" value={devEmail} onChange={(e) => setDevEmail(e.target.value)} placeholder="you@example.com" required className="h-9" />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-muted-foreground">Password</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs text-muted-foreground">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -109,7 +109,7 @@ function LoginContent() {
                 onChange={(e) => setDevPassword(e.target.value)}
                 placeholder="Password"
                 required
-                className="h-10 pr-11"
+                className="h-9 pr-11"
               />
               <button
                 type="button"
@@ -122,7 +122,7 @@ function LoginContent() {
             </div>
           </div>
 
-          <Button type="submit" disabled={isLoading !== null || !devEmail || !devPassword} className="h-9 w-full">
+          <Button type="submit" disabled={isLoading !== null || !devEmail || !devPassword} className="h-8 w-full text-xs sm:text-sm">
             {isLoading === 'credentials' ? (
               <span className="size-5 rounded-full border-2 border-background/30 border-t-background animate-spin" />
             ) : (
@@ -135,7 +135,7 @@ function LoginContent() {
         </form>
       </div>
 
-      <div className="border-t border-border px-6 py-2.5 text-center text-sm text-muted-foreground">
+      <div className="border-t border-border px-5 py-2 text-center text-xs text-muted-foreground sm:text-sm">
         Don&apos;t have an account?{' '}
         <Link href="/signup" className="font-semibold text-primary hover:text-foreground">
           Sign up

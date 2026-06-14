@@ -74,23 +74,23 @@ function SignUpContent() {
 
   return (
     <AuthShell mode="signup" title="Create account" subtitle="Start tracking editor time, streaks, goals, and language stats.">
-      <div className="p-4 sm:p-5">
+      <div className="p-3 sm:p-4">
         {error && (
-          <div className="mb-4 rounded-md border border-destructive/30 bg-[var(--color-danger-soft)] p-3 text-center text-sm text-destructive">
+          <div className="mb-3 rounded-md border border-destructive/30 bg-[var(--color-danger-soft)] p-2 text-center text-xs text-destructive">
             {error === 'OAuthAccountNotLinked'
               ? 'This email is already registered with a different provider.'
               : 'An error occurred during sign up. Please try again.'}
           </div>
         )}
 
-        <form onSubmit={handleDevSignUp} className="space-y-2.5">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-muted-foreground">Full name</Label>
-            <Input id="name" type="text" value={devName} onChange={(e) => setDevName(e.target.value)} placeholder="Ada Lovelace" required className="h-10" />
+        <form onSubmit={handleDevSignUp} className="space-y-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-xs text-muted-foreground">Full name</Label>
+            <Input id="name" type="text" value={devName} onChange={(e) => setDevName(e.target.value)} placeholder="Ada Lovelace" required className="h-9" />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-muted-foreground">Email</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
             <Input
               id="email"
               type="email"
@@ -103,7 +103,7 @@ function SignUpContent() {
               }}
               placeholder="you@example.com"
               required
-              className="h-10"
+              className="h-9"
             />
           </div>
 
@@ -136,7 +136,7 @@ function SignUpContent() {
             }}
           />
 
-          <Button type="submit" disabled={isLoading !== null || !isFormValid} className="h-9 w-full">
+          <Button type="submit" disabled={isLoading !== null || !isFormValid} className="h-8 w-full text-xs sm:text-sm">
             {isLoading === 'credentials' ? (
               <span className="size-5 rounded-full border-2 border-background/30 border-t-background animate-spin" />
             ) : (
@@ -148,7 +148,7 @@ function SignUpContent() {
           </Button>
         </form>
 
-        <div className="relative my-3">
+        <div className="relative my-2.5">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border" />
           </div>
@@ -157,7 +157,7 @@ function SignUpContent() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
           {[
             { id: 'github', name: 'GitHub', Icon: Github },
             { id: 'google', name: 'Google', Icon: GoogleIcon },
@@ -167,7 +167,7 @@ function SignUpContent() {
               variant="outline"
               onClick={() => handleSignIn(id)}
               disabled={isLoading !== null}
-              className="h-9 w-full justify-center gap-2 bg-background text-sm"
+              className="h-8 w-full justify-center gap-2 bg-background text-xs sm:text-sm"
               title={`Sign up with ${name}`}
             >
               {isLoading === id ? (
@@ -183,7 +183,7 @@ function SignUpContent() {
         </div>
       </div>
 
-      <div className="border-t border-border px-6 py-2.5 text-center text-sm text-muted-foreground">
+      <div className="border-t border-border px-5 py-2 text-center text-xs text-muted-foreground sm:text-sm">
         Already have an account?{' '}
         <Link href="/login" className="font-semibold text-primary hover:text-foreground">
           Sign in
@@ -213,8 +213,8 @@ function PasswordField({
   placeholder: string
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-muted-foreground">{label}</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
           id={id}
@@ -224,7 +224,7 @@ function PasswordField({
           placeholder={placeholder}
           required
           minLength={8}
-          className="h-10 pr-11"
+          className="h-9 pr-11"
           aria-invalid={Boolean(error)}
         />
         <button
@@ -236,7 +236,7 @@ function PasswordField({
           {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </button>
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
     </div>
   )
 }
