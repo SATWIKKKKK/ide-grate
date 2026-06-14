@@ -48,9 +48,10 @@
   --color-contrib-4: #16a34a;
   --grid-line: rgb(0 0 0 / 0.05);
 
-  --font-display: "Libre Caslon Text", Georgia, serif;
   --font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono-ui: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono-ui: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-welcome: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;

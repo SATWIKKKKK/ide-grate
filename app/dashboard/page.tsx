@@ -586,8 +586,8 @@ export default function DashboardPage() {
  <img src={session.user.image} alt="" className="mt-1 hidden h-16 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm md:block" />
  )}
  <div className="min-w-0">
- <h1 className="font-sans text-xl font-semibold leading-tight sm:text-2xl">
- Welcome back, <span className="font-mono font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
+ <h1 className="text-xl font-semibold leading-tight sm:text-2xl" style={{ fontFamily: 'var(--font-welcome)' }}>
+ Welcome back, <span className="font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
  </h1>
  <p className="mt-2 text-base text-muted-foreground">
  {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today in ${idePrefix}` : `Start coding to see ${idePrefix} stats`}
