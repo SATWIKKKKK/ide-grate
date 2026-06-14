@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { CheckCircle2, Code2, Radio, Shield } from 'lucide-react'
 import Logo from '@/components/Logo'
 
 export function GoogleIcon({ className }: { className?: string }) {
@@ -17,7 +16,6 @@ export function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function AuthShell({
-  mode,
   title,
   subtitle,
   children,
@@ -27,39 +25,19 @@ export function AuthShell({
   subtitle: string
   children: ReactNode
 }) {
-  const isSignup = mode === 'signup'
-
   return (
     <div className="page-shell h-svh overflow-y-auto px-3 py-4 sm:px-4 sm:py-5">
-      <section className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-[390px] flex-col justify-center py-1 sm:min-h-[calc(100svh-2.5rem)]" data-gsap="fade-up">
+      <section className="mx-auto flex min-h-[calc(100svh-2rem)] w-full max-w-[390px] flex-col justify-center py-1 font-sans sm:min-h-[calc(100svh-2.5rem)]" data-gsap="fade-up">
         <Link href="/" className="mb-1.5 flex items-center justify-center">
           <Logo size="sm" />
         </Link>
         <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="border-b border-border bg-[var(--color-surface-bright)] p-3 text-center sm:p-3.5">
-              <div className="mx-auto mb-2 flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                {isSignup ? <Radio className="size-4" /> : <Code2 className="size-4" />}
-              </div>
-              <h1 className="font-sans text-xl font-semibold">{title}</h1>
-              <p className="mx-auto mt-1 max-w-xs text-[11px] leading-relaxed text-muted-foreground">{subtitle}</p>
+          <div className="border-b border-border bg-[var(--color-surface-bright)] p-4 text-center sm:p-5">
+              <h1 className="font-sans text-[1.35rem] font-semibold leading-tight sm:text-[1.5rem]">{title}</h1>
+              <p className="mx-auto mt-2 max-w-xs font-sans text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
           </div>
           {children}
         </div>
-          <div className={`${isSignup ? 'hidden' : 'mt-2 flex'} flex-wrap justify-center gap-1.5 text-[10px] text-muted-foreground`}>
-            {[
-              { icon: Shield, label: 'No code access' },
-              { icon: CheckCircle2, label: 'Private by default' },
-              { icon: Radio, label: 'Live heartbeat' },
-            ].map((item) => {
-              const Icon = item.icon
-              return (
-                <div key={item.label} className="flex items-center justify-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 font-mono">
-                  <Icon className="size-3 text-muted-foreground" />
-                  <span>{item.label}</span>
-                </div>
-              )
-            })}
-          </div>
       </section>
     </div>
   )

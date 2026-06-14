@@ -11,6 +11,7 @@ import { IDE_CONFIG, type IdeId } from "@/lib/ide-config"
 type Props = {
   ide: IdeId
   className?: string
+  bare?: boolean
 }
 
 type IconDef = {
@@ -38,10 +39,24 @@ const iconMap: Record<IdeId, IconDef> = {
   sublime: siSublimetext,
 }
 
-export default function IdeIcon({ ide, className = "size-5" }: Props) {
+export default function IdeIcon({ ide, className = "size-5", bare = false }: Props) {
   const config = IDE_CONFIG[ide]
   const icon = iconMap[ide]
   const color = icon.hex ? `#${icon.hex.replace(/^#/, "")}` : config.color
+
+  if (bare) {
+    return (
+      <svg
+        viewBox={icon.viewBox || "0 0 24 24"}
+        className={className}
+        role="img"
+        focusable="false"
+        aria-label={icon.title}
+      >
+        <path fill={color} d={icon.path} />
+      </svg>
+    )
+  }
 
   return (
     <span

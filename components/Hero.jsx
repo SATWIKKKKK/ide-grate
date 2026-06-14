@@ -78,8 +78,8 @@ export default function Hero() {
             <div className="flex flex-wrap items-center gap-1.5">
               {IDE_OPTIONS.map((ide) => (
                 <span key={ide.id} className="group relative inline-flex" title={ide.shortName} aria-label={ide.shortName}>
-                  <span className="flex size-8 items-center justify-center rounded-full border border-border bg-card transition-colors hover:border-primary">
-                    <IdeIcon ide={ide.id} className="size-5" />
+                  <span className="flex size-8 items-center justify-center transition-transform hover:scale-110">
+                    <IdeIcon ide={ide.id} bare className="size-6" />
                   </span>
                   <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-popover px-2 py-1 font-mono text-[10px] text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                     {ide.shortName}

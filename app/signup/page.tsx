@@ -83,14 +83,14 @@ function SignUpContent() {
           </div>
         )}
 
-        <form onSubmit={handleDevSignUp} className="space-y-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-xs text-muted-foreground">Full name</Label>
-            <Input id="name" type="text" value={devName} onChange={(e) => setDevName(e.target.value)} placeholder="Ada Lovelace" required className="h-9" />
+        <form onSubmit={handleDevSignUp} className="space-y-3">
+          <div className="space-y-2.5">
+            <Label htmlFor="name" className="block font-sans text-sm font-medium normal-case leading-normal tracking-normal text-muted-foreground">Full name</Label>
+            <Input id="name" type="text" value={devName} onChange={(e) => setDevName(e.target.value)} placeholder="Ada Lovelace" required className="h-10 font-sans text-sm" />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
+          <div className="space-y-2.5">
+            <Label htmlFor="email" className="block font-sans text-sm font-medium normal-case leading-normal tracking-normal text-muted-foreground">Email</Label>
             <Input
               id="email"
               type="email"
@@ -103,7 +103,7 @@ function SignUpContent() {
               }}
               placeholder="you@example.com"
               required
-              className="h-9"
+              className="h-10 font-sans text-sm"
             />
           </div>
 
@@ -136,7 +136,7 @@ function SignUpContent() {
             }}
           />
 
-          <Button type="submit" disabled={isLoading !== null || !isFormValid} className="h-8 w-full text-xs sm:text-sm">
+          <Button type="submit" disabled={isLoading !== null || !isFormValid} className="h-10 w-full font-sans text-sm">
             {isLoading === 'credentials' ? (
               <span className="size-5 rounded-full border-2 border-background/30 border-t-background animate-spin" />
             ) : (
@@ -153,7 +153,7 @@ function SignUpContent() {
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="bg-card px-3 font-mono text-muted-foreground">or continue with</span>
+            <span className="bg-card px-3 font-sans text-sm text-muted-foreground">or continue with</span>
           </div>
         </div>
 
@@ -167,23 +167,21 @@ function SignUpContent() {
               variant="outline"
               onClick={() => handleSignIn(id)}
               disabled={isLoading !== null}
-              className="h-8 w-full justify-center gap-2 bg-background text-xs sm:text-sm"
+              className="h-10 w-full justify-center bg-background"
               title={`Sign up with ${name}`}
+              aria-label={`Sign up with ${name}`}
             >
               {isLoading === id ? (
                 <span className="size-5 rounded-full border-2 border-current/30 border-t-current animate-spin" />
               ) : (
-                <>
-                  <Icon className="size-5" />
-                  Continue with {name}
-                </>
+                <Icon className="size-5" />
               )}
             </Button>
           ))}
         </div>
       </div>
 
-      <div className="border-t border-border px-5 py-2 text-center text-xs text-muted-foreground sm:text-sm">
+      <div className="border-t border-border px-5 py-3 text-center font-sans text-sm text-muted-foreground">
         Already have an account?{' '}
         <Link href="/login" className="font-semibold text-primary hover:text-foreground">
           Sign in
@@ -213,8 +211,8 @@ function PasswordField({
   placeholder: string
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">{label}</Label>
+    <div className="space-y-2.5">
+      <Label htmlFor={id} className="block font-sans text-sm font-medium normal-case leading-normal tracking-normal text-muted-foreground">{label}</Label>
       <div className="relative">
         <Input
           id={id}
@@ -224,7 +222,7 @@ function PasswordField({
           placeholder={placeholder}
           required
           minLength={8}
-          className="h-9 pr-11"
+          className="h-10 pr-11 font-sans text-sm"
           aria-invalid={Boolean(error)}
         />
         <button

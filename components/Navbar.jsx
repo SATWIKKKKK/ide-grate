@@ -48,12 +48,12 @@ export default function Navbar(props) {
   return (
     <nav className="sticky top-0 z-50 h-16 border-b border-border bg-[var(--color-paper-glass)] backdrop-blur-xl">
       <div className="signal-container">
-        <div className="flex h-16 items-center justify-between gap-3">
+        <div className="relative flex h-16 items-center justify-between gap-3">
           <Link href={session ? '/dashboard' : '/'} className="inline-flex shrink-0 rounded-md">
             <Logo size="sm" />
           </Link>
 
-          <div className="hidden h-full items-end gap-8 md:flex">
+          <div className={`${session ? 'hidden h-full items-end gap-8 md:flex' : 'absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-end gap-8 md:flex'}`}>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
