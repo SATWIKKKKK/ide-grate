@@ -238,11 +238,11 @@ function PublicContributionGraph({ contributions }: { contributions: Record<stri
   startDate.setDate(startDate.getDate() - startDate.getDay())
 
   const getColor = (hours: number): string => {
-    if (!hours || hours === 0) return 'var(--color-paper-3)'
-    if (hours < 1) return 'color-mix(in oklch, var(--color-accent) 28%, var(--color-paper-3))'
-    if (hours < 2) return 'color-mix(in oklch, var(--color-accent) 52%, var(--color-paper-3))'
-    if (hours < 4) return 'color-mix(in oklch, var(--color-accent) 76%, var(--color-paper-3))'
-    return 'var(--color-accent)'
+    if (!hours || hours === 0) return 'var(--color-contrib-0)'
+    if (hours < 1) return 'var(--color-contrib-1)'
+    if (hours < 2) return 'var(--color-contrib-2)'
+    if (hours < 4) return 'var(--color-contrib-3)'
+    return 'var(--color-contrib-4)'
   }
 
   const weekColumns = []

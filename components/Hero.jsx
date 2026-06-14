@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
-  Code2,
   EyeOff,
   LayoutDashboard,
   Lock,
@@ -60,16 +59,12 @@ export default function Hero() {
   return (
     <div className="page-shell">
       <section className="signal-container grid min-h-[calc(100vh-4rem)] grid-cols-1 items-center gap-12 py-14 lg:grid-cols-[0.95fr_1.05fr] lg:py-20">
-        <header className="min-w-0" data-gsap="fade-up">
-          <p className="signal-kicker">
-            <Code2 className="size-4 text-[var(--color-live)]" />
-            Cadence Feature Stack
-          </p>
-          <h1 className="mt-5 max-w-3xl text-[clamp(3.25rem,7.2vw,4.5rem)] leading-[0.96]">
+        <header className="min-w-0 lg:pt-8" data-gsap="fade-up">
+          <h1 className="font-display max-w-3xl text-[clamp(3.25rem,7.2vw,4.5rem)] font-normal leading-[0.96]">
             Track real coding activity across your editors.
           </h1>
           <p className="signal-copy mt-6 max-w-xl">
-            Cadence turns editor heartbeats into sessions, focus time, streaks, language mix, and daily progress without reading your source code.
+            Cadence turns editor activity into sessions, focus time, streaks, language mix, and daily progress without reading your source code.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/signup" className="signal-button px-6">
@@ -97,8 +92,7 @@ export default function Hero() {
         <section className="signal-panel min-w-0 p-6" data-gsap="fade-up" aria-label="Dashboard preview">
           <div className="mb-4 flex items-start justify-between border-b border-border pb-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">today&apos;s signal</p>
-              <p className="font-mono text-xl font-bold text-foreground">editor heartbeats</p>
+              <p className="font-mono text-xl font-bold text-foreground">know your limits</p>
             </div>
             <div className="hidden max-w-52 flex-wrap justify-end gap-1.5 sm:flex">
               {IDE_OPTIONS.map((ide) => (
@@ -116,7 +110,7 @@ export default function Hero() {
         <div className="signal-container">
           <div className="mb-12 max-w-2xl" data-gsap="fade-up">
             <p className="signal-kicker">dashboard signals</p>
-            <h2 className="mt-3 text-3xl sm:text-4xl">Built for people who work across more than one editor.</h2>
+            <h2 className="mt-3 font-display text-3xl font-normal sm:text-4xl">Built for people who work across more than one editor.</h2>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-gsap-stagger>
             {featureCards.map((item) => {
@@ -133,18 +127,43 @@ export default function Hero() {
         </div>
       </section>
 
+      <section id="how-it-works" className="border-t border-border py-20">
+        <div className="signal-container">
+          <div className="mb-12 max-w-2xl" data-gsap="fade-up">
+            <p className="signal-kicker">how it works</p>
+            <h2 className="mt-3 font-display text-3xl font-normal sm:text-4xl">From editor event to dashboard signal.</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3" data-gsap-stagger>
+            {[
+              ['01', 'Choose your editor', 'Pick VS Code, Cursor, Antigravity, JetBrains, Zed, Neovim, or Sublime from setup. Cadence keeps that selection on refresh.'],
+              ['02', 'Install the matching integration', 'Use the VS Code-family package, the JetBrains/Sublime/Neovim plugin path, or the Zed companion process shown for that editor.'],
+              ['03', 'Add your Cadence key', 'Generate one key, paste it into the editor integration, and keep the heartbeat endpoint pointed at your Cadence site.'],
+              ['04', 'Run the connection test', 'Each setup path includes the exact test command or menu action. The dashboard waits for a real heartbeat before showing connected.'],
+              ['05', 'Code normally', 'Cadence receives time, language, platform, and anonymous project metadata. It does not read file contents or source paths.'],
+              ['06', 'Review your limits', 'Your dashboard rolls those heartbeats into today total, contribution density, language mix, streaks, goals, and per-IDE activity.'],
+            ].map(([step, title, text]) => (
+              <article key={step} className="app-card p-6" data-gsap-item>
+                <p className="font-mono text-xs font-semibold text-[var(--color-live)]">{step}</p>
+                <h3 className="mt-5 font-sans text-base font-semibold leading-snug">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="privacy" className="border-t border-border py-20">
         <div className="signal-container grid grid-cols-1 gap-4 lg:grid-cols-2">
           <article className="app-card p-8" data-gsap="fade-up">
             <Lock className="mb-8 size-7 text-[var(--color-live)]" />
             <p className="signal-kicker">privacy boundary</p>
-            <h2 className="mt-3 text-3xl sm:text-4xl">Analytics, not surveillance.</h2>
+            <h2 className="mt-3 font-display text-3xl font-normal sm:text-4xl">Analytics, not surveillance.</h2>
             <p className="mt-6 max-w-xl text-muted-foreground">
               Cadence tracks activity metadata only. It does not collect source code, file contents, keystrokes, file names, or repository paths.
             </p>
           </article>
           <article className="app-card p-8" data-gsap-stagger>
-            <h3 className="text-3xl">Tracked signals</h3>
+            <h3 className="font-display text-3xl font-normal">Tracked signals</h3>
             <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {['Session duration', 'Programming language', 'Platform', 'Anonymized project hash', 'Daily contribution totals', 'Goal progress'].map((item) => (
                 <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground" data-gsap-item>
@@ -159,8 +178,7 @@ export default function Hero() {
 
       <section className="border-t border-border py-24 text-center">
         <div className="signal-container" data-gsap="fade-up">
-          <p className="signal-kicker justify-center">ready when your editor stack is</p>
-          <h2 className="mx-auto mt-4 max-w-3xl text-3xl sm:text-5xl">Let the dashboard tell the truth about your coding rhythm.</h2>
+          <h2 className="mx-auto max-w-3xl font-display text-3xl font-normal sm:text-5xl">Let the dashboard tell the truth about your coding rhythm.</h2>
           <div className="mt-8 flex justify-center">
             <Link href="/signup" className="signal-button px-8">
               Get started
@@ -179,7 +197,8 @@ export default function Hero() {
           <nav className="flex flex-wrap gap-6 font-mono text-xs text-muted-foreground">
             <Link href="/signup" className="hover:text-foreground">Dashboard</Link>
             <Link href="/dashboard/setup" className="hover:text-foreground">Setup guide</Link>
-            <Link href="/settings" className="hover:text-foreground">Settings</Link>
+            <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link href="/terms" className="hover:text-foreground">Terms</Link>
             <Link href="/login" className="hover:text-foreground">Sign in</Link>
           </nav>
         </div>

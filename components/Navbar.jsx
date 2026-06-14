@@ -39,12 +39,11 @@ export default function Navbar(props) {
         { href: '/settings', label: 'Settings' },
       ]
     : [
-        { href: '/#features', label: 'Signals' },
-        { href: '/#how-it-works', label: 'Setup' },
-        { href: '/#privacy', label: 'Privacy' },
+        { href: '/#features', label: 'Features' },
+        { href: '/#how-it-works', label: 'How it works' },
       ];
 
-  const isActive = (href) => pathname === href || (href.startsWith('/#') && pathname === '/');
+  const isActive = (href) => !href.startsWith('/#') && pathname === href;
 
   return (
     <nav className="sticky top-0 z-50 h-16 border-b border-border bg-[var(--color-paper-glass)] backdrop-blur-xl">
@@ -59,10 +58,10 @@ export default function Navbar(props) {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex h-full items-end border-b-2 px-1 pb-4 font-mono text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex h-full items-end border-b-2 px-1 pb-4 font-mono text-sm font-medium transition-colors whitespace-nowrap hover:no-underline ${
                   isActive(link.href)
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+                    ? 'border-transparent text-primary hover:border-primary'
+                    : 'border-transparent text-muted-foreground hover:border-primary hover:text-foreground'
                 }`}
               >
                 {link.label}

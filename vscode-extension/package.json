@@ -50,6 +50,10 @@
         "title": "Cadence: Show Status"
       },
       {
+        "command": "vs-integrate.testConnection",
+        "title": "Cadence: Test Connection"
+      },
+      {
         "command": "vs-integrate.openDashboard",
         "title": "Cadence: Open Dashboard"
       }

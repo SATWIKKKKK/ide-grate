@@ -35,7 +35,8 @@ export async function GET() {
       return {
         ...definition,
         isSetup: Boolean(setup?.isActive),
-        isConnected: Boolean(setup?.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo),
+        isConnected: Boolean(setup?.isActive && setup?.lastHeartbeat),
+        isActiveNow: Boolean(setup?.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo),
         connectedAt: setup?.connectedAt?.toISOString() || null,
         lastHeartbeat: setup?.lastHeartbeat?.toISOString() || null,
         lastSessionAt: ideActivities[0]?.endTime?.toISOString() || null,

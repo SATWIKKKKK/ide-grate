@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
  Clock, Flame, Zap, Code2, Trophy, Target, Calendar, Copy, Check,
  TrendingUp, BarChart3, Globe2, FolderGit2, ChevronDown, Plus, X,
- Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info, Timer, WifiOff, Terminal, Download
+ Loader2, ArrowRight, ExternalLink, Eye, EyeOff, Info, WifiOff, Terminal, Download
 } from 'lucide-react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -93,26 +93,23 @@ function invalidateCache(key?: string) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const LANGUAGE_COLORS: Record<string, string> = {
- typescriptreact: '#000000', typescript: '#5d5f5f', javascriptreact: '#7e7576',
- css: '#46464e', python: '#616363', javascript: '#c6c6c7',
- html: '#1a1c1d', scss: '#4c4546', vue: '#5d5f5f', svelte: '#7e7576',
- rust: '#1a1c1d', go: '#4c4546', java: '#5d5f5f', cpp: '#7e7576',
- c: '#616363', csharp: '#46464e', ruby: '#4c4546', php: '#616363',
- swift: '#5d5f5f', kotlin: '#7e7576', dart: '#4c4546', lua: '#616363',
- shell: '#5d5f5f', sql: '#7e7576', graphql: '#4c4546', dockerfile: '#616363',
- r: '#5d5f5f', scala: '#7e7576', elixir: '#4c4546', haskell: '#616363',
- perl: '#5d5f5f', objective_c: '#7e7576', powershell: '#4c4546',
+ typescriptreact: 'var(--color-chart-1)', typescript: 'var(--color-chart-1)', javascriptreact: 'var(--color-chart-3)',
+ css: 'var(--color-chart-4)', python: 'var(--color-chart-2)', javascript: 'var(--color-chart-3)',
+ html: 'var(--color-chart-5)', scss: 'var(--color-chart-4)', vue: 'var(--color-chart-5)', svelte: 'var(--color-chart-3)',
+ rust: 'var(--color-chart-3)', go: 'var(--color-chart-5)', java: 'var(--color-chart-2)', cpp: 'var(--color-chart-1)',
+ c: 'var(--color-chart-1)', csharp: 'var(--color-chart-4)', ruby: 'var(--color-chart-3)', php: 'var(--color-chart-4)',
+ swift: 'var(--color-chart-3)', kotlin: 'var(--color-chart-4)', dart: 'var(--color-chart-5)', lua: 'var(--color-chart-1)',
+ shell: 'var(--color-chart-2)', sql: 'var(--color-chart-5)', graphql: 'var(--color-chart-4)', dockerfile: 'var(--color-chart-1)',
+ r: 'var(--color-chart-5)', scala: 'var(--color-chart-3)', elixir: 'var(--color-chart-4)', haskell: 'var(--color-chart-1)',
+ perl: 'var(--color-chart-2)', objective_c: 'var(--color-chart-3)', powershell: 'var(--color-chart-1)',
 }
+const LANGUAGE_PALETTE = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)']
 
 function getLangColor(lang: string): string {
- return LANGUAGE_COLORS[lang.toLowerCase()] || '#5d5f5f'
-}
-
-function formatTimer(seconds: number): string {
- const h = Math.floor(seconds / 3600)
- const m = Math.floor((seconds % 3600) / 60)
- const s = seconds % 60
- return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+ const key = lang.toLowerCase()
+ if (LANGUAGE_COLORS[key]) return LANGUAGE_COLORS[key]
+ const hash = key.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+ return LANGUAGE_PALETTE[hash % LANGUAGE_PALETTE.length]
 }
 
 function formatHours(h: number): string {
@@ -162,7 +159,6 @@ export default function DashboardPage() {
  const contributionApiUrl = `/api/contributions?days=365${ideQuery ? `&${ideQuery}` : ''}`
  const statsApiUrl = `/api/stats/overview${ideQuery ? `?${ideQuery}` : ''}`
  const connectionApiUrl = `/api/connection-status${ideQuery ? `?${ideQuery}` : ''}`
- const liveTimerStorageKey = `vsintegrate-live-start-${session?.user?.id || 'anonymous'}`
 
  // Data
  const [stats, setStats] = useState<StatsData | null>(null)
@@ -173,7 +169,7 @@ export default function DashboardPage() {
  const [apiKey, setApiKey] = useState<string | null>(null)
  const [connectionStatus, setConnectionStatus] = useState<{
  connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null
- integrations?: { id: string; active?: boolean; isSetup?: boolean; hours?: number }[]
+ integrations?: { id: string; active?: boolean; connected?: boolean; isSetup?: boolean; hours?: number }[]
  }>({ connected: false, active: false, hasApiKey: false, hasActivity: false, lastActivityAt: null })
  const [connectionReady, setConnectionReady] = useState(false)
 
@@ -191,17 +187,12 @@ export default function DashboardPage() {
  const [hoveredDay, setHoveredDay] = useState<{ date: string; hours: number; sessions: number; x: number; y: number } | null>(null)
 
  const [connectionToast, setConnectionToast] = useState<{ show: boolean; message: string; type: 'success' | 'warning' | 'info' } | null>(null)
- const [timerFilter, setTimerFilter] = useState<'7d' | '1m' | '3m'>('7d')
- const [liveSeconds, setLiveSeconds] = useState(0)
  const [activeStatPopup, setActiveStatPopup] = useState<string | null>(null)
  const [dailyBarFilter, setDailyBarFilter] = useState<'7d' | '14d' | '1m' | '3m' | '1y'>('14d')
- const [showTimerPopup, setShowTimerPopup] = useState(false)
  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
  const [showReconnectPopup, setShowReconnectPopup] = useState(false)
  const hasFetched = useRef(false)
  const prevConnected = useRef<boolean | null>(null)
- const liveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
- const sessionStartRef = useRef<Date | null>(null)
 
  useEffect(() => {
  if (typeof window === 'undefined') return
@@ -226,7 +217,7 @@ export default function DashboardPage() {
  cachedFetch<{ goals: GoalData[] }>('goals', '/api/goals'),
  cachedFetch<{ achievements: AchievementData[]; totalUnlocked: number }>('achievements', '/api/achievements'),
  cachedFetch<{ apiKey: string | null }>('apikey', '/api/apikey'),
- cachedFetch<{ connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null; integrations?: { id: string; active?: boolean; isSetup?: boolean }[] }>(`connection:${selectedIde}`, connectionApiUrl),
+ cachedFetch<{ connected: boolean; active: boolean; hasApiKey: boolean; hasActivity: boolean; lastActivityAt?: string | null; integrations?: { id: string; active?: boolean; connected?: boolean; isSetup?: boolean }[] }>(`connection:${selectedIde}`, connectionApiUrl),
  ])
 
  if (statsData) setStats(statsData)
@@ -305,50 +296,6 @@ export default function DashboardPage() {
  return () => clearInterval(interval)
  }, [session, contributionApiUrl, statsApiUrl, connectionApiUrl, selectedIde, idePrefix])
 
- // Live session timer — persists across reload/signout, resets only on manual disconnect+reconnect
- useEffect(() => {
- if (!connectionReady) return
-
- if (connectionStatus.connected) {
- if (!sessionStartRef.current) {
- // Check localStorage for a persisted start time
- const savedStart = typeof window !== 'undefined' ? localStorage.getItem(liveTimerStorageKey) : null
- let start = savedStart ? new Date(savedStart) : null
-
- if (!start || Number.isNaN(start.getTime())) {
- // No saved start — begin a fresh timer from now
- start = new Date()
- }
-
- if (typeof window !== 'undefined') {
- localStorage.setItem(liveTimerStorageKey, start.toISOString())
- }
-
- sessionStartRef.current = start
- setLiveSeconds(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)))
- }
-
- if (liveTimerRef.current) clearInterval(liveTimerRef.current)
- liveTimerRef.current = setInterval(() => {
- setLiveSeconds(Math.floor((Date.now() - sessionStartRef.current!.getTime()) / 1000))
- }, 1000)
- } else {
- if (liveTimerRef.current) {
- clearInterval(liveTimerRef.current)
- liveTimerRef.current = null
- }
- // Don't clear sessionStartRef or localStorage here —
- // the timer will resume when the user comes back.
- // Only disconnectTracking() clears them.
- }
- return () => {
- if (liveTimerRef.current) {
- clearInterval(liveTimerRef.current)
- liveTimerRef.current = null
- }
- }
- }, [connectionReady, connectionStatus.connected, liveTimerStorageKey])
-
  useEffect(() => {
  if (status === 'unauthenticated') router.push('/login')
  }, [status, router])
@@ -380,11 +327,6 @@ export default function DashboardPage() {
  setApiKey(null)
  setConnectionStatus(prev => ({ ...prev, connected: false, active: false, hasApiKey: false }))
  setConnectionReady(true)
- sessionStartRef.current = null
- setLiveSeconds(0)
- if (typeof window !== 'undefined') {
- localStorage.removeItem(liveTimerStorageKey)
- }
  // Show reconnect popup after disconnect
  setShowReconnectPopup(true)
  }
@@ -577,6 +519,16 @@ export default function DashboardPage() {
 
  // Period hours use server data only (accurate active-time tracking)
  const periodHoursDisplay = periodHours
+ const dashboardIdeStatuses = useMemo(() => {
+ const rows = stats?.ideBreakdown?.length ? stats.ideBreakdown : connectionStatus.integrations || []
+ return rows.map((item) => ({
+ id: item.id,
+ active: Boolean('active' in item ? item.active : false),
+ connected: Boolean('connected' in item ? item.connected : 'lastHeartbeat' in item ? item.lastHeartbeat : false),
+ isSetup: Boolean('isSetup' in item ? item.isSetup : false),
+ hours: 'hours' in item ? item.hours : undefined,
+ }))
+ }, [stats?.ideBreakdown, connectionStatus.integrations])
 
  // ─── Loading state ─────────────────────────────────────────────────────────
  if (status === 'loading' || (loading && !stats)) {
@@ -592,12 +544,13 @@ export default function DashboardPage() {
 
  if (!session) return null
 
- const levelColors = ['bg-[var(--color-paper-3)]', 'bg-[color-mix(in_oklch,var(--color-accent)_32%,var(--color-paper-3))]', 'bg-[color-mix(in_oklch,var(--color-accent)_56%,var(--color-paper-3))]', 'bg-[color-mix(in_oklch,var(--color-accent)_76%,var(--color-paper-3))]', 'bg-primary']
+ const levelColors = ['bg-[var(--color-contrib-0)]', 'bg-[var(--color-contrib-1)]', 'bg-[var(--color-contrib-2)]', 'bg-[var(--color-contrib-3)]', 'bg-[var(--color-contrib-4)]']
  const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', '']
+ const setupHref = selectedIde === 'combined' ? '/dashboard/setup' : `/dashboard/setup?ide=${selectedIde}`
 
  return (
  <div className="page-shell flex min-h-screen flex-col text-foreground">
- <Navbar toolbarSlot={<IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={stats?.ideBreakdown || connectionStatus.integrations || []} />} />
+ <Navbar toolbarSlot={<IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={dashboardIdeStatuses} />} />
 
  {/* Connection status toast */}
  <AnimatePresence>
@@ -619,7 +572,7 @@ export default function DashboardPage() {
 
  <main className="dashboard-shell flex-1 py-14 sm:py-16" data-gsap-stagger>
  <div className="mb-5 flex justify-end sm:hidden">
- <IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={stats?.ideBreakdown || connectionStatus.integrations || []} />
+ <IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={dashboardIdeStatuses} />
  </div>
  {/* Header */}
  <motion.div
@@ -644,29 +597,20 @@ export default function DashboardPage() {
 
  {/* Connection status */}
  <div className="flex shrink-0 flex-wrap items-center gap-3">
+ {connectionStatus.connected ? (
  <div
- className={`flex cursor-default items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-xs ${
- connectionStatus.connected
- ? connectionStatus.active
- ? 'border-border bg-card text-primary'
- : 'border-border bg-card text-primary'
- : 'border-destructive/30 bg-[var(--color-danger-soft)] text-destructive'
- }`}
- title={
- connectionStatus.connected
- ? connectionStatus.active
- ? `${idePrefix} is actively sending heartbeats`
- : `${idePrefix} configured — tracking resumes when you code`
- : 'No API key yet — generate one to start tracking'
- }
+ className="flex cursor-default items-center gap-2 rounded-full border border-[var(--color-live)]/35 bg-[var(--color-live-soft)] px-3 py-1.5 font-mono text-xs text-[var(--color-live)]"
+ title={connectionStatus.active ? `${idePrefix} is actively sending heartbeats` : `${idePrefix} has verified heartbeats`}
  >
- <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
- connectionStatus.connected
- ? connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary'
- : 'bg-destructive'
- }`} />
- {connectionStatus.connected ? `${idePrefix} connected` : `${idePrefix} disconnected`}
+ <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--color-live)] ${connectionStatus.active ? 'animate-pulse' : ''}`} />
+ {connectionStatus.active ? `${idePrefix} active` : `${idePrefix} connected`}
  </div>
+ ) : (
+ <Link href={setupHref} className="signal-button min-h-9 px-3 text-xs">
+ Connect now
+ <ArrowRight className="size-3.5" />
+ </Link>
+ )}
  {apiKey && connectionStatus.connected && (
  <button
  onClick={confirmDisconnect}
@@ -747,10 +691,10 @@ export default function DashboardPage() {
  >
  <div className="mb-4 flex items-center justify-between gap-3">
  <div>
- <p className="signal-kicker">{selectedIde === 'combined' ? 'Combined stack' : idePrefix}</p>
+ {selectedIde !== 'combined' && <p className="signal-kicker">{idePrefix}</p>}
  <h2 className="font-sans text-lg font-semibold">IDE activity breakdown</h2>
  </div>
- <Link href="/dashboard/setup" className="signal-button signal-button-secondary min-h-9 px-3 text-xs">
+ <Link href={setupHref} className="signal-button signal-button-secondary min-h-9 px-3 text-xs">
  Setup
  </Link>
  </div>
@@ -794,12 +738,12 @@ export default function DashboardPage() {
  <p className="mt-1 text-sm text-muted-foreground">Combined activity is still available. Configure {idePrefix} when you want this panel to light up.</p>
  </div>
  </div>
- <Link href="/dashboard/setup" className="signal-button min-h-10 shrink-0">Open setup</Link>
+ <Link href={setupHref} className="signal-button min-h-10 shrink-0">Connect now</Link>
  </div>
  </motion.div>
  )}
 
- {/* Live Timer */}
+ {/* Today's total */}
  <motion.div
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
@@ -807,269 +751,45 @@ export default function DashboardPage() {
  className="mb-6"
  data-gsap-item
  >
- <div className={`rounded-xl border transition-all overflow-hidden cursor-pointer ${
+ <div className={`overflow-hidden rounded-xl border transition-all ${
  connectionStatus.connected
- ? 'bg-secondary border-primary/30'
+ ? 'border-[var(--color-live)]/35 bg-[var(--color-live-soft)]'
  : 'bg-card/80 border-border'
- }`}
- onClick={() => setShowTimerPopup(true)}
- >
- {/* Connected banner */}
- {connectionStatus.connected && (
- <div className="bg-primary/10 border-b border-primary/20 px-5 py-2 flex items-center gap-2">
- <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary/60'}`} />
- <span className="text-xs text-primary font-medium">
- {connectionStatus.active
- ? <>Connected since {sessionStartRef.current ? sessionStartRef.current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'now'}
- {sessionStartRef.current && (
- <span className="text-primary/60 ml-1">
- — {sessionStartRef.current.toLocaleDateString([], { month: 'short', day: 'numeric' })}
- </span>
- )}
- </>
- : <>Connected • {connectionStatus.lastActivityAt
- ? `Last active ${new Date(connectionStatus.lastActivityAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
- : `Waiting for ${idePrefix} activity`}</>
- }
- </span>
- </div>
- )}
-
- <div className="p-4 sm:p-5">
- <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
- {/* Timer display */}
- <div className="flex items-center gap-4 flex-1 min-w-0">
- <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
- connectionStatus.connected
- ? 'bg-primary/20 ring-2 ring-ring/30'
- : 'bg-secondary'
+ }`}>
+ <div className="p-5 sm:p-6">
+ <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+ <div className="flex min-w-0 items-center gap-4">
+ <div className={`flex size-14 shrink-0 items-center justify-center rounded-2xl ${
+ connectionStatus.connected ? 'bg-[var(--color-live)]/15' : 'bg-secondary'
  }`}>
  {connectionStatus.connected
- ? <Timer className="w-7 h-7 text-primary" />
- : <WifiOff className="w-7 h-7 text-muted-foreground" />}
+ ? <Zap className="size-7 text-[var(--color-live)]" />
+ : <WifiOff className="size-7 text-muted-foreground" />}
  </div>
  <div className="min-w-0">
- <div className="flex items-center gap-2 mb-1">
- <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Current Session</span>
- {connectionStatus.active && (
- <span className="flex items-center gap-1 text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full border border-primary/25 font-semibold">
- <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
- LIVE
- </span>
- )}
- </div>
- <p className={`text-xl min-[380px]:text-2xl sm:text-3xl font-mono font-bold tracking-normal tabular-nums break-words ${
- connectionStatus.connected ? 'text-primary' : 'text-muted-foreground'
- }`}>
- {connectionStatus.connected ? formatTimer(liveSeconds) : '0:00:00'}
+ <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today&apos;s total</p>
+ <p className="mt-1 break-words font-mono text-3xl font-bold tracking-normal text-primary sm:text-5xl">
+ {formatHours(stats?.hoursToday || 0)}
  </p>
- <p className="text-xs mt-1">
+ <p className="mt-2 text-xs text-muted-foreground">
  {connectionStatus.connected
  ? connectionStatus.active
- ? <span className="text-primary/70">Session time • Today&apos;s total: {formatHours(stats?.hoursToday || 0)}</span>
- : <span className="text-primary/70">Today&apos;s total: {formatHours(stats?.hoursToday || 0)} • Tracking resumes when you code</span>
- : <span className="text-destructive/80">Generate an API key and connect an editor to start tracking.</span>}
+ ? `${idePrefix} is actively sending heartbeats.`
+ : `${idePrefix} is verified. Today's total updates when fresh activity arrives.`
+ : `Connect ${idePrefix} to start tracking today's total.`}
  </p>
  </div>
  </div>
-
- {/* Period filter */}
- <div className="w-full sm:w-auto flex items-center bg-secondary/80 rounded-xl p-1 gap-0.5 shrink-0">
- {([
- { key: '7d' as const, label: '7 Days' },
- { key: '1m' as const, label: '1 Month' },
- { key: '3m' as const, label: '3 Months' },
- ]).map(f => (
- <button
- key={f.key}
- onClick={(e) => { e.stopPropagation(); setTimerFilter(f.key) }}
- className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 whitespace-nowrap ${
- timerFilter === f.key
- ? 'bg-primary/20 text-primary shadow-sm'
- : 'text-muted-foreground hover:text-muted-foreground hover:bg-secondary/50'
- }`}
- >
- {f.label}
- </button>
- ))}
- </div>
- </div>
-
- {/* Period summary cards */}
- <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
- <div className={`rounded-lg p-3 text-center border ${
- connectionStatus.connected ? 'bg-primary/20 border-primary/15' : 'bg-secondary/50 border-border'
- }`}>
- <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">
- {timerFilter === '7d' ? 'Last 7 Days' : timerFilter === '1m' ? 'Last 30 Days' : 'Last 90 Days'}
- </p>
- <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-primary' : 'text-foreground'}`}>
- {formatHours(periodHoursDisplay[timerFilter])}
- </p>
- <p className="text-[10px] text-muted-foreground mt-0.5">total in {idePrefix}</p>
- </div>
- <div className={`rounded-lg p-3 text-center border ${
- connectionStatus.connected ? 'bg-primary/20 border-primary/15' : 'bg-secondary/50 border-border'
- }`}>
- <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Daily Avg</p>
- <p className={`text-lg sm:text-xl font-bold ${connectionStatus.connected ? 'text-primary' : 'text-primary'}`}>
- {formatHours(periodHoursDisplay[timerFilter] / periodActiveDays[timerFilter])}
- </p>
- <p className="text-[10px] text-muted-foreground mt-0.5">per day</p>
- </div>
- <div className={`rounded-lg p-3 text-center border ${
- connectionStatus.connected ? 'bg-primary/20 border-primary/15' : 'bg-secondary/50 border-border'
- }`}>
- <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Today</p>
- <p className="text-lg sm:text-xl font-bold text-primary">{formatHours(stats?.hoursToday || 0)}</p>
- <p className="text-[10px] text-muted-foreground mt-0.5">coded today</p>
- </div>
- </div>
-
- {/* CLI Install helper when disconnected */}
- {!connectionStatus.connected && !connectionStatus.hasApiKey && (
- <div className="mt-4 p-4 bg-secondary/50 border border-border/40 rounded-xl" onClick={e => e.stopPropagation()}>
- <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
- <Terminal className="w-3.5 h-3.5 text-primary" /> Quick Install
- </p>
- <p className="text-[11px] text-muted-foreground mb-2">Download the VSIX for VS Code-family editors:</p>
- <a
- href="/downloads/extension.vsix"
- download="cadence-extension.vsix"
- className="w-full py-2.5 bg-primary hover:bg-primary rounded-lg text-primary-foreground text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
- onClick={e => e.stopPropagation()}
- >
- <Download className="w-3.5 h-3.5" />
- Download .vsix File
- </a>
- <div className="mt-2 space-y-1">
- {[
- 'Open VS Code, Cursor, or Antigravity extensions',
- 'Click ⋯ menu → "Install from VSIX..."',
- 'Select the downloaded file',
- ].map((text, i) => (
- <div key={i} className="flex items-start gap-2 p-1.5 bg-card/50 rounded-lg">
- <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px] font-bold shrink-0">{i + 1}</span>
- <span className="text-[10px] text-muted-foreground">{text}</span>
- </div>
- ))}
- </div>
- <p className="text-[10px] text-muted-foreground mt-2">
- Then generate an API key above and set it from the Cadence command palette action. Use endpoint: <code className="text-primary">/api/heartbeat</code>
- </p>
- </div>
+ {!connectionStatus.connected && (
+ <Link href={setupHref} className="signal-button min-h-10 shrink-0">
+ Connect now
+ <ArrowRight className="size-4" />
+ </Link>
  )}
+ </div>
  </div>
  </div>
  </motion.div>
-
- {/* Timer Session Popup */}
- <AnimatePresence>
- {showTimerPopup && (
- <motion.div
- initial={{ opacity: 0 }}
- animate={{ opacity: 1 }}
- exit={{ opacity: 0 }}
- transition={{ duration: 0.2 }}
- className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4"
- onClick={() => setShowTimerPopup(false)}
- >
- <motion.div
- initial={{ opacity: 0, scale: 0.9, y: 20 }}
- animate={{ opacity: 1, scale: 1, y: 0 }}
- exit={{ opacity: 0, scale: 0.9, y: 20 }}
- transition={{ duration: 0.25, ease: 'easeOut' }}
- className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-lg max-h-[92vh] sm:max-h-[80vh] overflow-y-auto"
- onClick={e => e.stopPropagation()}
- >
- <div className="p-4 sm:p-6">
- <div className="flex items-start justify-between gap-3 mb-5">
- <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
- <Timer className="w-5 h-5 text-primary" />
- </div>
- <div className="min-w-0">
- <h3 className="text-lg font-semibold">Session Details</h3>
- <p className="text-xs text-muted-foreground leading-relaxed">
- {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
- </p>
- </div>
- </div>
- <button onClick={() => setShowTimerPopup(false)} className="p-1 hover:bg-secondary rounded-lg transition-colors">
- <X className="w-5 h-5 text-muted-foreground" />
- </button>
- </div>
-
- {/* Summary */}
- <div className="grid grid-cols-1 min-[380px]:grid-cols-3 gap-3 mb-5">
- <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-center">
- <p className="text-xl sm:text-2xl font-bold text-primary break-words">{formatHours(stats?.hoursToday || 0)}</p>
- <p className="text-[10px] text-muted-foreground mt-1">Total Today</p>
- </div>
- <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-center">
- <p className="text-xl sm:text-2xl font-bold text-primary">{stats?.todaySessions?.length || 0}</p>
- <p className="text-[10px] text-muted-foreground mt-1">Sessions</p>
- </div>
- <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-center">
- <p className="text-xl sm:text-2xl font-bold text-primary break-words">
- {connectionStatus.connected ? formatTimer(liveSeconds) : '—'}
- </p>
- <p className="text-[10px] text-muted-foreground mt-1">Live Timer</p>
- </div>
- </div>
-
- {/* Session list */}
- <h4 className="text-sm font-medium text-muted-foreground mb-3">Today&apos;s Sessions</h4>
- {stats?.todaySessions && stats.todaySessions.length > 0 ? (
- <div className="space-y-2">
- {stats.todaySessions.map((session, i) => {
- const start = new Date(session.startTime)
- const end = new Date(session.endTime)
- const durationHrs = session.duration / 3600
- return (
- <div key={i} className="flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-3 p-3 bg-secondary/30 rounded-lg border border-border">
- <div className="flex items-center gap-3 min-w-0">
- <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
- <span className="text-xs font-bold text-primary">#{i + 1}</span>
- </div>
- <div className="min-w-0">
- <p className="text-sm font-medium break-words">
- {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
- </p>
- <p className="text-[10px] text-muted-foreground">Session {i + 1}</p>
- </div>
- </div>
- <div className="text-left min-[420px]:text-right">
- <p className="text-sm font-semibold text-primary">{formatHours(durationHrs)}</p>
- <p className="text-[10px] text-muted-foreground">active time</p>
- </div>
- </div>
- )
- })}
- </div>
- ) : (
- <div className="text-center py-6 text-muted-foreground">
- <Timer className="w-8 h-8 mx-auto mb-2 opacity-40" />
- <p className="text-sm">No sessions recorded today</p>
- <p className="text-xs mt-1">Connect an editor to start tracking</p>
- </div>
- )}
-
- {connectionStatus.connected && (
- <div className={`mt-4 p-3 ${connectionStatus.active ? 'bg-primary/5 border-primary/15' : 'bg-primary/5 border-primary/15'} border rounded-lg flex items-center gap-2`}>
- <span className={`w-2 h-2 rounded-full ${connectionStatus.active ? 'bg-primary animate-pulse' : 'bg-primary'}`} />
- <span className={`text-xs ${connectionStatus.active ? 'text-primary' : 'text-primary'}`}>
- {connectionStatus.active
- ? `Currently tracking — ${formatTimer(liveSeconds)} this viewing session`
- : `Session timer: ${formatTimer(liveSeconds)} — tracking resumes when you code`}
- </span>
- </div>
- )}
- </div>
- </motion.div>
- </motion.div>
- )}
- </AnimatePresence>
 
  {/* Disconnect Confirmation Popup */}
  <AnimatePresence>
@@ -1095,7 +815,7 @@ export default function DashboardPage() {
  <WifiOff className="w-6 h-6 text-destructive" />
  </div>
  <h3 className="text-lg font-semibold mb-2">Disconnect Tracking?</h3>
- <p className="text-sm text-muted-foreground mb-1">This will end your current session and revoke your API key.</p>
+ <p className="text-sm text-muted-foreground mb-1">This will revoke your API key and stop editor tracking.</p>
  <p className="text-xs text-muted-foreground mb-5">You&apos;ll need to generate a new key and reconfigure your editor integrations to resume tracking.</p>
  <div className="flex flex-col min-[380px]:flex-row gap-3">
  <button
@@ -1140,9 +860,9 @@ export default function DashboardPage() {
  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
  <WifiOff className="w-6 h-6 text-primary" />
  </div>
- <h3 className="text-lg font-semibold mb-2">Tracking Disconnected</h3>
- <p className="text-sm text-muted-foreground mb-1">Your API key has been revoked or is missing.</p>
- <p className="text-xs text-muted-foreground mb-5">Follow the setup guide to generate a new key and reconnect your editor to resume tracking your coding activity.</p>
+ <h3 className="text-lg font-semibold mb-2">Tracking Needs Setup</h3>
+ <p className="text-sm text-muted-foreground mb-1">Cadence has not verified a live editor heartbeat yet.</p>
+ <p className="text-xs text-muted-foreground mb-5">Open setup for the selected editor, run its test command, then verify the connection.</p>
  <div className="flex flex-col min-[380px]:flex-row gap-3">
  <button
  onClick={() => setShowReconnectPopup(false)}
@@ -1151,10 +871,10 @@ export default function DashboardPage() {
  Dismiss
  </button>
  <Link
- href="/dashboard/setup"
+ href={setupHref}
  className="flex-1 py-2.5 bg-primary hover:bg-primary rounded-xl text-sm text-primary-foreground font-medium transition-colors flex items-center justify-center gap-1.5"
  >
- Setup Guide
+ Connect now
  <ArrowRight className="w-4 h-4" />
  </Link>
  </div>
@@ -1340,12 +1060,6 @@ export default function DashboardPage() {
  <span className="text-sm text-muted-foreground">Server-tracked</span>
  <span className="text-sm font-semibold">{formatHours(stats?.hoursToday || 0)}</span>
  </div>
- {connectionStatus.connected && (
- <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
- <span className="text-sm text-muted-foreground">Current session</span>
- <span className="text-sm font-semibold text-primary">{formatTimer(liveSeconds)}</span>
- </div>
- )}
  <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
  <span className="text-sm text-muted-foreground">Daily Average</span>
  <span className="text-sm font-semibold">{formatHours(stats?.avgDailyHours || 0)}</span>
@@ -1388,7 +1102,7 @@ export default function DashboardPage() {
  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getLangColor(lang.language) }} />
  <span className="text-sm font-medium capitalize">{lang.language}</span>
  </div>
- <span className="text-xs text-muted-foreground">{formatHours(lang.hours)} ({lang.percentage}%)</span>
+ <span className="text-xs font-semibold" style={{ color: getLangColor(lang.language) }}>{formatHours(lang.hours)} ({lang.percentage}%)</span>
  </div>
  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
  <div
@@ -1541,7 +1255,7 @@ export default function DashboardPage() {
  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getLangColor(lang.language) }} />
  <span className="text-sm text-foreground capitalize">{lang.language}</span>
  </div>
- <span className="text-xs text-muted-foreground">{formatHours(lang.hours)} ({lang.percentage}%)</span>
+ <span className="text-xs font-semibold" style={{ color: getLangColor(lang.language) }}>{formatHours(lang.hours)} ({lang.percentage}%)</span>
  </div>
  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
  <motion.div
@@ -1785,7 +1499,7 @@ export default function DashboardPage() {
  <div key={l.name} className="flex items-center gap-1.5">
  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: l.fill }} />
  <span className="text-[10px] text-muted-foreground truncate capitalize">{l.name}</span>
- <span className="text-[10px] text-muted-foreground ml-auto">{l.percentage}%</span>
+ <span className="ml-auto text-[10px] font-semibold" style={{ color: l.fill }}>{l.percentage}%</span>
  </div>
  ))}
  </div>

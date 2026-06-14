@@ -20,7 +20,6 @@ export type IdeDefinition = {
   color: string
   setupTitle: string
   setupSummary: string
-  statusLabel: string
 }
 
 export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
@@ -33,7 +32,6 @@ export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
     color: "#007ACC",
     setupTitle: "VS Code extension",
     setupSummary: "Install the Cadence VSIX, paste your API key, then run the connection test.",
-    statusLabel: "VSIX",
   },
   cursor: {
     id: "cursor",
@@ -44,7 +42,6 @@ export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
     color: "#111111",
     setupTitle: "Cursor extension",
     setupSummary: "Install the same Cadence VSIX in Cursor. Runtime detection reports it separately.",
-    statusLabel: "VSIX",
   },
   antigravity: {
     id: "antigravity",
@@ -55,7 +52,6 @@ export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
     color: "#4285F4",
     setupTitle: "Antigravity extension",
     setupSummary: "Use the Cadence VSIX in Antigravity's editor view; appName detection marks it as Antigravity.",
-    statusLabel: "VSIX",
   },
   jetbrains: {
     id: "jetbrains",
@@ -66,7 +62,6 @@ export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
     color: "#FE315D",
     setupTitle: "JetBrains plugin",
     setupSummary: "Build or install the Cadence plugin, set your API key, and test the heartbeat client.",
-    statusLabel: "Plugin",
   },
   zed: {
     id: "zed",
@@ -77,7 +72,6 @@ export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
     color: "#084CCF",
     setupTitle: "Zed companion",
     setupSummary: "Use the documented companion CLI while Zed extensions lack reliable buffer-save telemetry hooks.",
-    statusLabel: "CLI",
   },
   neovim: {
     id: "neovim",
@@ -88,7 +82,6 @@ export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
     color: "#57A143",
     setupTitle: "Neovim plugin",
     setupSummary: "Load the Lua plugin, configure your API key, then let debounced buffer events send heartbeats.",
-    statusLabel: "Lua",
   },
   sublime: {
     id: "sublime",
@@ -99,7 +92,6 @@ export const IDE_CONFIG: Record<IdeId, IdeDefinition> = {
     color: "#FF9800",
     setupTitle: "Sublime Text package",
     setupSummary: "Install the package, set your API key, and use the test connection command.",
-    statusLabel: "Package",
   },
 }
 

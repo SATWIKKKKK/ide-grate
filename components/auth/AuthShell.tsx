@@ -28,63 +28,24 @@ export function AuthShell({
   children: ReactNode
 }) {
   const isSignup = mode === 'signup'
-  const proof = isSignup
-    ? [
-        ['Install', 'download VSIX'],
-        ['Connect', 'paste API key'],
-        ['Track', 'code normally'],
-      ]
-    : [
-        ['Sessions', 'resume signal'],
-        ['Goals', 'check progress'],
-        ['Privacy', 'review sharing'],
-      ]
 
   return (
-    <div className="page-shell flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="hidden min-h-[46rem] flex-col justify-between overflow-hidden rounded-lg border border-primary bg-[var(--color-inverse)] p-10 text-[var(--color-inverse-text)] shadow-2xl lg:flex" data-gsap="fade-up">
-          <Link href="/" className="inline-flex rounded-md">
-            <Logo size="md" tone="inverted" />
-          </Link>
-          <div>
-            <p className="font-mono text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-primary-muted)]">
-              {isSignup ? 'create your signal ledger' : 'welcome back to the signal'}
-            </p>
-            <h1 className="mt-4 max-w-xl text-5xl leading-[1.05] text-[var(--color-primary-text)]">
-              {isSignup ? 'Turn coding hours into a useful record.' : 'Pick up the thread from your last session.'}
-            </h1>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-[var(--color-inverse-text)]/82">
-              {isSignup
-                ? 'Connect your editor stack once, then let sessions, streaks, languages, and goals fill in automatically.'
-                : 'Sign in to inspect live session time, recent activity, goals, and privacy controls from one calm dashboard.'}
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-3" data-gsap-stagger>
-            {proof.map(([value, label]) => (
-              <div key={value} className="rounded-sm border border-[var(--color-inverse-text)]/18 bg-[var(--color-inverse-text)]/5 p-4" data-gsap-item>
-                <p className="font-semibold text-[var(--color-primary-text)]">{value}</p>
-                <p className="mt-1 font-mono text-xs lowercase text-[var(--color-inverse-text)]/62">{label}</p>
+    <div className="page-shell flex h-svh items-center justify-center overflow-hidden p-2 sm:p-3">
+      <section className="mx-auto w-full max-w-[440px]" data-gsap="fade-up">
+        <Link href="/" className="mb-2 flex items-center justify-center">
+          <Logo size="md" />
+        </Link>
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="border-b border-border bg-[var(--color-surface-bright)] p-4 text-center">
+              <div className="mx-auto mb-3 flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                {isSignup ? <Radio className="size-4" /> : <Code2 className="size-4" />}
               </div>
-            ))}
+              <h1 className="font-sans text-2xl font-semibold">{title}</h1>
+              <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">{subtitle}</p>
           </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-[480px]" data-gsap="fade-up">
-          <Link href="/" className="mb-7 flex items-center justify-center lg:hidden">
-            <Logo size="xl" />
-          </Link>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="border-b border-border bg-[var(--color-surface-bright)] p-8 text-center">
-              <div className="mx-auto mb-5 flex size-12 items-center justify-center rounded-sm bg-primary text-primary-foreground">
-                {isSignup ? <Radio className="size-5" /> : <Code2 className="size-5" />}
-              </div>
-              <h1 className="font-display text-3xl">{title}</h1>
-              <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-muted-foreground">{subtitle}</p>
-            </div>
-            {children}
-          </div>
-          <div className="mt-4 flex flex-wrap justify-center gap-2 text-[11px] text-muted-foreground">
+          {children}
+        </div>
+          <div className={`${isSignup ? 'hidden' : 'mt-3 flex'} flex-wrap justify-center gap-2 text-[11px] text-muted-foreground`}>
             {[
               { icon: Shield, label: 'No code access' },
               { icon: CheckCircle2, label: 'Private by default' },
@@ -99,8 +60,7 @@ export function AuthShell({
               )
             })}
           </div>
-        </section>
-      </div>
+      </section>
     </div>
   )
 }

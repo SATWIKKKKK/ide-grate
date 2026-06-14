@@ -110,6 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('vs-integrate.setApiKey', setApiKey),
         vscode.commands.registerCommand('vs-integrate.showStatus', showStatus),
+        vscode.commands.registerCommand('vs-integrate.testConnection', testConnection),
         vscode.commands.registerCommand('vs-integrate.openDashboard', openDashboard)
     );
 
@@ -283,7 +284,7 @@ async function sendConnectionTest(): Promise<void> {
     const config = getConfig();
     
     if (!config.apiKey) {
-        return;
+        throw new Error('Cadence API key is missing');
     }
 
     const connNow = new Date();
@@ -307,6 +308,17 @@ async function sendConnectionTest(): Promise<void> {
         console.error('Connection test failed:', error);
         updateStatusBar('Error');
         throw error;
+    }
+}
+
+async function testConnection() {
+    try {
+        await sendConnectionTest();
+        vscode.window.showInformationMessage(`Cadence connection verified for ${getProductLabel()}.`);
+    } catch (error) {
+        vscode.window.showErrorMessage(
+            `Cadence connection failed for ${getProductLabel()}: ${error instanceof Error ? error.message : 'check your API key and endpoint'}`
+        );
     }
 }
 

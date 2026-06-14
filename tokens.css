@@ -37,10 +37,15 @@
   --color-accent-soft: var(--color-surface-container);
   --color-accent-ink: var(--color-primary-text);
   --color-chart-1: #000000;
-  --color-chart-2: #4c4546;
-  --color-chart-3: #7e7576;
-  --color-chart-4: #c6c6c7;
-  --color-chart-5: #e2e2e3;
+  --color-chart-2: #2563eb;
+  --color-chart-3: #d97706;
+  --color-chart-4: #be123c;
+  --color-chart-5: #7c3aed;
+  --color-contrib-0: #e2e2e3;
+  --color-contrib-1: #bbf7d0;
+  --color-contrib-2: #86efac;
+  --color-contrib-3: #4ade80;
+  --color-contrib-4: #16a34a;
   --grid-line: rgb(0 0 0 / 0.05);
 
   --font-display: "Libre Caslon Text", Georgia, serif;
@@ -76,10 +81,10 @@
   --dur-slow: 240ms;
 
   --rule-hair: 1px;
-  --radius-xs: 0.125rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
   --radius-pill: 9999px;
   --shadow-panel: 0 20px 50px rgb(26 28 29 / 0.06);
   --shadow-soft: 0 10px 28px rgb(26 28 29 / 0.05);
@@ -119,11 +124,16 @@
   --color-accent-3: var(--color-live);
   --color-accent-soft: var(--color-surface-container);
   --color-accent-ink: var(--color-primary-text);
-  --color-chart-1: #f1f3f4;
-  --color-chart-2: #a7afb5;
-  --color-chart-3: #6f7b84;
-  --color-chart-4: #3a4248;
-  --color-chart-5: #22272a;
+  --color-chart-1: #93c5fd;
+  --color-chart-2: #fbbf24;
+  --color-chart-3: #fb7185;
+  --color-chart-4: #a78bfa;
+  --color-chart-5: #38bdf8;
+  --color-contrib-0: #1f2933;
+  --color-contrib-1: #123d24;
+  --color-contrib-2: #14532d;
+  --color-contrib-3: #166534;
+  --color-contrib-4: #22c55e;
   --grid-line: rgb(255 255 255 / 0.06);
   --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.34);
   --shadow-soft: 0 10px 28px rgb(0 0 0 / 0.24);

@@ -51,8 +51,8 @@ Colour is achromatic by default. Green is reserved for live status, contribution
 No soft SaaS shadow stack. Depth comes from tonal surfaces, borders, and occasional very restrained panel shadow. Components use 1px borders, darker borders on hover/focus, and instant 100ms interactions.
 
 ## Shapes
-- Base radius: 4px.
-- Large cards and panels: 8px.
+- Base radius: 8px.
+- Large cards and panels: 12px.
 - Pills only for status indicators, avatars, and toggles.
 - Icons use lucide thin-stroke icons.
 

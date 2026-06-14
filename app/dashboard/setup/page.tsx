@@ -8,7 +8,7 @@ import AppFooter from '@/components/AppFooter'
 import IdeIcon from '@/components/IdeIcon'
 import IdeSelector from '@/components/IdeSelector'
 import IdeSetupPanel from '@/components/IdeSetupPanel'
-import { IDE_CONFIG, IDE_OPTIONS, type IdeId, type IdeSelection } from '@/lib/ide-config'
+import { IDE_CONFIG, IDE_OPTIONS, isIdeId, type IdeId, type IdeSelection } from '@/lib/ide-config'
 
 type SetupRow = {
   id: IdeId
@@ -17,6 +17,7 @@ type SetupRow = {
   color: string
   isSetup: boolean
   isConnected: boolean
+  isActiveNow?: boolean
   lastHeartbeat: string | null
   lastSessionAt: string | null
   weeklyMinutes: number
@@ -29,13 +30,16 @@ export default function DashboardSetupPage() {
   const [rows, setRows] = useState<SetupRow[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [selectionReady, setSelectionReady] = useState(false)
+  const [verifyState, setVerifyState] = useState<{ ide: IdeId; status: 'idle' | 'checking' | 'success' | 'error'; message: string } | null>(null)
 
   const selectedIde = selected === 'combined' ? 'vscode' : selected
   const selectedRow = rows.find((row) => row.id === selectedIde)
 
   const statuses = useMemo(() => rows.map((row) => ({
     id: row.id,
-    active: row.isConnected,
+    active: row.isActiveNow,
+    connected: row.isConnected,
     isSetup: row.isSetup,
     hours: row.weeklyMinutes / 60,
   })), [rows])
@@ -47,6 +51,24 @@ export default function DashboardSetupPage() {
     setApiKey(data.apiKey)
     setRows(data.integrations)
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const fromUrl = params.get('ide')
+    const stored = window.localStorage.getItem('cadence-selected-ide')
+    const next = isIdeId(fromUrl) ? fromUrl : isIdeId(stored) ? stored : 'vscode'
+    setSelected(next)
+    setSelectionReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !selectionReady || selected === 'combined') return
+    window.localStorage.setItem('cadence-selected-ide', selected)
+    const url = new URL(window.location.href)
+    url.searchParams.set('ide', selected)
+    window.history.replaceState(null, '', url)
+  }, [selected, selectionReady])
 
   useEffect(() => {
     let active = true
@@ -81,13 +103,34 @@ export default function DashboardSetupPage() {
     }
   }
 
-  async function markInstalled(ide: IdeId) {
-    await fetch('/api/ide-setup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ide, label: IDE_CONFIG[ide].shortName }),
-    })
-    await fetchSetup()
+  async function verifySelected() {
+    setVerifyState({ ide: selectedIde, status: 'checking', message: `Checking for a ${IDE_CONFIG[selectedIde].shortName} heartbeat...` })
+    try {
+      const res = await fetch(`/api/connection-status?ide=${selectedIde}`, { cache: 'no-store' })
+      const data = await res.json()
+      await fetchSetup()
+      if (res.ok && data.connected) {
+        setVerifyState({
+          ide: selectedIde,
+          status: 'success',
+          message: `${IDE_CONFIG[selectedIde].shortName} is verified. A heartbeat reached Cadence.`,
+        })
+        return
+      }
+      setVerifyState({
+        ide: selectedIde,
+        status: 'error',
+        message: apiKey
+          ? `No ${IDE_CONFIG[selectedIde].shortName} heartbeat yet. Run the editor test command below, then verify again.`
+          : 'Generate a key before verifying an editor connection.',
+      })
+    } catch {
+      setVerifyState({
+        ide: selectedIde,
+        status: 'error',
+        message: 'Could not check connection status. Try again after the setup page reloads.',
+      })
+    }
   }
 
   return (
@@ -101,7 +144,7 @@ export default function DashboardSetupPage() {
               <p className="signal-kicker">Cadence setup</p>
               <h1 className="mt-2 font-sans text-2xl font-semibold sm:text-3xl">Connect your editor stack</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                One Cadence API key works across VS Code, Cursor, Antigravity, JetBrains, Zed, Neovim, and Sublime Text. Existing `vsi_` keys and extension settings keep working.
+                One Cadence key works across VS Code, Cursor, Antigravity, JetBrains, Zed, Neovim, and Sublime Text. Pick an editor, follow its setup path, run its test command, then verify the heartbeat here.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -165,7 +208,15 @@ export default function DashboardSetupPage() {
                         )}
                       </div>
                       <h3 className="mt-3 font-sans text-base font-semibold">{definition.shortName}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground">{row?.weeklyMinutes ? `${Math.round(row.weeklyMinutes)} min this week` : definition.statusLabel}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {row?.isActiveNow
+                          ? 'Active now'
+                          : row?.isConnected
+                            ? 'Connection verified'
+                            : row?.weeklyMinutes
+                              ? `${Math.round(row.weeklyMinutes)} min this week`
+                              : 'No heartbeat yet'}
+                      </p>
                     </button>
                   )
                 })}
@@ -177,18 +228,27 @@ export default function DashboardSetupPage() {
             <IdeSetupPanel ide={selectedIde} apiKey={apiKey} />
             <button
               type="button"
-              onClick={() => markInstalled(selectedIde)}
-              className="signal-button w-full"
+              onClick={verifySelected}
+              disabled={verifyState?.status === 'checking'}
+              className="signal-button w-full disabled:opacity-60"
             >
-              <CheckCircle2 className="size-4" />
-              Mark {IDE_CONFIG[selectedIde].shortName} installed
+              {verifyState?.status === 'checking' ? <RefreshCw className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+              Verify {IDE_CONFIG[selectedIde].shortName} connection
             </button>
-            <div className="rounded-md border border-border bg-secondary/55 p-3 text-xs text-muted-foreground">
-              {selectedRow?.isConnected
-                ? `${IDE_CONFIG[selectedIde].shortName} sent a heartbeat recently.`
-                : selectedRow?.isSetup
-                  ? `Waiting for the first ${IDE_CONFIG[selectedIde].shortName} heartbeat.`
-                  : `Install or configure ${IDE_CONFIG[selectedIde].shortName}, then test the connection.`}
+            <div className={`rounded-md border p-3 text-xs ${
+              verifyState?.ide === selectedIde && verifyState.status === 'success'
+                ? 'border-[var(--color-live)]/40 bg-[var(--color-live-soft)] text-[var(--color-live)]'
+                : verifyState?.ide === selectedIde && verifyState.status === 'error'
+                  ? 'border-destructive/30 bg-[var(--color-danger-soft)] text-destructive'
+                  : 'border-border bg-secondary/55 text-muted-foreground'
+            }`}>
+              {verifyState?.ide === selectedIde && verifyState.status !== 'idle'
+                ? verifyState.message
+                : selectedRow?.isConnected
+                  ? `${IDE_CONFIG[selectedIde].shortName} has sent a verified heartbeat.`
+                  : selectedRow?.isSetup
+                    ? `Setup exists, but Cadence has not received a verified ${IDE_CONFIG[selectedIde].shortName} heartbeat yet.`
+                    : `Follow the ${IDE_CONFIG[selectedIde].shortName} docs below, run the editor test command, then verify here.`}
             </div>
           </aside>
         </section>

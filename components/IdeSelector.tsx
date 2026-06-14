@@ -8,6 +8,7 @@ import IdeIcon from './IdeIcon'
 type IdeStatus = {
   id: string
   active?: boolean
+  connected?: boolean
   isSetup?: boolean
   hours?: number
 }
@@ -50,16 +51,18 @@ export default function IdeSelector({ value, onChange, statuses = [], includeCom
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex min-h-10 max-w-[calc(100vw-1rem)] items-center gap-2 rounded-sm border border-border bg-card px-3 text-sm font-semibold text-foreground hover:border-primary"
+        className={`inline-flex max-w-[calc(100vw-1rem)] items-center gap-2 border border-border bg-card font-semibold text-foreground shadow-sm hover:border-primary hover:no-underline ${
+          compact ? 'min-h-9 rounded-xl px-2.5 text-sm' : 'min-h-11 rounded-2xl px-3.5 text-sm'
+        }`}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         {value === 'combined' ? (
-          <span className="inline-flex size-5 items-center justify-center rounded-sm bg-secondary text-primary">
+          <span className="inline-flex size-6 items-center justify-center rounded-lg bg-secondary text-primary">
             <Layers3 className="size-3.5" />
           </span>
         ) : (
-          <IdeIcon ide={value} className="size-5" />
+          <IdeIcon ide={value} className="size-6" />
         )}
         <span className={compact ? 'sr-only' : 'truncate'}>{activeLabel}</span>
         <ChevronDown className="size-4 text-muted-foreground" />
@@ -68,18 +71,17 @@ export default function IdeSelector({ value, onChange, statuses = [], includeCom
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-lg border border-border bg-popover p-2 shadow-xl max-[380px]:right-1/2 max-[380px]:translate-x-1/2"
+          className="absolute right-0 z-50 mt-2 w-[min(16rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border bg-popover p-2 shadow-xl max-[380px]:right-1/2 max-[380px]:translate-x-1/2"
         >
-          <div className="grid grid-cols-2 gap-1 max-[380px]:grid-cols-1">
+          <div className="grid grid-cols-1 gap-1">
             {includeCombined && (
               <SelectorItem
                 selected={value === 'combined'}
                 label="Combined"
-                detail="All IDEs"
                 active
                 setup
                 onClick={() => choose('combined')}
-                leading={<span className="inline-flex size-8 items-center justify-center rounded-sm bg-secondary text-primary"><Layers3 className="size-4" /></span>}
+                leading={<span className="inline-flex size-8 items-center justify-center rounded-lg bg-secondary text-primary"><Layers3 className="size-4" /></span>}
               />
             )}
             {IDE_OPTIONS.map((definition) => {
@@ -89,9 +91,8 @@ export default function IdeSelector({ value, onChange, statuses = [], includeCom
                   key={definition.id}
                   selected={value === definition.id}
                   label={definition.shortName}
-                  detail={status?.hours ? `${status.hours.toFixed(1)}h` : definition.statusLabel}
                   active={status?.active}
-                  setup={status?.isSetup}
+                  setup={status?.connected || status?.isSetup}
                   onClick={() => choose(definition.id)}
                   leading={<IdeIcon ide={definition.id} className="size-8" />}
                 />
@@ -107,7 +108,6 @@ export default function IdeSelector({ value, onChange, statuses = [], includeCom
 function SelectorItem({
   selected,
   label,
-  detail,
   active,
   setup,
   leading,
@@ -115,7 +115,6 @@ function SelectorItem({
 }: {
   selected: boolean
   label: string
-  detail: string
   active?: boolean
   setup?: boolean
   leading: React.ReactNode
@@ -127,15 +126,17 @@ function SelectorItem({
       onClick={onClick}
       role="option"
       aria-selected={selected}
-      className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md p-2 text-left hover:bg-accent"
+      className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl p-2 text-left hover:bg-accent"
     >
       {leading}
-      <span className="min-w-0">
+      <span className="flex min-w-0 items-center gap-2">
         <span className="block truncate text-sm font-semibold text-foreground">{label}</span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className={`size-1.5 rounded-full ${active ? 'bg-[var(--color-live)]' : setup ? 'bg-[var(--color-muted)]' : 'bg-border'}`} />
-          {detail}
-        </span>
+        {setup && (
+          <span
+            className={`size-1.5 rounded-full ${active ? 'bg-[var(--color-live)]' : 'bg-[var(--color-contrib-3)]'}`}
+            title={active ? 'Active now' : 'Connected'}
+          />
+        )}
       </span>
       {selected && <Check className="size-4 text-primary" />}
     </button>

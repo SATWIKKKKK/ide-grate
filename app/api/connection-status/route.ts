@@ -66,9 +66,10 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    const setupActive = setups.some((setup) => setup.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo)
-    const recentConnectionTest = !ide && stats?.lastActiveDate && stats.lastActiveDate >= fiveMinutesAgo
-    const isActive = Boolean(recentActivity || setupActive || recentConnectionTest)
+    const connectedSetups = setups.filter((setup) => setup.isActive && setup.lastHeartbeat)
+    const setupActive = connectedSetups.some((setup) => setup.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo)
+    const hasConnectedSetup = connectedSetups.length > 0
+    const isActive = Boolean(hasConnectedSetup && (recentActivity || setupActive))
 
     const integrations = IDE_OPTIONS.map((definition) => {
       const setup = setups.find((item) => item.ide === definition.id)
@@ -78,6 +79,7 @@ export async function GET(request: NextRequest) {
         name: definition.shortName,
         color: definition.color,
         isSetup: Boolean(setup?.isActive),
+        connected: Boolean(setup?.isActive && setup?.lastHeartbeat),
         active: Boolean(setup?.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo),
         lastHeartbeat: setup?.lastHeartbeat?.toISOString() || null,
         lastActivityAt: latestForIde?.endTime?.toISOString() || null,
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      connected: true,
+      connected: hasConnectedSetup,
       active: isActive,
       hasApiKey: true,
       hasActivity: totalSessions > 0 || isActive,

@@ -122,7 +122,7 @@ function activate(context) {
         }
     }));
     // Register commands
-    context.subscriptions.push(vscode.commands.registerCommand('vs-integrate.setApiKey', setApiKey), vscode.commands.registerCommand('vs-integrate.showStatus', showStatus), vscode.commands.registerCommand('vs-integrate.openDashboard', openDashboard));
+    context.subscriptions.push(vscode.commands.registerCommand('vs-integrate.setApiKey', setApiKey), vscode.commands.registerCommand('vs-integrate.showStatus', showStatus), vscode.commands.registerCommand('vs-integrate.testConnection', testConnection), vscode.commands.registerCommand('vs-integrate.openDashboard', openDashboard));
     // Track editor activity
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(onActivity), vscode.workspace.onDidChangeTextDocument(onActivity), vscode.window.onDidChangeTextEditorSelection(onActivity), vscode.workspace.onDidSaveTextDocument(onActivity));
     // Track window focus — mark idle immediately when VS Code loses focus
@@ -263,7 +263,7 @@ function trackLanguageTime() {
 async function sendConnectionTest() {
     const config = getConfig();
     if (!config.apiKey) {
-        return;
+        throw new Error('Cadence API key is missing');
     }
     const connNow = new Date();
     const payload = {
@@ -286,6 +286,15 @@ async function sendConnectionTest() {
         console.error('Connection test failed:', error);
         updateStatusBar('Error');
         throw error;
+    }
+}
+async function testConnection() {
+    try {
+        await sendConnectionTest();
+        vscode.window.showInformationMessage(`Cadence connection verified for ${getProductLabel()}.`);
+    }
+    catch (error) {
+        vscode.window.showErrorMessage(`Cadence connection failed for ${getProductLabel()}: ${error instanceof Error ? error.message : 'check your API key and endpoint'}`);
     }
 }
 function postData(urlString, data) {

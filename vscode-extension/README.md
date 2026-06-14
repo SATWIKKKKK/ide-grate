@@ -22,6 +22,7 @@ Existing command IDs, settings keys, `vsi_` API keys, and endpoint URLs remain c
 2. Download the VSIX and install it in VS Code, Cursor, or Antigravity.
 3. Run `Cadence: Set API Key`.
 4. Paste your `vsi_` API key and heartbeat endpoint.
+5. Run `Cadence: Test Connection`, then verify the selected editor on the Cadence setup page.
 
 ## Configuration
 

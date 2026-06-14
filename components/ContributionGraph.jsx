@@ -7,7 +7,6 @@ import { useSession } from 'next-auth/react';
 export default function ContributionGraph() {
   const { data: session } = useSession();
   const [contributionData, setContributionData] = useState(null);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
 
@@ -17,7 +16,6 @@ export default function ContributionGraph() {
     } else {
       // Show mock data for non-authenticated users
       setContributionData(generateMockContributions());
-      setStats({ totalHours: 120, activeDays: 150, avgHoursPerDay: 0.8 });
       setLoading(false);
     }
   }, [session]);
@@ -66,21 +64,17 @@ export default function ContributionGraph() {
               : val;
           }
           setContributionData(normalized);
-          setStats(data.stats);
         } else {
           // No real data yet — show mock so the graph looks alive
           setContributionData(generateMockContributions());
-          setStats({ totalHours: 120, activeDays: 150, avgHoursPerDay: 0.8 });
         }
       } else {
         // API returned an error (e.g. no database) — fall back to mock data
         setContributionData(generateMockContributions());
-        setStats({ totalHours: 120, activeDays: 150, avgHoursPerDay: 0.8 });
       }
     } catch (error) {
       console.error('Failed to fetch contributions:', error);
       setContributionData(generateMockContributions());
-      setStats({ totalHours: 120, activeDays: 150, avgHoursPerDay: 0.8 });
     } finally {
       setLoading(false);
     }
@@ -143,12 +137,12 @@ export default function ContributionGraph() {
   const contributions = contributionData ? getContributionGrid() : [];
   
   const getColor = (level) => {
-    if (level === 0) return 'bg-[var(--color-paper-3)]';
-    if (level === 1) return 'bg-[color-mix(in_oklch,var(--color-live)_22%,var(--color-paper-3))]';
-    if (level === 2) return 'bg-[color-mix(in_oklch,var(--color-live)_48%,var(--color-paper-3))]';
-    if (level === 3) return 'bg-[color-mix(in_oklch,var(--color-live)_72%,var(--color-paper-3))]';
-    if (level === 4) return 'bg-[var(--color-live)]';
-    return 'bg-[var(--color-live)]';
+    if (level === 0) return 'bg-[var(--color-contrib-0)]';
+    if (level === 1) return 'bg-[var(--color-contrib-1)]';
+    if (level === 2) return 'bg-[var(--color-contrib-2)]';
+    if (level === 3) return 'bg-[var(--color-contrib-3)]';
+    if (level === 4) return 'bg-[var(--color-contrib-4)]';
+    return 'bg-[var(--color-contrib-4)]';
   };
 
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -201,52 +195,13 @@ export default function ContributionGraph() {
       <div className="flex items-center gap-3 mt-6 text-xs text-muted-foreground">
         <span>Less</span>
         <div className="flex gap-1">
-          <div className="w-3 h-3 bg-[var(--color-paper-3)] rounded-[3px]" />
-          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-live)_22%,var(--color-paper-3))] rounded-[1px]" />
-          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-live)_48%,var(--color-paper-3))] rounded-[1px]" />
-          <div className="w-3 h-3 bg-[color-mix(in_oklch,var(--color-live)_72%,var(--color-paper-3))] rounded-[1px]" />
-          <div className="w-3 h-3 bg-[var(--color-live)] rounded-[1px]" />
+          <div className="w-3 h-3 bg-[var(--color-contrib-0)] rounded-[3px]" />
+          <div className="w-3 h-3 bg-[var(--color-contrib-1)] rounded-[1px]" />
+          <div className="w-3 h-3 bg-[var(--color-contrib-2)] rounded-[1px]" />
+          <div className="w-3 h-3 bg-[var(--color-contrib-3)] rounded-[1px]" />
+          <div className="w-3 h-3 bg-[var(--color-contrib-4)] rounded-[1px]" />
         </div>
         <span>More</span>
-      </div>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8" data-gsap-stagger>
-        <motion.div
-          whileHover={{ y: -5 }}
-          className="app-card p-4"
-          data-gsap-item
-        >
-          <p className="text-muted-foreground text-xs mb-1">Total Hours</p>
-          <p className="text-2xl font-medium text-[var(--color-live)]">
-            {stats?.totalHours || 0}h
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">This year</p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ y: -5 }}
-          className="app-card p-4"
-          data-gsap-item
-        >
-          <p className="text-muted-foreground text-xs mb-1">Active Days</p>
-          <p className="text-2xl font-medium text-[var(--color-live)]">
-            {stats?.activeDays || 0}
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">Days coded</p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ y: -5 }}
-          className="app-card p-4"
-          data-gsap-item
-        >
-          <p className="text-muted-foreground text-xs mb-1">Avg. Daily</p>
-          <p className="text-2xl font-medium text-[var(--color-live)]">
-            {stats?.avgHoursPerDay || 0}h
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">Per active day</p>
-        </motion.div>
       </div>
     </div>
   );
