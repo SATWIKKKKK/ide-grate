@@ -1,4 +1,4 @@
-# VS-Integrate — Multi-IDE Support: Codex Prompts
+# Cadence — Multi-IDE Support: Codex Prompts
 
 > Feed these prompts to Codex (GPT-5.5) in order. Each is self-contained with full context.
 > Paste the relevant files alongside each prompt as context.
@@ -11,7 +11,7 @@
 
 ---
 
-You are working on **vs-integrate**, a Next.js 16 + Prisma + PostgreSQL app that tracks VS Code coding activity. We are extending it to support **multiple IDEs**: VS Code, Cursor, JetBrains (IntelliJ/WebStorm/PyCharm/GoLand/Rider), Zed, Neovim, and Sublime Text.
+You are working on **cadence**, a Next.js 16 + Prisma + PostgreSQL app that tracks VS Code coding activity. We are extending it to support **multiple IDEs**: VS Code, Cursor, JetBrains (IntelliJ/WebStorm/PyCharm/GoLand/Rider), Zed, Neovim, and Sublime Text.
 
 ### Current schema (relevant parts):
 ```prisma
@@ -102,7 +102,7 @@ Output the complete updated `schema.prisma` and the migration script.
 
 ---
 
-You are extending **vs-integrate**'s backend API to support multiple IDEs. The database schema now has `ide` fields on `Activity` and `DailyContribution`, and a new `UserIdeSetup` model (see schema).
+You are extending **cadence**'s backend API to support multiple IDEs. The database schema now has `ide` fields on `Activity` and `DailyContribution`, and a new `UserIdeSetup` model (see schema).
 
 ### TASK A — Update `app/api/heartbeat/route.ts`
 
@@ -210,7 +210,7 @@ Add a comment explaining this.
 
 ---
 
-You are building a UI component for **vs-integrate**, a Next.js 16 + TypeScript + Tailwind CSS v4 + shadcn/ui app. The app now supports multiple IDEs and the user needs a way to switch between them.
+You are building a UI component for **cadence**, a Next.js 16 + TypeScript + Tailwind CSS v4 + shadcn/ui app. The app now supports multiple IDEs and the user needs a way to switch between them.
 
 The existing design is clean, minimal, monochrome (black/white/gray), uses a serif display font for large headings (similar to editorial design), and is grid-based.
 
@@ -308,7 +308,7 @@ Keep all icons the same size (default 20×20) and accept a `size` prop. Icons sh
 
 ---
 
-You are updating the **vs-integrate** dashboard to be fully IDE-aware.
+You are updating the **cadence** dashboard to be fully IDE-aware.
 
 ### Current state:
 The dashboard (`app/dashboard/page.tsx`) fetches analytics from `/api/analytics` and renders stats, contribution graph, top languages, project breakdown, weekly activity, 30-day trend, language mix, daily hours, productivity breakdown, goals, and achievements.
@@ -322,7 +322,7 @@ Add a `selectedIde` state to the dashboard page:
 const [selectedIde, setSelectedIde] = useState<string | 'combined'>('combined')
 ```
 
-Persist this to `localStorage` with key `vs-integrate-selected-ide`.
+Persist this to `localStorage` with key `cadence-selected-ide`.
 
 Pass `selectedIde` to all API fetch calls as a query param:
 - `/api/analytics?ide=vscode` (or no param for combined)
@@ -380,7 +380,7 @@ When viewing a specific IDE (not combined):
 
 ---
 
-You are redesigning the **Setup** page in vs-integrate to support multiple IDEs.
+You are redesigning the **Setup** page in cadence to support multiple IDEs.
 
 ### Current setup flow:
 1. Copy API key
@@ -418,10 +418,10 @@ For each IDE, show:
 
 **VS Code:**
 ```
-1. Install the VS Integrate extension from the VS Code Marketplace
+1. Install the Cadence extension from the VS Code Marketplace
    [Open Marketplace →] button
 2. Open Command Palette (Ctrl+Shift+P)
-3. Run: "VS Integrate: Set API Key"
+3. Run: "Cadence: Set API Key"
 4. Paste your API key: [API Key field with copy button]
 5. Done! Heartbeats will start appearing here.
 ```
@@ -430,8 +430,8 @@ For each IDE, show:
 ```
 Cursor is built on VS Code — use the same extension.
 1. In Cursor, open Extensions (Ctrl+Shift+X)
-2. Search "VS Integrate" and install
-3. Open Command Palette → "VS Integrate: Set API Key"
+2. Search "Cadence" and install
+3. Open Command Palette → "Cadence: Set API Key"
 4. Paste your API key: [API Key field with copy button]
 Note: The extension sends ide="cursor" automatically when running in Cursor.
 ```
@@ -440,9 +440,9 @@ Note: The extension sends ide="cursor" automatically when running in Cursor.
 ```
 1. Open your JetBrains IDE
 2. Go to Settings → Plugins → Marketplace
-3. Search "VS Integrate" (coming soon) — or use the manual install:
+3. Search "Cadence" (coming soon) — or use the manual install:
    [Download .jar plugin →]
-4. After installing, go to Settings → Tools → VS Integrate
+4. After installing, go to Settings → Tools → Cadence
 5. Paste your API key: [API Key field with copy button]
 6. Set Heartbeat URL: [URL field - pre-filled with production URL]
 ```
@@ -450,13 +450,13 @@ Note: The extension sends ide="cursor" automatically when running in Cursor.
 **Zed:**
 ```
 1. Open Zed's extension panel (Ctrl+Shift+X)  
-2. Search "vs-integrate" — or add to ~/.config/zed/extensions.json:
-   { "vs-integrate": "*" }
+2. Search "cadence" — or add to ~/.config/zed/extensions.json:
+   { "cadence": "*" }
 3. Add to ~/.config/zed/settings.json:
    {
      "vs_integrate": {
        "api_key": "YOUR_KEY",
-       "heartbeat_url": "https://vs-integrate.vercel.app/api/heartbeat"
+       "heartbeat_url": "https://cadence.vercel.app/api/heartbeat"
      }
    }
 4. Paste your API key: [API Key field with copy button]
@@ -466,23 +466,23 @@ Note: The extension sends ide="cursor" automatically when running in Cursor.
 ```
 1. Add the plugin to your config (lazy.nvim example):
    {
-     "your-org/vs-integrate.nvim",
+     "your-org/cadence.nvim",
      config = function()
-       require("vs-integrate").setup({
+       require("cadence").setup({
          api_key = "YOUR_KEY",
        })
      end
    }
 2. Paste your API key: [API Key field with copy button]
-3. Run :VsIntegrateStart in Neovim
+3. Run :CadenceStart in Neovim
 ```
 
 **Sublime Text:**
 ```
 1. Install Package Control (if not already)
 2. Open Command Palette → "Package Control: Install Package"
-3. Search "VS Integrate" and install
-4. Go to Preferences → Package Settings → VS Integrate → Settings
+3. Search "Cadence" and install
+4. Go to Preferences → Package Settings → Cadence → Settings
 5. Add: { "api_key": "YOUR_KEY" }
 6. Paste your API key: [API Key field with copy button]
 ```
@@ -508,7 +508,7 @@ Below the instructions, show a **live connection test** that polls `/api/heartbe
 
 ---
 
-You are building the **Combined IDE Analytics** ("Super Dashboard") view for vs-integrate.
+You are building the **Combined IDE Analytics** ("Super Dashboard") view for cadence.
 
 This view is shown when the user selects "All IDEs / Combined" from the IDE selector.
 
@@ -633,7 +633,7 @@ Clicking a card navigates to that IDE's individual dashboard view.
 
 ---
 
-You are building IDE extensions/plugins for vs-integrate to track coding activity across multiple editors.
+You are building IDE extensions/plugins for cadence to track coding activity across multiple editors.
 
 The existing VS Code extension sends heartbeats to `POST /api/heartbeat` with:
 ```typescript
@@ -677,14 +677,14 @@ Update `vscode-extension/package.json`:
 
 Create a new directory `jetbrains-plugin/` with the following files:
 
-**`jetbrains-plugin/src/main/kotlin/com/vsintegrate/VsIntegratePlugin.kt`**:
+**`jetbrains-plugin/src/main/kotlin/com/cadence/CadencePlugin.kt`**:
 ```kotlin
-// A JetBrains IDE plugin that sends heartbeats to vs-integrate
+// A JetBrains IDE plugin that sends heartbeats to cadence
 // Uses the IntelliJ Platform Plugin SDK
 ```
 
 Build a minimal Kotlin plugin with:
-1. A `VsIntegrateAppService` (application-level service) that:
+1. A `CadenceAppService` (application-level service) that:
    - Reads `apiKey` and `heartbeatUrl` from persistent settings
    - Sends a heartbeat every 2 minutes when the user is active
    - Heartbeat payload: `{ ide: "jetbrains", language, project, filename, timestamp }`
@@ -692,19 +692,19 @@ Build a minimal Kotlin plugin with:
    - Detects current language from `FileType.getName()`
    - Detects project name from `Project.getName()`
 
-2. A `VsIntegrateSettings` (persistent state) storing `apiKey: String = ""` and `heartbeatUrl: String = ""`
+2. A `CadenceSettings` (persistent state) storing `apiKey: String = ""` and `heartbeatUrl: String = ""`
 
-3. A `VsIntegrateConfigurable` (settings UI) showing two text fields: API Key and Heartbeat URL, with a "Test Connection" button
+3. A `CadenceConfigurable` (settings UI) showing two text fields: API Key and Heartbeat URL, with a "Test Connection" button
 
 4. A `DocumentListener` that fires on document changes (typing/editing) to detect activity
 
 **`jetbrains-plugin/src/main/resources/META-INF/plugin.xml`**:
 ```xml
 <idea-plugin>
-  <id>com.vsintegrate.jetbrains</id>
-  <name>VS Integrate</name>
+  <id>com.cadence.jetbrains</id>
+  <name>Cadence</name>
   <version>1.0.0</version>
-  <description>Track your JetBrains IDE coding activity with VS Integrate</description>
+  <description>Track your JetBrains IDE coding activity with Cadence</description>
   <depends>com.intellij.modules.platform</depends>
   ...
 </idea-plugin>
@@ -721,12 +721,12 @@ Create `zed-extension/` with:
 
 **`zed-extension/extension.toml`**:
 ```toml
-id = "vs-integrate"
-name = "VS Integrate"
+id = "cadence"
+name = "Cadence"
 description = "Track your Zed coding activity"
 version = "1.0.0"
 schema_version = 1
-authors = ["VS Integrate"]
+authors = ["Cadence"]
 [language_servers]
 ```
 
@@ -741,7 +741,7 @@ Build a minimal Rust Zed extension that:
 **`zed-extension/Cargo.toml`**:
 ```toml
 [package]
-name = "vs-integrate-zed"
+name = "cadence-zed"
 version = "1.0.0"
 edition = "2021"
 
@@ -758,14 +758,14 @@ zed_extension_api = "0.1"
 
 Create `neovim-plugin/` with:
 
-**`neovim-plugin/lua/vs-integrate/init.lua`**:
+**`neovim-plugin/lua/cadence/init.lua`**:
 ```lua
--- VS Integrate Neovim plugin
+-- Cadence Neovim plugin
 -- Sends heartbeats on BufEnter, CursorMoved, InsertEnter events
 ```
 
 The plugin should:
-1. Accept config: `require("vs-integrate").setup({ api_key = "...", heartbeat_url = "..." })`
+1. Accept config: `require("cadence").setup({ api_key = "...", heartbeat_url = "..." })`
 2. Register autocmds on `BufEnter`, `InsertEnter`, `CursorMovedI` events
 3. Debounce heartbeats to max 1 per 2 minutes
 4. Send heartbeat via `curl` (using `vim.fn.system` or `vim.loop` async)
@@ -781,9 +781,9 @@ The plugin should:
 
 ---
 
-Add a public profile page at `/u/[username]` for **vs-integrate** that shows:
+Add a public profile page at `/u/[username]` for **cadence** that shows:
 
-1. **URL**: `https://vs-integrate.vercel.app/u/satwikchandra`
+1. **URL**: `https://cadence.vercel.app/u/satwikchandra`
 2. **No auth required** (public read)
 3. **Shows**:
    - User avatar + username + "X hours coded"
@@ -792,7 +792,7 @@ Add a public profile page at `/u/[username]` for **vs-integrate** that shows:
    - Top 3 languages
    - Top 3 projects
    - IDE badge row (shows which IDEs the user tracks)
-   - "Built with vs-integrate" link at bottom
+   - "Built with cadence" link at bottom
 4. **Privacy**: Only shown if the user enables "public profile" in Settings
 5. **OG image**: Generate a dynamic OG image via `/api/og/[username]` using `@vercel/og` showing stats in a card format
 
@@ -844,7 +844,7 @@ Files to attach:
 CONTEXT
 ----------------------------------------------------------------------
 
-This is vs-integrate — a Next.js 16 + Tailwind CSS v4 + shadcn/ui +
+This is cadence — a Next.js 16 + Tailwind CSS v4 + shadcn/ui +
 Framer Motion app that tracks VS Code/IDE coding activity. The current
 design is a clean editorial monochrome (black/white/gray) with very
 large serif display headings for every dashboard section.
@@ -981,7 +981,7 @@ PART B — DARK MODE TOGGLE
 1. Create a custom React context: lib/theme-context.tsx
 
   - Stores: theme ('light' | 'dark' | 'system')
-  - On mount, reads from localStorage key 'vs-integrate-theme'
+  - On mount, reads from localStorage key 'cadence-theme'
   - If 'system', uses window.matchMedia('prefers-color-scheme: dark')
   - Applies/removes 'dark' class on document.documentElement
   - Listens to system preference changes when mode is 'system'
@@ -1015,7 +1015,7 @@ PART B — DARK MODE TOGGLE
   <script dangerouslySetInnerHTML={{ __html: `
     (function() {
       try {
-        var t = localStorage.getItem('vs-integrate-theme');
+        var t = localStorage.getItem('cadence-theme');
         if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');
         }
@@ -1079,7 +1079,7 @@ CURRENT → TARGET sizes (use Tailwind size classes or equivalent px):
   Contribution graph "85 active days in selected period":
     Keep at text-xs or text-sm — already fine.
 
-  Nav brand "// vs-integrate":
+  Nav brand "// cadence":
     Keep as-is — correct size for a nav logo.
 
 ----------------------------------------------------------------------
@@ -1221,7 +1221,7 @@ CRITICAL NOTES FOR CODEX
 - make everything responsive across mobiles,tablets and laptops
 
 # NAME CHANGE
-- change name of vs-integrate to Cadence
+- change name of cadence to Cadence
 - remove "//" from everywhere
 - by reading this md file, add significant changes to landing page as per requirements.
 - make sure to add antigravity as and IDE as well along with other IDE implementations.

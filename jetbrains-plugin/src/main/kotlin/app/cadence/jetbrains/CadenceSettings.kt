@@ -10,7 +10,7 @@ import com.intellij.openapi.components.Storage
 class CadenceSettings : PersistentStateComponent<CadenceSettings.State> {
     data class State(
         var apiKey: String = "",
-        var endpoint: String = "https://vs-integrate.vercel.app/api/heartbeat",
+        var endpoint: String = "https://cadence.vercel.app/api/heartbeat",
         var idleTimeoutSeconds: Int = 120,
         var debounceMillis: Int = 30000,
     )

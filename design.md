@@ -1,6 +1,6 @@
 # Design - Monochrome Logic
 
-A locked design system for vs-integrate. Every page uses this system for typography, colour, spacing, borders, forms, charts, and navigation. Backend data remains dynamic; reference numbers in mockups are presentation examples only.
+A locked design system for cadence. Every page uses this system for typography, colour, spacing, borders, forms, charts, and navigation. Backend data remains dynamic; reference numbers in mockups are presentation examples only.
 
 ## Genre
 High-contrast minimal developer workbench.

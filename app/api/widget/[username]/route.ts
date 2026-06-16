@@ -129,7 +129,7 @@ function generateWidgetSVG(data: {
   ${heatmapCells.join("\n  ")}
 
   <!-- Footer -->
-  <text x="25" y="180" class="footer">vs-integrate · vsintegrate.com/u/${escapeXml(data.username)}</text>
+  <text x="25" y="180" class="footer">Cadence · /u/${escapeXml(data.username)}</text>
 </svg>`
 }
 

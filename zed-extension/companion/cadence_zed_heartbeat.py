@@ -42,7 +42,7 @@ def send(args):
 def main():
     parser = argparse.ArgumentParser(description="Cadence companion heartbeat for Zed")
     parser.add_argument("--api-key", required=True)
-    parser.add_argument("--endpoint", default="https://vs-integrate.vercel.app/api/heartbeat")
+    parser.add_argument("--endpoint", default="https://cadence.vercel.app/api/heartbeat")
     parser.add_argument("--language", default="")
     parser.add_argument("--interval", type=int, default=30)
     parser.add_argument("--test", action="store_true")

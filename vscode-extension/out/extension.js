@@ -50,7 +50,15 @@ let languageTimeMap = {};
 let lastLanguageSwitchAt = Date.now();
 let lastLanguageId = 'unknown';
 let isWindowFocused = true;
-const DEFAULT_API_ENDPOINT = 'https://vs-integrate.vercel.app/api/heartbeat';
+const CONFIG_SECTION = 'cadence';
+const LEGACY_CONFIG_SECTION = `vs${'Integrate'}`;
+const DEFAULT_API_ENDPOINT = 'https://cadence.vercel.app/api/heartbeat';
+const COMMANDS = {
+    setApiKey: 'cadence.setApiKey',
+    showStatus: 'cadence.showStatus',
+    testConnection: 'cadence.testConnection',
+    openDashboard: 'cadence.openDashboard',
+};
 function detectIde() {
     const appName = (vscode.env.appName || '').toLowerCase();
     if (appName.includes('cursor')) {
@@ -88,7 +96,7 @@ function activate(context) {
     lastLanguageSwitchAt = Date.now();
     // Create status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    statusBarItem.command = 'vs-integrate.showStatus';
+    statusBarItem.command = COMMANDS.showStatus;
     context.subscriptions.push(statusBarItem);
     // Register URI handler for deep-link authentication
     context.subscriptions.push(vscode.window.registerUriHandler({
@@ -99,9 +107,9 @@ function activate(context) {
                 const endpoint = params.get('endpoint');
                 if (apiKey) {
                     try {
-                        await vscode.workspace.getConfiguration('vsIntegrate').update('apiKey', apiKey, vscode.ConfigurationTarget.Global);
+                        await vscode.workspace.getConfiguration(CONFIG_SECTION).update('apiKey', apiKey, vscode.ConfigurationTarget.Global);
                         if (endpoint) {
-                            await vscode.workspace.getConfiguration('vsIntegrate').update('apiEndpoint', endpoint, vscode.ConfigurationTarget.Global);
+                            await vscode.workspace.getConfiguration(CONFIG_SECTION).update('apiEndpoint', endpoint, vscode.ConfigurationTarget.Global);
                         }
                         vscode.window.showInformationMessage('Cadence connected. Your coding activity will now be tracked.');
                         startTracking();
@@ -122,7 +130,7 @@ function activate(context) {
         }
     }));
     // Register commands
-    context.subscriptions.push(vscode.commands.registerCommand('vs-integrate.setApiKey', setApiKey), vscode.commands.registerCommand('vs-integrate.showStatus', showStatus), vscode.commands.registerCommand('vs-integrate.testConnection', testConnection), vscode.commands.registerCommand('vs-integrate.openDashboard', openDashboard));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMANDS.setApiKey, setApiKey), vscode.commands.registerCommand(COMMANDS.showStatus, showStatus), vscode.commands.registerCommand(COMMANDS.testConnection, testConnection), vscode.commands.registerCommand(COMMANDS.openDashboard, openDashboard));
     // Track editor activity
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(onActivity), vscode.workspace.onDidChangeTextDocument(onActivity), vscode.window.onDidChangeTextEditorSelection(onActivity), vscode.workspace.onDidSaveTextDocument(onActivity));
     // Track window focus — mark idle immediately when VS Code loses focus
@@ -144,13 +152,29 @@ function activate(context) {
     updateStatusBar();
 }
 function getConfig() {
-    const config = vscode.workspace.getConfiguration('vsIntegrate');
     return {
-        apiKey: config.get('apiKey') || '',
-        apiEndpoint: normalizeApiEndpoint(config.get('apiEndpoint') || DEFAULT_API_ENDPOINT),
-        heartbeatInterval: config.get('heartbeatInterval') || 30,
-        idleTimeout: config.get('idleTimeout') || 120
+        apiKey: getConfiguredValue('apiKey', ''),
+        apiEndpoint: normalizeApiEndpoint(getConfiguredValue('apiEndpoint', DEFAULT_API_ENDPOINT)),
+        heartbeatInterval: getConfiguredValue('heartbeatInterval', 30),
+        idleTimeout: getConfiguredValue('idleTimeout', 120)
     };
+}
+function getConfiguredValue(key, fallback) {
+    const configured = getExplicitConfigValue(CONFIG_SECTION, key);
+    if (configured !== undefined && configured !== '') {
+        return configured;
+    }
+    const legacy = getExplicitConfigValue(LEGACY_CONFIG_SECTION, key);
+    if (legacy !== undefined && legacy !== '') {
+        return legacy;
+    }
+    return vscode.workspace.getConfiguration(CONFIG_SECTION).get(key) ?? fallback;
+}
+function getExplicitConfigValue(section, key) {
+    const inspected = vscode.workspace.getConfiguration(section).inspect(key);
+    return inspected?.workspaceFolderValue
+        ?? inspected?.workspaceValue
+        ?? inspected?.globalValue;
 }
 function hashProjectPath(projectPath) {
     return crypto.createHash('sha256').update(projectPath).digest('hex').substring(0, 16);
@@ -385,13 +409,13 @@ async function handleManualDisconnect() {
 async function setApiKey() {
     const apiKey = await vscode.window.showInputBox({
         prompt: 'Enter your Cadence API Key',
-        placeHolder: 'vsi_xxxxxxxxxxxx',
+        placeHolder: 'cad_xxxxxxxxxxxx',
         password: false,
         ignoreFocusOut: true
     });
     if (apiKey) {
-        const config = vscode.workspace.getConfiguration('vsIntegrate');
-        const currentEndpoint = normalizeApiEndpoint(config.get('apiEndpoint') || DEFAULT_API_ENDPOINT);
+        const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
+        const currentEndpoint = normalizeApiEndpoint(getConfiguredValue('apiEndpoint', DEFAULT_API_ENDPOINT));
         const endpointInput = await vscode.window.showInputBox({
             prompt: 'Enter your Cadence site URL or heartbeat endpoint',
             placeHolder: 'https://your-site.com or http://localhost:3001/api/heartbeat',

@@ -1,9 +1,9 @@
 {
-  "name": "vs-integrate-tracker",
+  "name": "cadence",
   "displayName": "Cadence - Coding Activity Tracker",
   "description": "Track real coding activity from VS Code, Cursor, and Antigravity, then visualize sessions, languages, streaks, and productivity in Cadence.",
   "version": "0.2.0",
-  "publisher": "vsintegrate",
+  "publisher": "cadence",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -42,41 +42,41 @@
   "contributes": {
     "commands": [
       {
-        "command": "vs-integrate.setApiKey",
+        "command": "cadence.setApiKey",
         "title": "Cadence: Set API Key"
       },
       {
-        "command": "vs-integrate.showStatus",
+        "command": "cadence.showStatus",
         "title": "Cadence: Show Status"
       },
       {
-        "command": "vs-integrate.testConnection",
+        "command": "cadence.testConnection",
         "title": "Cadence: Test Connection"
       },
       {
-        "command": "vs-integrate.openDashboard",
+        "command": "cadence.openDashboard",
         "title": "Cadence: Open Dashboard"
       }
     ],
     "configuration": {
       "title": "Cadence",
       "properties": {
-        "vsIntegrate.apiKey": {
+        "cadence.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Your Cadence API key (existing vsi_ keys are supported)"
+          "description": "Your Cadence API key"
         },
-        "vsIntegrate.apiEndpoint": {
+        "cadence.apiEndpoint": {
           "type": "string",
           "default": "",
-          "description": "API endpoint for heartbeat data (e.g. https://vs-integrate.vercel.app/api/heartbeat). Leave blank to use the default endpoint. You can enter either your site URL or the full /api/heartbeat path."
+          "description": "API endpoint for heartbeat data (for example, https://your-cadence-site.vercel.app/api/heartbeat). Leave blank to use the default endpoint. You can enter either your site URL or the full /api/heartbeat path."
         },
-        "vsIntegrate.heartbeatInterval": {
+        "cadence.heartbeatInterval": {
           "type": "number",
           "default": 30,
           "description": "How often to send heartbeats (in seconds)"
         },
-        "vsIntegrate.idleTimeout": {
+        "cadence.idleTimeout": {
           "type": "number",
           "default": 120,
           "description": "How long before considering user idle (in seconds)"

@@ -50,13 +50,13 @@ export async function sendGoalAchievedEmail(
         <p style="color: #737373; font-size: 14px;">Keep up the great work! Consistency is the key to mastery.</p>
       </div>
       <div style="padding: 16px 32px; background: #111; text-align: center; border-top: 1px solid #222;">
-        <p style="color: #555; font-size: 12px; margin: 0;">VS Integrate — Track your coding journey</p>
+        <p style="color: #555; font-size: 12px; margin: 0;">Cadence - Track your coding journey</p>
       </div>
     </div>
   `
 
   await transporter.sendMail({
-    from: `"VS Integrate" <${process.env.SMTP_USER}>`,
+    from: `"Cadence" <${process.env.SMTP_USER}>`,
     to,
     subject: `🎯 Goal Achieved: ${goalTypeLabel}!`,
     html,
@@ -89,13 +89,13 @@ export async function sendAchievementUnlockedEmail(
         <p style="color: #737373; font-size: 14px;">Keep shipping code. Your next badge is waiting.</p>
       </div>
       <div style="padding: 16px 28px; background: #111; text-align: center; border-top: 1px solid #222;">
-        <p style="color: #555; font-size: 12px; margin: 0;">VS Integrate — Track your coding journey</p>
+        <p style="color: #555; font-size: 12px; margin: 0;">Cadence - Track your coding journey</p>
       </div>
     </div>
   `
 
   await transporter.sendMail({
-    from: `"VS Integrate" <${process.env.SMTP_USER}>`,
+    from: `"Cadence" <${process.env.SMTP_USER}>`,
     to,
     subject: `${achievementIcon} Achievement Unlocked: ${achievementTitle}`,
     html,

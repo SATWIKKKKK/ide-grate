@@ -3,7 +3,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dashboard - vs-integrate</title>
+<title>Dashboard - cadence</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -213,7 +213,7 @@
 <div class="flex justify-between items-center px-margin-desktop max-w-max-width mx-auto h-full">
 <!-- Brand -->
 <div class="font-headline-md text-headline-md font-bold tracking-tighter text-primary dark:text-on-primary-fixed">
-                vs-integrate
+                cadence
             </div>
 <!-- Navigation Links -->
 <nav class="hidden md:flex items-end h-full gap-lg">
@@ -460,7 +460,7 @@
 <div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-max-width mx-auto gap-md">
 <!-- Copyright -->
 <div class="font-label-mono text-label-mono text-secondary">
-                © 2024 vs-integrate. Built for precision.
+                © 2024 cadence. Built for precision.
             </div>
 <!-- Links -->
 <div class="flex items-center gap-md font-body-md text-body-md">

@@ -2,7 +2,7 @@ local M = {}
 
 local config = {
   api_key = vim.env.CADENCE_API_KEY or "",
-  endpoint = vim.env.CADENCE_ENDPOINT or "https://vs-integrate.vercel.app/api/heartbeat",
+  endpoint = vim.env.CADENCE_ENDPOINT or "https://cadence.vercel.app/api/heartbeat",
   debounce_ms = 30000,
   idle_timeout = 120,
 }

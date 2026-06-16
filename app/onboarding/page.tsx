@@ -96,8 +96,8 @@ export default function OnboardingPage() {
 
   const downloadVSIX = () => {
     const a = document.createElement('a')
-    a.href = '/downloads/extension.vsix'
-    a.download = 'vs-integrate-extension.vsix'
+    a.href = '/api/download/vsix'
+    a.download = 'cadence.vsix'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -182,7 +182,7 @@ export default function OnboardingPage() {
             </div>
             <div className="mt-5 hidden border-t border-border pt-5 lg:block">
               <p className="font-semibold">Endpoint</p>
-              <p className="mt-2 break-all rounded-sm border border-border bg-[var(--color-surface-container)] p-2 font-mono text-xs text-muted-foreground">https://vs-integrate.vercel.app/api/heartbeat</p>
+              <p className="mt-2 break-all rounded-sm border border-border bg-[var(--color-surface-container)] p-2 font-mono text-xs text-muted-foreground">https://your-cadence-site.vercel.app/api/heartbeat</p>
             </div>
           </aside>
 
@@ -192,14 +192,14 @@ export default function OnboardingPage() {
                 <StepCard key="install" icon={<Download className="size-5" />} title="Install the extension" subtitle="Download the VSIX and install it from VS Code.">
                   <button onClick={downloadVSIX} className="signal-button w-full">
                     <Download className="size-4" />
-                    Download .vsix file
+                    Download cadence.vsix
                   </button>
                   <InstructionList
                     items={[
                       'Open VS Code and go to the Extensions panel.',
                       'Open the more actions menu and choose Install from VSIX.',
-                      'Select the downloaded .vsix file and install it.',
-                      'Confirm VS Integrate appears in your extensions list.',
+                      'Select cadence.vsix and install it.',
+                      'Confirm Cadence appears in your extensions list.',
                     ]}
                   />
                   <button onClick={() => goToStep(2)} className="signal-button w-full">
@@ -231,7 +231,7 @@ export default function OnboardingPage() {
                         items={[
                           'Open VS Code.',
                           'Press Ctrl+Shift+P or Cmd+Shift+P on Mac.',
-                          'Run VS Integrate: Set API Key.',
+                          'Run Cadence: Set API Key.',
                           'Paste your API key, then use the heartbeat endpoint when prompted.',
                         ]}
                       />
