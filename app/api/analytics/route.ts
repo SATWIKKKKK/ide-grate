@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireServerUser } from "@/lib/serverAuth"
 import { IDE_OPTIONS, validateIdeParam } from "@/lib/ide-config"
+import { normalizeLanguageKey } from "@/lib/languages"
 
 // GET /api/analytics - Get user analytics data.
 export async function GET(request: NextRequest) {
@@ -72,7 +73,10 @@ export async function GET(request: NextRequest) {
       },
       contributions: contributionData,
       weeklyBreakdown,
-      recentActivities: recentActivities.slice(0, 10),
+      recentActivities: recentActivities.slice(0, 10).map((activity) => ({
+        ...activity,
+        language: normalizeLanguageKey(activity.language) || null,
+      })),
       ideBreakdown,
     })
   } catch (error) {

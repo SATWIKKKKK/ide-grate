@@ -49,6 +49,7 @@ model User {
   apiKey        String?    @unique  // API key for VS Code extension
   // Privacy settings
   profilePublic    Boolean @default(false)
+  showBio          Boolean @default(true)
   showHours        Boolean @default(true)
   showLanguages    Boolean @default(true)
   showStreak       Boolean @default(true)

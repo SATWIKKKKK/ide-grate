@@ -29,7 +29,7 @@ export default function IdeTargetCard({
 }: IdeTargetCardProps) {
   const definition = IDE_CONFIG[ide]
   const isLive = active || connected
-  const stateLabel = active ? 'Active now' : connected ? 'Verified' : setup ? 'Setup saved' : 'No heartbeat yet'
+  const stateLabel = active ? 'Tracking now' : connected ? 'Tracking now' : setup ? 'Setup saved' : 'Not active'
   const StateIcon = isLive ? CheckCircle2 : setup ? RadioTower : AlertCircle
   const content = (
     <>
@@ -43,7 +43,7 @@ export default function IdeTargetCard({
               ? 'bg-[var(--color-live-soft)] text-[var(--color-live)]'
               : setup
                 ? 'bg-secondary text-foreground'
-                : 'text-muted-foreground'
+                : 'bg-[var(--color-danger-soft)] text-destructive'
           }`}
         >
           <StateIcon className="size-3.5" />

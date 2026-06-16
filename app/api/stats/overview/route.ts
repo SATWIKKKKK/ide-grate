@@ -2,16 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireServerUser } from "@/lib/serverAuth"
 import { IDE_CONFIG, IDE_OPTIONS, type IdeId, validateIdeParam } from "@/lib/ide-config"
-
-const NON_LANGUAGES = new Set([
-  "dotenv", "markdown", "json", "jsonc", "yaml", "yml", "toml", "xml",
-  "plaintext", "text", "log", "csv", "tsv", "ini", "cfg", "conf",
-  "properties", "env", "editorconfig", "gitignore", "gitattributes",
-  "dockerignore", "npmignore", "eslintignore", "prettierignore",
-  "ignore", "lock", "svg", "ico", "png", "jpg", "jpeg", "gif",
-  "bmp", "webp", "woff", "woff2", "ttf", "eot", "otf",
-  "binary", "image", "font", "pdf", "zip", "tar", "gz",
-])
+import { normalizeLanguageKey } from "@/lib/languages"
 
 type OverviewActivity = {
   ide: string
@@ -50,7 +41,7 @@ export async function GET(request: NextRequest) {
     weekStart.setHours(0, 0, 0, 0)
     const ideFilter = ide ? { ide } : {}
 
-    const [activities, allActivities, userStats, contributions, allContributions, ideSetups] = await Promise.all([
+    const [activities, allActivities, userStats, contributions, allContributions, metricContributions, ideSetups] = await Promise.all([
       prisma.activity.findMany({
         where: { userId: sessionUser.id, startTime: { gte: yearStart }, ...ideFilter },
         select: { ide: true, startTime: true, endTime: true, duration: true, language: true, projectHash: true, projectName: true },
@@ -70,6 +61,10 @@ export async function GET(request: NextRequest) {
         where: { userId: sessionUser.id, date: { gte: yearStart } },
         select: { ide: true, date: true, hours: true, sessions: true },
       }),
+      prisma.dailyContribution.findMany({
+        where: { userId: sessionUser.id, ...ideFilter },
+        select: { ide: true, date: true, hours: true, sessions: true },
+      }),
       prisma.userIdeSetup.findMany({
         where: { userId: sessionUser.id },
         select: { ide: true, isActive: true, lastHeartbeat: true, connectedAt: true },
@@ -83,12 +78,13 @@ export async function GET(request: NextRequest) {
       : now.toISOString().split("T")[0]
 
     const totalSeconds = activities.reduce((s, a) => s + a.duration, 0)
-    const fallbackTotalHours = totalSeconds / 3600
-    const totalHours = ide ? fallbackTotalHours : (userStats?.totalHours ?? fallbackTotalHours)
-    const totalSessions = ide ? activities.length : (userStats?.totalSessions ?? activities.length)
+    const totalHours = metricContributions.reduce((sum, contribution) => sum + contribution.hours, 0)
+    const contributionSessions = metricContributions.reduce((sum, contribution) => sum + contribution.sessions, 0)
+    const totalSessions = contributionSessions || (ide ? activities.length : (userStats?.totalSessions ?? activities.length))
 
     const contributionHoursByDate = sumContributionsByDate(contributions)
-    const activeDays = Object.values(contributionHoursByDate).filter((hours) => hours > 0).length
+    const metricHoursByDate = sumContributionsByDate(metricContributions)
+    const activeDays = Object.values(metricHoursByDate).filter((hours) => hours > 0).length
     const avgDailyHours = activeDays > 0 ? totalHours / activeDays : 0
 
     const sortedDates = Object.entries(contributionHoursByDate)
@@ -255,8 +251,8 @@ function parseLanguageTotals(raw: unknown): Record<string, number> {
     const fromArray: Record<string, number> = {}
     raw.forEach((entry) => {
       const item = entry as { language?: unknown; hours?: unknown; seconds?: unknown }
-      const language = typeof item.language === "string" ? item.language.toLowerCase() : ""
-      if (!language || language === "unknown" || NON_LANGUAGES.has(language)) return
+      const language = normalizeLanguageKey(item.language)
+      if (!language) return
       if (typeof item.seconds === "number" && Number.isFinite(item.seconds) && item.seconds > 0) {
         fromArray[language] = (fromArray[language] || 0) + item.seconds
         return
@@ -270,8 +266,8 @@ function parseLanguageTotals(raw: unknown): Record<string, number> {
   if (typeof raw === "object") {
     const fromObject: Record<string, number> = {}
     Object.entries(raw as Record<string, unknown>).forEach(([language, value]) => {
-      const key = language.toLowerCase()
-      if (!key || key === "unknown" || NON_LANGUAGES.has(key)) return
+      const key = normalizeLanguageKey(language)
+      if (!key) return
       if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return
       fromObject[key] = value
     })
@@ -283,9 +279,8 @@ function parseLanguageTotals(raw: unknown): Record<string, number> {
 function aggregateLanguagesFromActivities(activities: Array<{ language: string | null; duration: number }>) {
   const languageTotals: Record<string, number> = {}
   activities.forEach((a) => {
-    if (!a.language || a.language === "unknown") return
-    const key = a.language.toLowerCase()
-    if (NON_LANGUAGES.has(key)) return
+    const key = normalizeLanguageKey(a.language)
+    if (!key) return
     languageTotals[key] = (languageTotals[key] || 0) + a.duration
   })
   return languageTotals
@@ -321,6 +316,7 @@ function buildIdeBreakdown(
   setups: Array<{ ide: string; isActive: boolean; lastHeartbeat: Date | null; connectedAt: Date }>
 ) {
   const setupMap = new Map(setups.map((setup) => [setup.ide, setup]))
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
   return IDE_OPTIONS.map((definition) => {
     const ideActivities = activities.filter((activity) => activity.ide === definition.id)
     const ideContributions = contributions.filter((contribution) => contribution.ide === definition.id)
@@ -340,6 +336,7 @@ function buildIdeBreakdown(
       sessions: ideActivities.length,
       activeDays,
       isSetup: Boolean(setup?.isActive),
+      active: Boolean(setup?.lastHeartbeat && setup.lastHeartbeat >= fiveMinutesAgo),
       lastHeartbeat: setup?.lastHeartbeat?.toISOString() || null,
       lastActivityAt: lastActivity?.toISOString() || null,
     }

@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
     const where = { userId: sessionUser.id, ...(ide ? { ide } : {}) }
-    const [recentActivity, latestActivity, totalSessions, stats, setups, ideActivities] = await Promise.all([
+    const [recentActivity, latestActivity, totalSessions, scopedContributions, setups, allSetups, ideActivities] = await Promise.all([
       prisma.activity.findFirst({
         where: { ...where, endTime: { gte: fiveMinutesAgo } },
         orderBy: { endTime: "desc" },
@@ -50,12 +50,16 @@ export async function GET(request: NextRequest) {
         select: { endTime: true },
       }),
       prisma.activity.count({ where }),
-      prisma.userStats.findUnique({
-        where: { userId: sessionUser.id },
-        select: { totalHours: true, lastActiveDate: true },
+      prisma.dailyContribution.findMany({
+        where,
+        select: { hours: true },
       }),
       prisma.userIdeSetup.findMany({
         where: { userId: sessionUser.id, ...(ide ? { ide } : {}) },
+        select: { ide: true, isActive: true, lastHeartbeat: true, connectedAt: true },
+      }),
+      prisma.userIdeSetup.findMany({
+        where: { userId: sessionUser.id },
         select: { ide: true, isActive: true, lastHeartbeat: true, connectedAt: true },
       }),
       prisma.activity.findMany({
@@ -72,7 +76,7 @@ export async function GET(request: NextRequest) {
     const isActive = Boolean(hasConnectedSetup && (recentActivity || setupActive))
 
     const integrations = IDE_OPTIONS.map((definition) => {
-      const setup = setups.find((item) => item.ide === definition.id)
+      const setup = allSetups.find((item) => item.ide === definition.id)
       const latestForIde = ideActivities.find((activity) => activity.ide === definition.id)
       return {
         id: definition.id,
@@ -93,9 +97,9 @@ export async function GET(request: NextRequest) {
       hasActivity: totalSessions > 0 || isActive,
       isSetup: ide ? setups.some((setup) => setup.isActive) : setups.length > 0,
       ide: ide || "combined",
-      lastActivityAt: latestActivity?.endTime || setups[0]?.lastHeartbeat || stats?.lastActiveDate || null,
+      lastActivityAt: latestActivity?.endTime || setups[0]?.lastHeartbeat || null,
       totalSessions,
-      totalHours: stats?.totalHours || 0,
+      totalHours: scopedContributions.reduce((sum, contribution) => sum + contribution.hours, 0),
       integrations,
     })
   } catch (error) {

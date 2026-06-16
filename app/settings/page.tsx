@@ -20,6 +20,7 @@ interface UserSettings {
  username: string | null
  bio: string | null
  profilePublic: boolean
+ showBio: boolean
  showHours: boolean
  showLanguages: boolean
  showStreak: boolean
@@ -60,7 +61,7 @@ export default function SettingsPage() {
 
  // Settings
  const [settings, setSettings] = useState<UserSettings>({
- username: null, bio: null, profilePublic: false,
+ username: null, bio: null, profilePublic: false, showBio: true,
  showHours: true, showLanguages: true, showStreak: true,
  showHeatmap: true, showProjects: false,
  dailyDigest: false, streakReminder: false,
@@ -325,8 +326,8 @@ export default function SettingsPage() {
  </div>
  )}
  <div>
- <h1 className="text-[clamp(3rem,6vw,4.5rem)] leading-none">{session.user?.name || 'Settings'}</h1>
- <p className="mt-3 text-lg text-muted-foreground">{session.user?.email}</p>
+ <h1 className="font-sans text-2xl font-semibold leading-tight sm:text-3xl">{session.user?.name || 'Settings'}</h1>
+ <p className="mt-2 text-sm text-muted-foreground sm:text-base">{session.user?.email}</p>
  {accountCreatedAt && (
  <p className="mt-2 flex items-center gap-1 font-mono text-sm text-muted-foreground">
  <Calendar className="w-3 h-3" />
@@ -387,6 +388,9 @@ export default function SettingsPage() {
  {/* Profile */}
  <Section title="Profile" icon={<User className="w-4 h-4 text-primary" />} delay={0.1}>
  <div className="p-5 sm:p-6 space-y-4">
+ <p className="text-sm leading-relaxed text-muted-foreground">
+ Now u can share ur Cadence stats and profile to others.
+ </p>
  {/* Username */}
  <div>
  <label className="text-sm text-muted-foreground mb-1.5 block">Username</label>
@@ -449,184 +453,16 @@ export default function SettingsPage() {
  </div>
  </Section>
 
- {/* Editor Connection */}
- <Section title="Editor Connections" icon={<Code2 className="w-4 h-4 text-primary" />} delay={0.15}>
- <div className="p-5 sm:p-6 space-y-4">
- {/* Live connection badge */}
- <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border ${
- connection?.connected
- ? 'bg-primary/10 border-primary/30'
- : 'bg-secondary/40 border-border'
- }`}>
- <div className="flex items-center gap-3">
- {connection?.connected
- ? <Wifi className="w-5 h-5 text-primary shrink-0" />
- : <WifiOff className="w-5 h-5 text-muted-foreground shrink-0" />}
- <div>
- <p className={`text-sm font-medium ${connection?.connected ? 'text-primary' : 'text-muted-foreground'}`}>
- {connection?.connected
- ? 'Cadence Connected & Tracking'
- : connection?.hasApiKey
- ? 'Not Connected — open a configured editor to start tracking'
- : 'Not Connected'}
- </p>
- {connection?.connected && (
- <p className="text-xs text-primary/70 mt-0.5">Heartbeats received — every second is being tracked</p>
- )}
- {!connection?.connected && connection?.hasApiKey && (
- <p className="text-xs text-muted-foreground mt-0.5">
- {connection?.lastActivityAt
- ? `Last active: ${new Date(connection.lastActivityAt).toLocaleString()}`
- : 'No heartbeats yet — install an editor integration'}
- </p>
- )}
- {!connection?.connected && !connection?.hasApiKey && (
- <p className="text-xs text-muted-foreground mt-0.5">Generate an API key below to get started</p>
- )}
- </div>
- </div>
- <button
- onClick={testConnection}
- disabled={testStatus === 'testing'}
- className={`shrink-0 px-3 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5 ${
- connection?.connected
- ? 'bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary hover:text-primary'
- : 'bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary hover:text-primary'
- }`}
- >
- {testStatus === 'testing' && <Loader2 className="w-3 h-3 animate-spin" />}
- {testStatus === 'success' && <CheckCircle2 className="w-3 h-3 text-primary" />}
- {testStatus === 'ready' && <CheckCircle2 className="w-3 h-3 text-primary" />}
- {testStatus === 'error' && <XCircle className="w-3 h-3 text-destructive" />}
- {testStatus === 'idle' ? 'Refresh Status'
- : testStatus === 'testing' ? 'Checking…'
- : testStatus === 'success' ? 'Connected!'
- : testStatus === 'ready' ? 'Key Valid'
- : 'No Key'}
- </button>
- </div>
-
- {apiKey && !connection?.connected && (
- <div className="space-y-3">
- <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl">
- <p className="text-xs text-primary font-medium mb-1">How to connect:</p>
- <ol className="text-[11px] text-muted-foreground space-y-1 list-decimal list-inside">
- <li>Open the multi-IDE setup guide and choose your editor</li>
- <li>Install the VSIX, native plugin, or companion path shown there</li>
- <li>Paste your Cadence API key</li>
- <li>Use endpoint: <code className="text-primary bg-secondary px-1 rounded">/api/heartbeat</code></li>
- </ol>
- </div>
- {!apiKey && (
- <button
- onClick={connectVsCode}
- disabled={apiKeyLoading}
- className="signal-button w-full sm:w-auto px-4 py-2.5 text-sm disabled:opacity-45 flex items-center justify-center gap-2"
- >
- {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
- Generate API Key
- </button>
- )}
- </div>
- )}
-
- {/* API Key display */}
- {apiKey ? (
- <div className="space-y-3">
- <label className="text-sm text-muted-foreground block">Your API Key</label>
- <div className="flex items-center gap-2">
- <div className="flex-1 p-3 bg-secondary border border-border rounded-lg font-mono text-sm break-all min-w-0 overflow-hidden">
- {showKey
- ? <span className="text-primary select-all">{apiKey}</span>
- : <span className="text-muted-foreground">{'•'.repeat(Math.min(apiKey.length, 48))}</span>}
- </div>
- <button onClick={() => setShowKey(v => !v)} className="p-2.5 bg-primary/10 hover:bg-primary/20 rounded-lg border border-primary/20 transition-colors shrink-0">
- {showKey ? <EyeOff className="w-4 h-4 text-primary" /> : <Eye className="w-4 h-4 text-primary" />}
- </button>
- <button onClick={copyApiKey} className={`p-2.5 rounded-lg border transition-colors shrink-0 ${copied ? 'bg-primary/10 border-primary/20' : 'bg-secondary hover:bg-secondary border-border'}`}>
- {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
- </button>
- </div>
- <div className="flex flex-wrap gap-2">
- <button onClick={generateApiKey} disabled={apiKeyLoading}
- className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-xs text-primary transition-colors flex items-center gap-1.5">
- <RefreshCw className={`w-3 h-3 ${apiKeyLoading ? 'animate-spin' : ''}`} /> Regenerate
- </button>
- <button onClick={() => setShowRevokeConfirm(true)}
- className="px-3 py-1.5 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-xs transition-colors flex items-center gap-1.5">
- <Trash2 className="w-3 h-3" /> Revoke Key
- </button>
- </div>
- </div>
- ) : (
- <div className="text-center py-4">
- <p className="text-muted-foreground text-sm mb-3">No API key generated yet</p>
- <button onClick={generateApiKey} disabled={apiKeyLoading}
- className="signal-button px-5 py-2.5 text-sm flex items-center gap-2 mx-auto">
- {apiKeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
- Generate API Key
- </button>
- </div>
- )}
-
- {/* Setup steps */}
- <div className="bg-secondary/30 border border-border/40 rounded-xl p-4 space-y-2.5">
- <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-3">
- <Terminal className="w-3.5 h-3.5 text-primary" /> How to connect editors
- </p>
- {[
- 'Open Dashboard > Setup and choose an editor',
- 'Install the VSIX, native plugin, or companion path for that editor',
- 'Paste your Cadence API key in the integration settings',
- 'When prompted for endpoint, enter: /api/heartbeat',
- 'Status bar shows tracking state. Your dashboard updates as heartbeats arrive.',
- ].map((step, i) => (
- <div key={i} className="flex items-start gap-2.5">
- <span className="w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
- <p className="text-xs text-muted-foreground leading-relaxed">{step}</p>
- </div>
- ))}
- <div className="mt-3">
- <a
- href="/api/download/vsix"
- download="cadence.vsix"
- className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary rounded-lg text-xs text-primary-foreground font-medium transition-colors"
- >
- <Download className="w-3.5 h-3.5" />
- Download cadence.vsix
- </a>
- </div>
- </div>
- </div>
- </Section>
-
  {/* Privacy Controls */}
  <Section title="Public Profile & Privacy" icon={<Globe className="w-4 h-4 text-primary" />} delay={0.2}>
  <div className="divide-y divide-border">
  <ToggleRow label="Public Profile" description="Let others view your profile at /u/username" value={settings.profilePublic} onChange={() => toggleSetting('profilePublic')} />
+ <ToggleRow label="Show Bio" description="Display your bio on your public Cadence profile" value={settings.showBio} onChange={() => toggleSetting('showBio')} disabled={!settings.profilePublic} />
  <ToggleRow label="Show Total Hours" description="Display your total coding hours" value={settings.showHours} onChange={() => toggleSetting('showHours')} disabled={!settings.profilePublic} />
  <ToggleRow label="Show Languages" description="Display your top programming languages" value={settings.showLanguages} onChange={() => toggleSetting('showLanguages')} disabled={!settings.profilePublic} />
  <ToggleRow label="Show Streak" description="Display current and longest streak" value={settings.showStreak} onChange={() => toggleSetting('showStreak')} disabled={!settings.profilePublic} />
  <ToggleRow label="Show Heatmap" description="Display contribution activity heatmap" value={settings.showHeatmap} onChange={() => toggleSetting('showHeatmap')} disabled={!settings.profilePublic} />
  <ToggleRow label="Show Projects" description="Show project breakdown on public profile" value={settings.showProjects} onChange={() => toggleSetting('showProjects')} disabled={!settings.profilePublic} />
- </div>
- </Section>
-
- {/* Notifications */}
- <Section title="Notifications & Email" icon={<Bell className="w-4 h-4 text-primary" />} delay={0.25}>
- <div className="divide-y divide-border">
- <ToggleRow label="Goal Achievement Email" description="Get emailed when you achieve a coding goal" value={settings.dailyDigest} onChange={() => toggleSetting('dailyDigest')} />
- <ToggleRow label="Streak Reminder" description="Get warned when your streak is about to break" value={settings.streakReminder} onChange={() => toggleSetting('streakReminder')} />
- </div>
- <div className="px-5 sm:px-6 py-4 border-t border-border/50">
- <div className="flex items-start gap-2 text-xs text-muted-foreground">
- <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
- <p>
- Emails sent to <span className="text-muted-foreground font-medium">{session.user?.email}</span>.
- Configure <code className="text-primary">SMTP_USER</code> and <code className="text-primary">SMTP_PASS</code> in your
- environment variables to enable email delivery.
- </p>
- </div>
  </div>
  </Section>
 
@@ -764,9 +600,9 @@ function Section({
  className="signal-panel overflow-hidden transition-colors"
  data-gsap="fade-up"
  >
- <div className="flex items-center gap-3 border-b border-border bg-card px-6 py-5">
+ <div className="flex items-center gap-3 border-b border-border bg-card px-6 py-4">
  {icon}
- <h2 className="text-3xl">{title}</h2>
+ <h2 className="font-sans text-base font-semibold sm:text-lg">{title}</h2>
  </div>
  {children}
  </motion.div>

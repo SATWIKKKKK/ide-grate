@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
         username: true,
         bio: true,
         profilePublic: true,
+        showBio: true,
         showHours: true,
         showLanguages: true,
         showStreak: true,
@@ -42,6 +43,7 @@ export async function PATCH(request: NextRequest) {
     // Whitelist fields that can be updated
     const allowedFields = [
       'username', 'bio', 'profilePublic',
+      'showBio',
       'showHours', 'showLanguages', 'showStreak', 'showHeatmap', 'showProjects',
       'dailyDigest', 'streakReminder',
     ]
@@ -79,6 +81,7 @@ export async function PATCH(request: NextRequest) {
         username: true,
         bio: true,
         profilePublic: true,
+        showBio: true,
         showHours: true,
         showLanguages: true,
         showStreak: true,

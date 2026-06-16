@@ -19,7 +19,7 @@ export default withAuth(
         const { pathname } = req.nextUrl
         
         // Public routes that don't require authentication
-        const publicRoutes = ['/', '/login', '/signup', '/privacy', '/terms', '/auth/signin', '/auth/error', '/api/heartbeat']
+        const publicRoutes = ['/', '/login', '/signup', '/privacy', '/terms', '/auth/signin', '/auth/error', '/api/heartbeat', '/superadmin']
         
         // Allow public routes
         if (publicRoutes.includes(pathname)) {
@@ -48,6 +48,11 @@ export default withAuth(
 
         // Allow debug endpoints (DB connectivity test)
         if (pathname.startsWith('/api/debug/')) {
+          return true
+        }
+
+        // Superadmin has its own credential gate and must not be routed through user auth.
+        if (pathname.startsWith('/api/superadmin/')) {
           return true
         }
         

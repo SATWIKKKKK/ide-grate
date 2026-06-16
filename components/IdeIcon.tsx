@@ -39,12 +39,40 @@ const iconMap: Record<IdeId, IconDef> = {
   sublime: siSublimetext,
 }
 
+const pngIconMap: Partial<Record<IdeId, string | { light: string; dark: string }>> = {
+  vscode: "/vscode.png",
+  cursor: {
+    light: "/cursor-light%20mode.png",
+    dark: "/cursor-darkmode.png",
+  },
+  antigravity: "/antigravity.png",
+  jetbrains: "/jetbrains.png",
+}
+
+function PngIcon({ src, className, title }: { src: string | { light: string; dark: string }; className: string; title: string }) {
+  if (typeof src === "string") {
+    return <img src={src} alt={title} className={`${className} object-contain`} draggable={false} />
+  }
+
+  return (
+    <>
+      <img src={src.light} alt={title} className={`${className} object-contain dark:hidden`} draggable={false} />
+      <img src={src.dark} alt={title} className={`${className} hidden object-contain dark:block`} draggable={false} />
+    </>
+  )
+}
+
 export default function IdeIcon({ ide, className = "size-5", bare = false }: Props) {
   const config = IDE_CONFIG[ide]
   const icon = iconMap[ide]
   const color = icon.hex ? `#${icon.hex.replace(/^#/, "")}` : config.color
+  const pngIcon = pngIconMap[ide]
 
   if (bare) {
+    if (pngIcon) {
+      return <PngIcon src={pngIcon} className={className} title={icon.title} />
+    }
+
     return (
       <svg
         viewBox={icon.viewBox || "0 0 24 24"}
@@ -64,15 +92,19 @@ export default function IdeIcon({ ide, className = "size-5", bare = false }: Pro
       title={icon.title}
       aria-hidden="true"
     >
-      <svg
-        viewBox={icon.viewBox || "0 0 24 24"}
-        className="size-[72%]"
-        role="img"
-        focusable="false"
-        aria-label={icon.title}
-      >
-        <path fill={color} d={icon.path} />
-      </svg>
+      {pngIcon ? (
+        <PngIcon src={pngIcon} className="size-[78%]" title={icon.title} />
+      ) : (
+        <svg
+          viewBox={icon.viewBox || "0 0 24 24"}
+          className="size-[72%]"
+          role="img"
+          focusable="false"
+          aria-label={icon.title}
+        >
+          <path fill={color} d={icon.path} />
+        </svg>
+      )}
     </span>
   )
 }

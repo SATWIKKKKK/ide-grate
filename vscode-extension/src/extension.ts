@@ -433,7 +433,7 @@ async function handleManualDisconnect() {
     const legacyInstalled = Boolean(vscode.extensions.getExtension(LEGACY_EXTENSION_ID));
     const selection = await vscode.window.showWarningMessage(
         legacyInstalled
-            ? `API key has been disconnected for ${getProductLabel()}. The old VS Integrate extension is also installed; uninstall it to stop duplicate tracking warnings.`
+            ? `API key has been disconnected for ${getProductLabel()}. The old tracker extension is also installed; uninstall it to stop duplicate tracking warnings.`
             : `API key has been disconnected, please reconnect for ${getProductLabel()} tracking.`,
         'Reconnect Now',
         'Open Dashboard'
@@ -452,7 +452,7 @@ async function warnAboutLegacyExtension() {
     }
 
     const selection = await vscode.window.showWarningMessage(
-        'The old VS Integrate extension is still installed. Uninstall it so Cadence is the only tracker running.',
+        'The old tracker extension is still installed. Uninstall it so Cadence is the only tracker running.',
         'Copy uninstall command',
         'Open Extensions'
     );
@@ -461,7 +461,7 @@ async function warnAboutLegacyExtension() {
         await vscode.env.clipboard.writeText('code --uninstall-extension vsintegrate.vs-integrate-tracker');
         vscode.window.showInformationMessage('Uninstall command copied.');
     } else if (selection === 'Open Extensions') {
-        vscode.commands.executeCommand('workbench.extensions.search', '@installed VS Integrate');
+        vscode.commands.executeCommand('workbench.extensions.search', '@installed vsintegrate');
     }
 }
 

@@ -41,7 +41,7 @@ interface StatsData {
  weeklyBreakdown: number[]
  projects: { hash: string; name: string | null; hours: number; percentage: number; repoUrl?: string | null }[]
  todaySessions?: { ide?: string; startTime: string; endTime: string; duration: number }[]
- ideBreakdown?: { id: string; name: string; color: string; hours: number; sessions: number; activeDays: number; isSetup: boolean; lastHeartbeat: string | null; lastActivityAt: string | null }[]
+ ideBreakdown?: { id: string; name: string; color: string; hours: number; sessions: number; activeDays: number; isSetup: boolean; active?: boolean; lastHeartbeat: string | null; lastActivityAt: string | null }[]
 }
 
 interface ContributionDay {
@@ -154,7 +154,7 @@ function toLocalDateStr(d: Date): string {
 export default function DashboardPage() {
  const { data: session, status } = useSession()
  const router = useRouter()
- const [selectedIde, setSelectedIde] = useState<IdeSelection>('combined')
+ const [selectedIde, setSelectedIde] = useState<IdeSelection>('vscode')
  const ideQuery = selectedIde === 'combined' ? '' : `ide=${selectedIde}`
  const idePrefix = selectedIde === 'combined' ? 'combined' : IDE_CONFIG[selectedIde].shortName
  const contributionApiUrl = `/api/contributions?days=365${ideQuery ? `&${ideQuery}` : ''}`
@@ -190,6 +190,7 @@ export default function DashboardPage() {
  const [connectionToast, setConnectionToast] = useState<{ show: boolean; message: string; type: 'success' | 'warning' | 'info' } | null>(null)
  const [activeStatPopup, setActiveStatPopup] = useState<string | null>(null)
  const [dailyBarFilter, setDailyBarFilter] = useState<'7d' | '14d' | '1m' | '3m' | '1y'>('14d')
+ const [totalHoursRange, setTotalHoursRange] = useState<'30d' | '60d' | '90d' | 'all'>('all')
  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false)
  const [showReconnectPopup, setShowReconnectPopup] = useState(false)
  const hasFetched = useRef(false)
@@ -198,10 +199,27 @@ export default function DashboardPage() {
  useEffect(() => {
  if (typeof window === 'undefined') return
  const stored = window.localStorage.getItem('cadence-selected-ide')
- if (stored === 'combined' || stored === 'vscode' || stored === 'cursor' || stored === 'antigravity' || stored === 'jetbrains' || stored === 'zed' || stored === 'neovim' || stored === 'sublime') {
+ if (stored === 'vscode' || stored === 'cursor' || stored === 'antigravity' || stored === 'jetbrains' || stored === 'zed' || stored === 'neovim' || stored === 'sublime') {
  setSelectedIde(stored)
  }
  }, [])
+
+ useEffect(() => {
+ setLoading(true)
+ setStats(null)
+ setContributions({})
+ setConnectionReady(false)
+ setShowReconnectPopup(false)
+ prevConnected.current = null
+ setConnectionStatus((prev) => ({
+ connected: false,
+ active: false,
+ hasApiKey: prev.hasApiKey,
+ hasActivity: false,
+ lastActivityAt: null,
+ integrations: prev.integrations,
+ }))
+ }, [selectedIde])
 
  useEffect(() => {
  if (typeof window !== 'undefined') window.localStorage.setItem('cadence-selected-ide', selectedIde)
@@ -522,6 +540,30 @@ export default function DashboardPage() {
 
  // Period hours use server data only (accurate active-time tracking)
  const periodHoursDisplay = periodHours
+ const rangedTotalHours = useMemo(() => {
+ if (totalHoursRange === 'all') return stats?.totalHours || 0
+ const days = totalHoursRange === '30d' ? 30 : totalHoursRange === '60d' ? 60 : 90
+ let total = 0
+ for (let i = 0; i < days; i++) {
+ const d = new Date()
+ d.setDate(d.getDate() - i)
+ total += contributions[toLocalDateStr(d)]?.hours || 0
+ }
+ return total
+ }, [contributions, stats?.totalHours, totalHoursRange])
+
+ const rangedActiveDays = useMemo(() => {
+ if (totalHoursRange === 'all') return stats?.activeDays || 0
+ const days = totalHoursRange === '30d' ? 30 : totalHoursRange === '60d' ? 60 : 90
+ let count = 0
+ for (let i = 0; i < days; i++) {
+ const d = new Date()
+ d.setDate(d.getDate() - i)
+ if ((contributions[toLocalDateStr(d)]?.hours || 0) > 0) count++
+ }
+ return count
+ }, [contributions, stats?.activeDays, totalHoursRange])
+
  const dashboardIdeStatuses = useMemo(() => {
  const rows = stats?.ideBreakdown?.length ? stats.ideBreakdown : connectionStatus.integrations || []
  return rows.map((item) => ({
@@ -553,7 +595,7 @@ export default function DashboardPage() {
 
  return (
  <div className="page-shell flex min-h-screen flex-col text-foreground">
- <Navbar toolbarSlot={<IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={dashboardIdeStatuses} />} />
+ <Navbar toolbarSlot={<IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={dashboardIdeStatuses} includeCombined={false} />} />
 
  {/* Connection status toast */}
  <AnimatePresence>
@@ -575,7 +617,13 @@ export default function DashboardPage() {
 
  <main className="dashboard-shell flex-1 py-14 sm:py-16" data-gsap-stagger>
  <div className="mb-5 flex justify-end sm:hidden">
- <IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={dashboardIdeStatuses} />
+ <IdeSelector value={selectedIde} onChange={setSelectedIde} statuses={dashboardIdeStatuses} includeCombined={false} />
+ </div>
+ <div className="mb-6 text-sm text-muted-foreground">
+ Want to see combined tracking activity?{' '}
+ <Link href="/dashboard/combined" className="font-semibold text-primary hover:text-foreground">
+ click here
+ </Link>
  </div>
  {/* Header */}
  <motion.div
@@ -590,7 +638,7 @@ export default function DashboardPage() {
  )}
  <div className="min-w-0">
  <h1 className="text-xl font-semibold leading-tight sm:text-2xl" style={{ fontFamily: 'var(--font-welcome)' }}>
- Welcome back, <span className="font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
+ <span>Welcome back,</span><span className="ml-2 font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
  </h1>
  <p className="mt-2 text-base text-muted-foreground">
  {todayHours ? `${formatHours(todayHours)} coded today in ${idePrefix}` : `Start coding to see ${idePrefix} stats`}
@@ -603,10 +651,10 @@ export default function DashboardPage() {
  {connectionStatus.connected ? (
  <div
  className="flex cursor-default items-center gap-2 rounded-full border border-[var(--color-live)]/35 bg-[var(--color-live-soft)] px-3 py-1.5 font-mono text-xs text-[var(--color-live)]"
- title={connectionStatus.active ? `${idePrefix} is actively sending heartbeats` : `${idePrefix} has verified heartbeats`}
+ title={connectionStatus.active ? `${idePrefix} is tracking now` : `${idePrefix} has verified heartbeats`}
  >
  <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--color-live)] ${connectionStatus.active ? 'animate-pulse' : ''}`} />
- {connectionStatus.active ? `${idePrefix} active` : `${idePrefix} connected`}
+ {connectionStatus.active ? `${idePrefix} tracking now` : `${idePrefix} connected`}
  </div>
  ) : (
  <Link href={setupHref} className="signal-button min-h-9 px-3 text-xs">
@@ -702,7 +750,7 @@ export default function DashboardPage() {
  Setup
  </Link>
  </div>
- <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
+ <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
  {stats.ideBreakdown.map((item) => {
  const detailParts = [
  `${item.sessions} ${item.sessions === 1 ? 'session' : 'sessions'}`,
@@ -715,10 +763,11 @@ export default function DashboardPage() {
  ide={item.id as IdeId}
  selected={selectedIde === item.id}
  connected={Boolean(item.lastHeartbeat)}
+ active={Boolean(item.active)}
  setup={item.isSetup}
  metric={formatHoursShort(item.hours)}
  detail={detailParts.join(' · ')}
- className="min-h-[9rem]"
+ className="min-h-[8.25rem]"
  onClick={() => setSelectedIde(item.id as IdeSelection)}
  />
  )
@@ -778,7 +827,7 @@ export default function DashboardPage() {
  <p className="mt-2 text-xs text-muted-foreground">
  {connectionStatus.connected
  ? connectionStatus.active
- ? `${idePrefix} is actively sending heartbeats.`
+ ? `${idePrefix} is tracking now.`
  : `${idePrefix} is verified. Today's total updates when fresh activity arrives.`
  : `Connect ${idePrefix} to start tracking today's total.`}
  </p>
@@ -891,7 +940,7 @@ export default function DashboardPage() {
  {/* Stats Grid */}
  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8" data-gsap-stagger>
  {[
- { key: 'totalHours', label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `${stats?.activeDays || 0} active days` },
+ { key: 'totalHours', label: 'Total Hours', value: formatHours(rangedTotalHours), icon: Clock, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `${rangedActiveDays} active days` },
  { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `Best: ${stats?.longestStreak || 0}d` },
  { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, iconClass: 'text-[var(--color-accent-2)]', glowClass: 'bg-[color-mix(in_oklch,var(--color-accent-2)_10%,transparent)]', hoverClass: 'hover:border-[var(--color-accent-2)]', sub: `${stats?.totalSessions || 0} sessions` },
  ].map((stat, i) => (
@@ -908,6 +957,23 @@ export default function DashboardPage() {
  <div className="relative">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</span>
+ {stat.key === 'totalHours' && (
+ <select
+ value={totalHoursRange}
+ onClick={(event) => event.stopPropagation()}
+ onChange={(event) => {
+ event.stopPropagation()
+ setTotalHoursRange(event.target.value as typeof totalHoursRange)
+ }}
+ className="rounded-md border border-border bg-card px-2 py-1 text-xs text-muted-foreground outline-none hover:border-primary"
+ aria-label="Total hours range"
+ >
+ <option value="30d">30d</option>
+ <option value="60d">60d</option>
+ <option value="90d">90d</option>
+ <option value="all">All</option>
+ </select>
+ )}
  <stat.icon className={`w-4 h-4 ${stat.iconClass} opacity-70`} />
  </div>
  <p className="text-xl sm:text-2xl font-bold tracking-tight">{stat.value}</p>

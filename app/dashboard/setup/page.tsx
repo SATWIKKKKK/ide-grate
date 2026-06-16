@@ -282,6 +282,7 @@ export default function DashboardSetupPage() {
                     copied={copied}
                     verifyState={verifyState}
                     selectedIde={selectedIde}
+                    alreadyVerified={Boolean(selectedRow?.isConnected)}
                     onCopy={copyText}
                     onVerify={verifySelected}
                   />
@@ -303,6 +304,7 @@ function SetupStepCard({
   copied,
   verifyState,
   selectedIde,
+  alreadyVerified,
   onCopy,
   onVerify,
 }: {
@@ -311,10 +313,11 @@ function SetupStepCard({
   copied: string | null
   verifyState: VerifyState
   selectedIde: IdeId
+  alreadyVerified: boolean
   onCopy: (label: string, value?: string) => void
   onVerify: () => void
 }) {
-  const verified = verifyState?.ide === selectedIde && verifyState.status === 'success'
+  const verified = alreadyVerified || (verifyState?.ide === selectedIde && verifyState.status === 'success')
 
   return (
     <div className="relative z-10 flex flex-col">
@@ -382,7 +385,7 @@ function SetupStepCard({
                   key={action.label}
                   type="button"
                   onClick={onVerify}
-                  disabled={verifyState?.status === 'checking'}
+                  disabled={verified || verifyState?.status === 'checking'}
                   className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-60 ${
                     verified
                       ? 'bg-[var(--color-live)] text-white hover:opacity-90'
@@ -390,7 +393,7 @@ function SetupStepCard({
                   }`}
                 >
                   {verifyState?.status === 'checking' ? <RefreshCw className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-                  {action.label}
+                  {verified ? 'Verified' : action.label}
                 </button>
               )
             }
@@ -410,7 +413,7 @@ function SetupStepCard({
           })}
 
           {index === 3 ? (
-            <VerificationMessage verifyState={verifyState} selectedIde={selectedIde} />
+            <VerificationMessage verifyState={verifyState} selectedIde={selectedIde} alreadyVerified={alreadyVerified} />
           ) : null}
         </div>
       </article>
@@ -423,17 +426,19 @@ function ConnectionStatus({ row, ide }: { row?: SetupRow; ide: IdeId }) {
   const connected = row?.isConnected
   const label = connected
     ? row?.isActiveNow
-      ? 'Active now'
-      : 'Verified'
+      ? 'Tracking now'
+      : 'Tracking now'
     : row?.isSetup
       ? 'Setup saved'
-      : 'Needs setup'
+      : 'Not active'
 
   return (
     <div className={`rounded-2xl border px-4 py-3 text-sm ${
       connected
         ? 'border-[var(--color-live)]/35 bg-[var(--color-live-soft)] text-[var(--color-live)]'
-        : 'border-border bg-secondary/55 text-muted-foreground'
+        : row?.isSetup
+          ? 'border-border bg-secondary/55 text-muted-foreground'
+          : 'border-destructive/30 bg-[var(--color-danger-soft)] text-destructive'
     }`}>
       <div className="flex items-center gap-2">
         {connected ? <CheckCircle2 className="size-4" /> : <AlertCircle className="size-4" />}
@@ -443,7 +448,15 @@ function ConnectionStatus({ row, ide }: { row?: SetupRow; ide: IdeId }) {
   )
 }
 
-function VerificationMessage({ verifyState, selectedIde }: { verifyState: VerifyState; selectedIde: IdeId }) {
+function VerificationMessage({ verifyState, selectedIde, alreadyVerified }: { verifyState: VerifyState; selectedIde: IdeId; alreadyVerified: boolean }) {
+  if (alreadyVerified) {
+    return (
+      <div className="rounded-2xl border border-[var(--color-live)]/40 bg-[var(--color-live-soft)] p-3 text-xs leading-relaxed text-[var(--color-live)]">
+        verified! now u can start working on {IDE_CONFIG[selectedIde].shortName}.
+      </div>
+    )
+  }
+
   const isCurrent = verifyState?.ide === selectedIde
   if (!isCurrent || verifyState.status === 'idle') {
     return (
@@ -469,8 +482,8 @@ function VerificationMessage({ verifyState, selectedIde }: { verifyState: Verify
 }
 
 function targetDetail(row?: SetupRow): string {
-  if (row?.isActiveNow) return 'Sending heartbeats now'
-  if (row?.isConnected) return 'Connection verified'
+  if (row?.isActiveNow) return 'Tracking now'
+  if (row?.isConnected) return 'Tracking now'
   if (row?.weeklyMinutes) return `${Math.round(row.weeklyMinutes)} min this week`
   if (row?.isSetup) return 'Configured, waiting for test'
   return 'No heartbeat yet'

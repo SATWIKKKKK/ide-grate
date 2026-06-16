@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
 import prisma from "@/lib/prisma"
 import { IDE_CONFIG, type IdeId, isIdeId } from "@/lib/ide-config"
+import { normalizeLanguageKey } from "@/lib/languages"
 
 function asJsonObject(value: unknown): Record<string, Prisma.InputJsonValue | null> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date(typeof body.timestamp === "string" || typeof body.timestamp === "number" ? body.timestamp : Date.now())
-    const language = typeof body.language === "string" ? body.language : "unknown"
+    const language = normalizeLanguageKey(body.language) || "unknown"
     const file = typeof body.file === "string" ? body.file : ""
     const isIdle = Boolean(body.isIdle)
     const type = typeof body.type === "string" ? body.type : ""
@@ -305,8 +306,8 @@ function normalizeLanguageBreakdown(value: unknown): Record<string, number> {
   if (!value || typeof value !== "object") return {}
   const normalized: Record<string, number> = {}
   Object.entries(value as Record<string, unknown>).forEach(([language, seconds]) => {
-    const key = language.toLowerCase().trim()
-    if (!key || key === "unknown") return
+    const key = normalizeLanguageKey(language)
+    if (!key) return
     if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds < 0) return
     normalized[key] = seconds
   })
@@ -409,7 +410,8 @@ async function incrementSingleLanguageFallback(userId: string, ide: IdeId, langu
   const monthlyData = asJsonObject(stats?.monthlyData)
   const totalsByIde = asPlainRecord(monthlyData.languageTotalsByIde)
   const ideTotals = parseLanguageTotals(totalsByIde[ide])
-  const key = language.toLowerCase()
+  const key = normalizeLanguageKey(language)
+  if (!key) return
   totals[key] = (totals[key] || 0) + secondsToAdd
   ideTotals[key] = (ideTotals[key] || 0) + secondsToAdd
 
@@ -430,7 +432,8 @@ function parseLanguageTotals(raw: unknown): Record<string, number> {
   const out: Record<string, number> = {}
   Object.entries(raw as Record<string, unknown>).forEach(([language, seconds]) => {
     if (typeof seconds === "number" && Number.isFinite(seconds) && seconds > 0) {
-      out[language.toLowerCase()] = seconds
+      const key = normalizeLanguageKey(language)
+      if (key) out[key] = seconds
     }
   })
   return out

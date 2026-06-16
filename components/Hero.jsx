@@ -29,8 +29,7 @@ function LoggedInHero() {
         <div className="mb-8 flex justify-center">
           <Logo size="lg" />
         </div>
-        <p className="signal-kicker justify-center">session active</p>
-        <h1 className="mt-3 text-4xl sm:text-5xl">Your signal is ready.</h1>
+        <h1 className="mt-3 text-4xl sm:text-5xl">You are Ready for it! Start coding now.</h1>
         <p className="mx-auto mt-5 max-w-xl text-muted-foreground">
           Open your dashboard, finish setup for your editors, or tune how your public profile shares your coding activity.
         </p>

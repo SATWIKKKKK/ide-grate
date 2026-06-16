@@ -138,6 +138,16 @@ export const authOptions: AuthOptions = {
       try {
         // Create or update user stats on first sign in
         if (user?.id) {
+          const existingUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { apiKey: true },
+          })
+          if (existingUser && !existingUser.apiKey) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { apiKey: `cad_${crypto.randomBytes(32).toString("hex")}` },
+            })
+          }
           await prisma.userStats.upsert({
             where: { userId: user.id },
             update: {},

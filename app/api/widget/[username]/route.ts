@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { displayLanguageName, normalizeLanguageKey } from "@/lib/languages"
 
 // GET /api/widget/[username] - Embeddable SVG widget
 export async function GET(
@@ -20,21 +21,25 @@ export async function GET(
       })
     }
 
-    const stats = await prisma.userStats.findUnique({
-      where: { userId: user.id },
-    })
+    const stats = await prisma.userStats.findUnique({ where: { userId: user.id } })
 
     // Get last 30 days of contributions for mini heatmap
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const contributions = await prisma.dailyContribution.findMany({
-      where: {
-        userId: user.id,
-        date: { gte: thirtyDaysAgo },
-      },
-      orderBy: { date: "asc" },
-    })
+    const [contributions, allContributions] = await Promise.all([
+      prisma.dailyContribution.findMany({
+        where: {
+          userId: user.id,
+          date: { gte: thirtyDaysAgo },
+        },
+        orderBy: { date: "asc" },
+      }),
+      prisma.dailyContribution.findMany({
+        where: { userId: user.id },
+        select: { hours: true },
+      }),
+    ])
 
     const contribMap: Record<string, number> = {}
     contributions.forEach(c => {
@@ -42,10 +47,9 @@ export async function GET(
     })
 
     // Get top language
-    const topLangs = (stats?.topLanguages as any[]) || []
-    const topLanguage = topLangs.length > 0 ? topLangs[0].language : "–"
+    const topLanguage = getTopLanguage(stats?.topLanguages)
 
-    const totalHours = parseFloat((stats?.totalHours || 0).toFixed(1))
+    const totalHours = parseFloat(allContributions.reduce((sum, c) => sum + c.hours, 0).toFixed(1))
     const currentStreak = stats?.currentStreak || 0
 
     const svg = generateWidgetSVG({
@@ -146,6 +150,26 @@ function getHeatmapColor(hours: number): string {
   if (hours < 2) return "#006d32"
   if (hours < 4) return "#26a641"
   return "#39d353"
+}
+
+function getTopLanguage(raw: unknown): string {
+  const totals: Record<string, number> = {}
+  if (Array.isArray(raw)) {
+    raw.forEach((entry) => {
+      const item = entry as { language?: unknown; hours?: unknown; seconds?: unknown }
+      const language = normalizeLanguageKey(item.language)
+      if (!language) return
+      if (typeof item.seconds === "number" && Number.isFinite(item.seconds)) totals[language] = (totals[language] || 0) + item.seconds
+      if (typeof item.hours === "number" && Number.isFinite(item.hours)) totals[language] = (totals[language] || 0) + item.hours * 3600
+    })
+  } else if (raw && typeof raw === "object") {
+    Object.entries(raw as Record<string, unknown>).forEach(([language, seconds]) => {
+      const key = normalizeLanguageKey(language)
+      if (key && typeof seconds === "number" && Number.isFinite(seconds)) totals[key] = seconds
+    })
+  }
+  const [top] = Object.entries(totals).sort(([, a], [, b]) => b - a)
+  return top ? displayLanguageName(top[0]) : "–"
 }
 
 function escapeXml(str: string): string {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireServerUser } from "@/lib/serverAuth"
 import { isIdeId } from "@/lib/ide-config"
+import { normalizeLanguageKey } from "@/lib/languages"
 
 // GET /api/activities - Get user's activities
 export async function GET(request: NextRequest) {
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest) {
     if (!sessionUser?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await request.json()
-    const { startTime, endTime, duration, language, fileType, extensions, idleTime } = body
+    const { startTime, endTime, duration, fileType, extensions, idleTime } = body
+    const language = normalizeLanguageKey(body.language)
     const ide = body.ide ? String(body.ide).toLowerCase() : "vscode"
     if (!isIdeId(ide)) return NextResponse.json({ error: "Unsupported IDE" }, { status: 400 })
 
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
         startTime: new Date(startTime),
         endTime: new Date(endTime || new Date()),
         duration: parseInt(duration),
-        language: language || null,
+        language,
         fileType: fileType || null,
         extensions: extensions || [],
         idleTime: idleTime || 0,
@@ -130,7 +132,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function updateUserStats(userId: string, duration: number, language?: string) {
+async function updateUserStats(userId: string, duration: number, language?: string | null) {
   const hours = duration / 3600
   const today = new Date()
   today.setHours(0, 0, 0, 0)

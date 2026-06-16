@@ -16,6 +16,13 @@ export async function GET(request: NextRequest) {
         email: true,
         username: true,
         bio: true,
+        profilePublic: true,
+        showBio: true,
+        showHours: true,
+        showLanguages: true,
+        showStreak: true,
+        showHeatmap: true,
+        showProjects: true,
         createdAt: true,
       },
     })

@@ -16,7 +16,10 @@ import {
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import AppFooter from '@/components/AppFooter'
+import IdeSelector from '@/components/IdeSelector'
+import ThemeToggle from '@/components/ThemeToggle'
 import { ACHIEVEMENTS } from '@/lib/achievements'
+import { type IdeSelection } from '@/lib/ide-config'
 
 interface ProfileData {
   user: {
@@ -36,35 +39,44 @@ interface ProfileData {
   achievements: string[]
   contributions: Record<string, number> | null
   privacy: {
+    showBio: boolean
     showHours: boolean
     showLanguages: boolean
     showStreak: boolean
     showHeatmap: boolean
   }
+  selectedIde: IdeSelection
+  ideSetups?: { id: string; name: string; color: string; lastHeartbeat: string | null }[]
 }
 
 export default function PublicProfile() {
   const params = useParams()
   const username = params.username as string
   const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [selectedIde, setSelectedIde] = useState<IdeSelection>('combined')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (username) fetchProfile()
     async function fetchProfile() {
+      setLoading(true)
       try {
-        const res = await fetch(`/api/public/${username}`)
+        const query = selectedIde === 'combined' ? '' : `?ide=${selectedIde}`
+        const res = await fetch(`/api/public/${username}${query}`)
         if (res.status === 404) setError('User not found')
         else if (res.status === 403) setError('This profile is private')
-        else if (res.ok) setProfile(await res.json())
+        else if (res.ok) {
+          setError(null)
+          setProfile(await res.json())
+        }
         else setError('Failed to load profile')
       } catch {
         setError('Failed to load profile')
       }
       setLoading(false)
     }
-  }, [username])
+  }, [username, selectedIde])
 
   if (loading) {
     return <div className="page-shell flex min-h-screen items-center justify-center"><div className="size-8 rounded-full border-4 border-primary/30 border-t-primary animate-spin" /></div>
@@ -104,10 +116,13 @@ export default function PublicProfile() {
             <ArrowLeft className="size-4 text-muted-foreground" />
             <Logo size="sm" />
           </Link>
-          <a href={`/api/widget/${username}`} target="_blank" rel="noopener noreferrer" className="signal-button signal-button-secondary min-h-9 px-3 text-xs">
-            <Globe className="size-3.5" />
-            Widget
-          </a>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <a href={`/api/widget/${username}`} target="_blank" rel="noopener noreferrer" className="signal-button signal-button-secondary min-h-9 px-3 text-xs">
+              <Globe className="size-3.5" />
+              Widget
+            </a>
+          </div>
         </div>
       </header>
 
@@ -134,9 +149,22 @@ export default function PublicProfile() {
                 </p>
               </div>
             </div>
-            <Link href="/signup" className="signal-button">
-              Track your own activity
-            </Link>
+            <div className="flex flex-col gap-3 sm:items-end">
+              <IdeSelector
+                value={selectedIde}
+                onChange={setSelectedIde}
+                includeCombined={false}
+                statuses={(profile.ideSetups || []).map((setup) => ({
+                  id: setup.id,
+                  connected: Boolean(setup.lastHeartbeat),
+                  active: Boolean(setup.lastHeartbeat && Date.now() - new Date(setup.lastHeartbeat).getTime() < 5 * 60 * 1000),
+                  isSetup: Boolean(setup.lastHeartbeat),
+                }))}
+              />
+              <Link href="/signup" className="signal-button">
+                Track your own activity
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -231,6 +259,7 @@ function ProfileStat({ icon, label, value }: { icon: React.ReactNode; label: str
 }
 
 function PublicContributionGraph({ contributions }: { contributions: Record<string, number> }) {
+  const [hovered, setHovered] = useState<{ date: string; hours: number; x: number; y: number } | null>(null)
   const weeks = 52
   const today = new Date()
   const startDate = new Date(today)
@@ -254,7 +283,16 @@ function PublicContributionGraph({ contributions }: { contributions: Record<stri
       const dateStr = currentDate.toISOString().split('T')[0]
       const hours = contributions[dateStr] || 0
       daysArray.push(
-        <div key={dateStr} className="size-2.5 rounded-[3px] border border-border" style={{ backgroundColor: getColor(hours) }} title={`${dateStr}: ${hours.toFixed(1)}h`} />
+        <div
+          key={dateStr}
+          className="size-2.5 cursor-pointer rounded-[3px] border border-border transition-transform hover:scale-125 hover:ring-1 hover:ring-primary/50"
+          style={{ backgroundColor: getColor(hours) }}
+          onMouseEnter={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect()
+            setHovered({ date: dateStr, hours, x: rect.left, y: rect.top })
+          }}
+          onMouseLeave={() => setHovered(null)}
+        />
       )
       currentDate.setDate(currentDate.getDate() + 1)
     }
@@ -262,8 +300,22 @@ function PublicContributionGraph({ contributions }: { contributions: Record<stri
   }
 
   return (
-    <div className="heatmap-scroll overflow-x-auto">
+    <div className="heatmap-scroll relative overflow-x-auto">
       <div className="flex min-w-max gap-0.5">{weekColumns}</div>
+      {hovered && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{ left: hovered.x - 46, top: hovered.y - 68 }}
+        >
+          <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-xl">
+            <p className="text-xs font-semibold text-foreground">
+              {hovered.hours < 1 && hovered.hours > 0 ? `${Math.round(hovered.hours * 60)} minutes` : `${hovered.hours.toFixed(1)} hours`}
+            </p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">{hovered.date}</p>
+          </div>
+          <div className="mx-auto -mt-1 size-2 rotate-45 border-b border-r border-border bg-card" />
+        </div>
+      )}
       <div className="mt-3 flex items-center justify-end gap-1.5 text-xs text-muted-foreground">
         <span>Less</span>
         {[0, 0.5, 1.5, 3, 5].map((h) => (

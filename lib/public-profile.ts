@@ -1,7 +1,8 @@
 import prisma from "@/lib/prisma"
-import { IDE_CONFIG, IDE_OPTIONS } from "@/lib/ide-config"
+import { IDE_CONFIG, IDE_OPTIONS, type IdeId } from "@/lib/ide-config"
+import { normalizeLanguageKey } from "@/lib/languages"
 
-export async function getPublicProfile(username: string) {
+export async function getPublicProfile(username: string, ide?: IdeId | null) {
   const user = await prisma.user.findFirst({
     where: { username },
     select: {
@@ -11,6 +12,7 @@ export async function getPublicProfile(username: string) {
       bio: true,
       image: true,
       profilePublic: true,
+      showBio: true,
       showHours: true,
       showLanguages: true,
       showStreak: true,
@@ -25,11 +27,12 @@ export async function getPublicProfile(username: string) {
 
   const yearAgo = new Date()
   yearAgo.setDate(yearAgo.getDate() - 365)
+  const ideFilter = ide ? { ide } : {}
 
   const [stats, contributions, achievements, setups] = await Promise.all([
     prisma.userStats.findUnique({ where: { userId: user.id } }),
     prisma.dailyContribution.findMany({
-      where: { userId: user.id, date: { gte: yearAgo } },
+      where: { userId: user.id, date: { gte: yearAgo }, ...ideFilter },
       orderBy: { date: "asc" },
     }),
     prisma.userAchievement.findMany({
@@ -50,8 +53,18 @@ export async function getPublicProfile(username: string) {
     })
   }
 
-  const topLanguages = user.showLanguages ? formatTopLanguages(stats?.topLanguages) : []
+  const allMetricContributions = await prisma.dailyContribution.findMany({
+    where: { userId: user.id, ...ideFilter },
+    select: { date: true, hours: true, sessions: true },
+  })
+
+  const topLanguages = user.showLanguages
+    ? formatTopLanguages(resolvePublicLanguageSource(stats?.topLanguages, stats?.monthlyData, ide))
+    : []
   const activeDays = new Set(contributions.filter((c) => c.hours > 0).map((c) => c.date.toISOString().split("T")[0])).size
+  const allActiveDays = new Set(allMetricContributions.filter((c) => c.hours > 0).map((c) => c.date.toISOString().split("T")[0])).size
+  const totalHours = allMetricContributions.reduce((sum, c) => sum + c.hours, 0)
+  const totalSessions = allMetricContributions.reduce((sum, c) => sum + c.sessions, 0)
   const publicSetups = setups.map((setup) => {
     const id = setup.ide as keyof typeof IDE_CONFIG
     const config = IDE_CONFIG[id]
@@ -70,22 +83,24 @@ export async function getPublicProfile(username: string) {
         name: user.name,
         username: user.username,
         image: user.image,
-        bio: user.bio,
+        bio: user.showBio ? user.bio : null,
         createdAt: user.createdAt.toISOString(),
       },
       stats: user.showHours || user.showStreak ? {
-        totalHours: user.showHours ? parseFloat((stats?.totalHours || 0).toFixed(1)) : 0,
-        totalSessions: user.showHours ? (stats?.totalSessions || 0) : 0,
+        totalHours: user.showHours ? parseFloat(totalHours.toFixed(1)) : 0,
+        totalSessions: user.showHours ? totalSessions : 0,
         currentStreak: user.showStreak ? (stats?.currentStreak || 0) : 0,
         longestStreak: user.showStreak ? (stats?.longestStreak || 0) : 0,
-        activeDays: user.showHours ? activeDays : 0,
+        activeDays: user.showHours ? allActiveDays || activeDays : 0,
       } : null,
       languages: topLanguages,
       achievements: achievements.map((a) => a.achievementId),
       contributions: user.showHeatmap ? activityData : null,
       ideSetups: publicSetups,
       supportedIdeCount: IDE_OPTIONS.length,
+      selectedIde: ide || "combined",
       privacy: {
+        showBio: user.showBio,
         showHours: user.showHours,
         showLanguages: user.showLanguages,
         showStreak: user.showStreak,
@@ -101,14 +116,15 @@ function formatTopLanguages(raw: unknown) {
   if (Array.isArray(raw)) {
     raw.forEach((item) => {
       const entry = item as { language?: unknown; hours?: unknown; seconds?: unknown }
-      const language = typeof entry.language === "string" ? entry.language.toLowerCase() : ""
+      const language = normalizeLanguageKey(entry.language)
       if (!language) return
       if (typeof entry.seconds === "number") totals[language] = (totals[language] || 0) + entry.seconds
       if (typeof entry.hours === "number") totals[language] = (totals[language] || 0) + entry.hours * 3600
     })
   } else if (raw && typeof raw === "object") {
     Object.entries(raw as Record<string, unknown>).forEach(([language, seconds]) => {
-      if (typeof seconds === "number" && Number.isFinite(seconds)) totals[language.toLowerCase()] = seconds
+      const key = normalizeLanguageKey(language)
+      if (key && typeof seconds === "number" && Number.isFinite(seconds)) totals[key] = seconds
     })
   }
 
@@ -121,4 +137,11 @@ function formatTopLanguages(raw: unknown) {
       hours: parseFloat((seconds / 3600).toFixed(1)),
       percentage: Math.round((seconds / totalSeconds) * 100),
     }))
+}
+
+function resolvePublicLanguageSource(topLanguages: unknown, monthlyData: unknown, ide?: IdeId | null) {
+  if (!ide || !monthlyData || typeof monthlyData !== "object") return topLanguages
+  const totalsByIde = (monthlyData as Record<string, unknown>).languageTotalsByIde
+  if (!totalsByIde || typeof totalsByIde !== "object" || Array.isArray(totalsByIde)) return topLanguages
+  return (totalsByIde as Record<string, unknown>)[ide] || topLanguages
 }

@@ -1,239 +1,249 @@
-# Cadence - Track Your Real Coding Activity
+# Cadence
 
-A full-stack Next.js application that visualizes your VS Code coding activity with GitHub-style contribution graphs, streaks, and productivity insights.
+Cadence tracks real editor activity across your coding stack and turns heartbeats into dashboard stats, contribution graphs, streaks, language mix, public profiles, and embeddable widgets.
+
+Cadence does not collect source code, file contents, keystrokes, or repository paths.
+
+## Supported Editors
+
+- VS Code
+- Cursor
+- Antigravity
+- JetBrains IDEs
+- Zed
+- Neovim
+- Sublime Text
 
 ## Features
 
-- **GitHub-style Contribution Graph**: Real-time visualization of coding activity
-- **Coding Streaks**: Track consecutive days of coding
-- **Language Analytics**: Detailed breakdown of programming languages used
-- **Productivity Insights**: Discover your most productive hours and days
-- **VS Code Extension**: Automatic activity tracking with privacy focus
-- **Privacy-First**: No code access, only anonymous activity metadata
+- Multi-IDE heartbeat tracking with per-editor setup and verification
+- Dashboard totals, streaks, contribution heatmap, language mix, project signals, and IDE breakdowns
+- Separate combined activity page at `/dashboard/combined`
+- Public profile pages at `/u/{username}` with privacy controls and per-IDE filtering
+- Embeddable SVG widget at `/api/widget/{username}`
+- Private setup flow with one Cadence API key for all editor targets
+- Superadmin dashboard at `/superadmin`, protected by separate credentials
 
 ## Tech Stack
 
-### Frontend
-- **Next.js 16** with React 19 and TypeScript
-- **Tailwind CSS v4** for styling
-- **shadcn/ui** for UI components
-- **Framer Motion** for animations
-- **Lucide Icons** for visual elements
+- Next.js 16 App Router, React 19, TypeScript
+- Tailwind CSS v4
+- Prisma 7 with PostgreSQL
+- NextAuth.js with credentials, GitHub OAuth, and Google OAuth
+- Recharts for dashboard visualizations
+- VSIX extension plus native/companion integrations for other editors
 
-### Backend
-- **Next.js API Routes** for serverless functions
-- **PostgreSQL** with Prisma ORM
-- **NextAuth.js** for authentication (GitHub, Microsoft, or Dev mode)
+## Environment
 
-### VS Code Extension
-- **TypeScript** extension for activity tracking
-- Heartbeat-based tracking with idle detection
-- Privacy-focused (no code content sent)
+Create `.env` or configure the same values in Vercel:
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- PostgreSQL database (local, Supabase, Neon, etc.)
-- Git
-
-### Installation
-
-1. Clone the repository and install dependencies:
-```bash
-npm install
-```
-
-2. Set up environment variables:
-```bash
-cp .env.example .env.local
-```
-
-3. Update `.env.local` with your configuration:
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/cadence"
-NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="http://localhost:3000"
+DATABASE_URL="postgresql://user:password@host:5432/cadence?sslmode=require"
+NEXTAUTH_SECRET="replace-with-a-long-secret"
+NEXTAUTH_URL="https://ca-dence.vercel.app"
 
-# Optional: OAuth providers (dev login available without these)
 GITHUB_ID=""
 GITHUB_SECRET=""
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+
+SUPERADMIN_USERNAME="cadence-admin"
+SUPERADMIN_PASSWORD="CadenceAdmin!2026"
+SUPERADMIN_SESSION_SECRET="replace-with-another-long-secret"
 ```
 
-4. Set up the database:
+`SUPERADMIN_USERNAME` and `SUPERADMIN_PASSWORD` are required in production. The test credentials above are only used automatically in local development when production env vars are missing.
+
+## Local Development
+
 ```bash
+npm install
 npx prisma generate
-npx prisma db push
-```
-
-5. Run the development server:
-```bash
+npx prisma migrate deploy
 npm run dev
 ```
 
-6. Open http://localhost:3000 in your browser
+The app runs on `http://localhost:3001`.
 
-### VS Code Extension Setup
+## Editor Setup
 
-1. Build the extension:
+1. Sign in.
+2. Open `/dashboard/setup`.
+3. Generate or copy your Cadence API key.
+4. Pick the editor you use.
+5. Follow the selected setup path: download/install, connect, and verify.
+6. Use this heartbeat endpoint:
+
+```text
+https://ca-dence.vercel.app/api/heartbeat
+```
+
+The setup page includes copy buttons for API key, endpoint, editor commands, and verification commands.
+
+## VS Code, Cursor, and Antigravity
+
+Download the VSIX from:
+
+```text
+/api/download/vsix
+```
+
+Install it:
+
 ```bash
-cd vscode-extension
-npm install
-npm run compile
+code --install-extension cadence.vsix
 ```
 
-2. Install in VS Code:
-   - Open VS Code
-   - Press `F5` to launch Extension Development Host
-   - Or package with: `npx @vscode/vsce package`
+Cursor can use:
 
-3. Configure:
-   - Sign in to the dashboard and generate an API key
-   - In VS Code: `Ctrl+Shift+P` -> "Cadence: Set API Key"
-
-## Project Structure
-
-```
-├── /app
-│   ├── /api                 # Backend API routes
-│   │   ├── /auth           # NextAuth authentication
-│   │   ├── /apikey         # API key management
-│   │   ├── /heartbeat      # VS Code extension endpoint
-│   │   ├── /activities     # Activity logging
-│   │   ├── /analytics      # Analytics endpoints
-│   │   └── /contributions  # Contribution graph data
-│   ├── /auth               # Auth pages (signin, error)
-│   ├── /dashboard          # User dashboard
-│   ├── page.jsx            # Landing page
-│   └── layout.tsx          # Root layout
-├── /components             # React components
-├── /lib                    # Utilities and database
-│   ├── prisma.ts           # Prisma client
-│   └── utils.ts            # Helper functions
-├── /prisma
-│   └── schema.prisma       # Database schema
-└── /vscode-extension       # VS Code extension source
-    ├── src/extension.ts    # Extension entry point
-    └── package.json        # Extension manifest
+```bash
+cursor --install-extension cadence.vsix
 ```
 
-## API Endpoints
+Then run:
 
-### Authentication
-- `GET/POST /api/auth/[...nextauth]` - NextAuth.js handlers
+```text
+Cadence: Set API Key
+Cadence: Test Connection
+```
 
-### API Key
-- `GET /api/apikey` - Get current API key
-- `POST /api/apikey` - Generate new API key
-- `DELETE /api/apikey` - Revoke API key
+The extension reports VS Code, Cursor, or Antigravity based on the host editor.
 
-### Heartbeat (VS Code Extension)
-- `POST /api/heartbeat` - Receive heartbeat from extension
-- `GET /api/heartbeat` - Check connection status
+## JetBrains
 
-### Analytics
-- `GET /api/analytics` - Get user analytics and stats
+Build and install the plugin from `jetbrains-plugin`, then open:
 
-### Contributions
-- `GET /api/contributions` - Get contribution graph data
+```text
+Settings > Tools > Cadence
+```
 
-### Activities
-- `GET /api/activities` - Get activity history
-- `POST /api/activities` - Log activity (manual)
+Paste your API key and heartbeat endpoint, then run:
 
-## Database Schema
+```text
+Tools > Cadence > Test Connection
+```
 
-### User
-```prisma
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  apiKey        String?   @unique
-  activities    Activity[]
-  stats         UserStats?
-  dailyContributions DailyContribution[]
+## Zed
+
+Use the companion script:
+
+```bash
+python zed-extension\companion\cadence_zed_heartbeat.py --api-key "cad_your_key" --endpoint "https://ca-dence.vercel.app/api/heartbeat"
+```
+
+Verify:
+
+```bash
+python zed-extension\companion\cadence_zed_heartbeat.py --api-key "cad_your_key" --endpoint "https://ca-dence.vercel.app/api/heartbeat" --test
+```
+
+## Neovim
+
+Copy `neovim-plugin/lua/cadence.lua` into your Neovim Lua runtime path and configure:
+
+```lua
+require("cadence").setup({
+  api_key = "cad_your_key",
+  endpoint = "https://ca-dence.vercel.app/api/heartbeat",
+})
+```
+
+Verify:
+
+```text
+:CadenceTestConnection
+```
+
+## Sublime Text
+
+Copy `sublime-package` into Sublime Text Packages as `Cadence`, then configure:
+
+```json
+{
+  "api_key": "cad_your_key",
+  "endpoint": "https://ca-dence.vercel.app/api/heartbeat"
 }
 ```
 
-### Activity
-```prisma
-model Activity {
-  id         String   @id @default(cuid())
-  userId     String
-  startTime  DateTime
-  endTime    DateTime
-  duration   Int      // in seconds
-  language   String?
-  idleTime   Int      @default(0)
-}
+Run:
+
+```text
+Command Palette > Cadence: Test Connection
 ```
+
+## API Routes
+
+- `POST /api/heartbeat` receives editor heartbeats.
+- `GET /api/connection-status` checks selected editor connection state.
+- `GET /api/ide-setup` returns all editor setup rows.
+- `GET /api/stats/overview` returns dashboard stats.
+- `GET /api/contributions` returns heatmap data.
+- `GET /api/analytics/combined` returns all-IDE comparison data.
+- `GET /api/public/{username}` returns public profile data.
+- `GET /api/widget/{username}` returns the SVG widget.
+- `GET /api/superadmin/users` returns protected admin user analytics.
+
+## Public Profiles
+
+Users can enable a public profile in Settings. Privacy toggles control whether visitors can see:
+
+- bio
+- total hours
+- languages
+- streaks
+- heatmap
+- project breakdowns
+
+Public profile pages support per-IDE filtering from the profile dropdown.
+
+## Superadmin
+
+Open:
+
+```text
+/superadmin
+```
+
+Set these production env vars before using it on Vercel:
+
+```env
+SUPERADMIN_USERNAME="cadence-admin"
+SUPERADMIN_PASSWORD="CadenceAdmin!2026"
+SUPERADMIN_SESSION_SECRET="replace-with-another-long-secret"
+```
+
+The page is not linked from the main app and requires the superadmin login before user analytics are returned.
 
 ## Deployment
 
-### Deploy to Vercel
 ```bash
 npm run build
 vercel deploy --prod
 ```
 
-Set environment variables in Vercel Project Settings:
-- `DATABASE_URL`
-- `NEXTAUTH_SECRET`
-- `NEXTAUTH_URL` (your production URL)
-- OAuth credentials (optional)
+After schema changes, apply migrations:
 
-### Database
-- Use Supabase, Neon, or any PostgreSQL provider
-- Run `npx prisma db push` to apply schema
-
-## Development Mode
-
-When no OAuth providers are configured, the app automatically enables a development login mode:
-- Sign in with any email address
-- No external OAuth required
-- Perfect for local development and testing
-
-To force dev login even with OAuth configured:
-```env
-ENABLE_DEV_LOGIN="true"
+```bash
+npx prisma migrate deploy
 ```
 
-## Nodemailer Setup (Goal Completion Emails)
+Set `NEXTAUTH_URL` to:
 
-Use these settings so users receive goal completion emails:
-
-1. Configure SMTP in `.env`:
-```env
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="your-email@gmail.com"
-SMTP_PASS="your-app-password"
+```text
+https://ca-dence.vercel.app
 ```
 
-2. For Gmail, enable 2FA and create an **App Password** (recommended) instead of using your normal password.
-3. Restart the app after updating env values.
-4. Ensure users have a valid email on their account profile; goal email jobs send to that address.
-5. Trigger a goal completion in development to verify delivery.
+Configure GitHub and Google OAuth callback URLs in their provider dashboards:
 
-## Security Considerations
+```text
+https://ca-dence.vercel.app/api/auth/callback/github
+https://ca-dence.vercel.app/api/auth/callback/google
+```
 
-- All API endpoints require authentication
-- API keys are securely generated with crypto
-- Session management via NextAuth.js
-- Use HTTPS in production
-- Never expose secrets in frontend code
+## Security Notes
 
-## Contributing
-
-Contributions are welcome! Please open an issue or PR on GitHub.
-
-## License
-
-MIT License - see LICENSE file for details.
-
----
-
-Built with ❤️ by developers who code at 2 AM.
+- API keys are generated server-side.
+- Superadmin uses a signed HTTP-only cookie.
+- Production superadmin access requires env credentials.
+- Editor integrations send metadata only.
+- Source code and file contents are never sent.

@@ -783,7 +783,7 @@ The plugin should:
 
 Add a public profile page at `/u/[username]` for **cadence** that shows:
 
-1. **URL**: `https://ca-dence.vercel.app/u/satwikchandra`
+1. **URL**: `https://ca-dence.vercel.app/u/{username}`
 2. **No auth required** (public read)
 3. **Shows**:
    - User avatar + username + "X hours coded"
@@ -1038,10 +1038,10 @@ CURRENT → TARGET sizes (use Tailwind size classes or equivalent px):
     Target:   text-xl    (20px), font-normal, text-(--text-secondary)
     Note: demote this to a greeting label, not a headline
 
-  Username (the large "satwikchandra" display text):
+  Username (the large display text):
     Current:  ~text-7xl  (72px), serif bold
     Target:   text-2xl   (24px), font-semibold, text-(--text-primary)
-    Note: keep it on the same line as "Welcome back," — "Welcome back, satwikchandra"
+    Note: keep it on the same line as "Welcome back," — "Welcome back, {username}"
           as a single line rather than stacked display text
 
   Section headings (Top Languages, Project Breakdown, Weekly Activity,
