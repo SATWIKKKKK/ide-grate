@@ -33,26 +33,7 @@ Cadence does not collect source code, file contents, keystrokes, or repository p
 - Recharts for dashboard visualizations
 - VSIX extension plus native/companion integrations for other editors
 
-## Environment
 
-Create `.env` or configure the same values in Vercel:
-
-```env
-DATABASE_URL="postgresql://user:password@host:5432/cadence?sslmode=require"
-NEXTAUTH_SECRET="replace-with-a-long-secret"
-NEXTAUTH_URL="https://ca-dence.vercel.app"
-
-GITHUB_ID=""
-GITHUB_SECRET=""
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-
-SUPERADMIN_USERNAME="cadence-admin"
-SUPERADMIN_PASSWORD="CadenceAdmin!2026"
-SUPERADMIN_SESSION_SECRET="replace-with-another-long-secret"
-```
-
-`SUPERADMIN_USERNAME` and `SUPERADMIN_PASSWORD` are required in production. The test credentials above are only used automatically in local development when production env vars are missing.
 
 ## Local Development
 
