@@ -14,6 +14,7 @@ import Navbar from '@/components/Navbar'
 import AppFooter from '@/components/AppFooter'
 import IdeIcon from '@/components/IdeIcon'
 import IdeSelector from '@/components/IdeSelector'
+import IdeTargetCard from '@/components/IdeTargetCard'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { IDE_CONFIG, type IdeId, type IdeSelection } from '@/lib/ide-config'
 import {
@@ -698,27 +699,26 @@ export default function DashboardPage() {
  Setup
  </Link>
  </div>
- <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
- {stats.ideBreakdown.map((item) => (
- <button
- type="button"
+ <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(10rem,1fr))]">
+ {stats.ideBreakdown.map((item) => {
+ const detailParts = [
+ `${item.sessions} ${item.sessions === 1 ? 'session' : 'sessions'}`,
+ item.activeDays ? `${item.activeDays} active ${item.activeDays === 1 ? 'day' : 'days'}` : null,
+ ].filter(Boolean)
+
+ return (
+ <IdeTargetCard
  key={item.id}
+ ide={item.id as IdeId}
+ selected={selectedIde === item.id}
+ connected={Boolean(item.lastHeartbeat)}
+ setup={item.isSetup}
+ metric={formatHoursShort(item.hours)}
+ detail={detailParts.join(' · ')}
  onClick={() => setSelectedIde(item.id as IdeSelection)}
- className={`rounded-md border p-3 text-left transition-colors hover:border-primary ${selectedIde === item.id ? 'border-primary bg-background' : 'border-border bg-secondary/45'}`}
- >
- <div className="flex items-center justify-between gap-3">
- <span className="flex items-center gap-2 min-w-0">
- <IdeIcon ide={item.id as IdeId} className="size-7" />
- <span className="truncate text-sm font-semibold">{item.name}</span>
- </span>
- <span className={`size-2 rounded-full ${item.lastHeartbeat ? 'bg-[var(--color-live)]' : item.isSetup ? 'bg-muted-foreground' : 'bg-border'}`} />
- </div>
- <div className="mt-3 flex items-end justify-between gap-3">
- <span className="font-mono text-xl font-semibold text-primary">{formatHoursShort(item.hours)}</span>
- <span className="text-xs text-muted-foreground">{item.sessions} sessions</span>
- </div>
- </button>
- ))}
+ />
+ )
+ })}
  </div>
  </motion.section>
  )}

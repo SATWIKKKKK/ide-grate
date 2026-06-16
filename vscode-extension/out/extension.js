@@ -51,7 +51,7 @@ let lastLanguageSwitchAt = Date.now();
 let lastLanguageId = 'unknown';
 let isWindowFocused = true;
 const CONFIG_SECTION = 'cadence';
-const LEGACY_CONFIG_SECTION = `vs${'Integrate'}`;
+const LEGACY_EXTENSION_ID = `vs${'integrate'}.vs-integrate-tracker`;
 const DEFAULT_API_ENDPOINT = 'https://cadence.vercel.app/api/heartbeat';
 const COMMANDS = {
     setApiKey: 'cadence.setApiKey',
@@ -131,6 +131,7 @@ function activate(context) {
     }));
     // Register commands
     context.subscriptions.push(vscode.commands.registerCommand(COMMANDS.setApiKey, setApiKey), vscode.commands.registerCommand(COMMANDS.showStatus, showStatus), vscode.commands.registerCommand(COMMANDS.testConnection, testConnection), vscode.commands.registerCommand(COMMANDS.openDashboard, openDashboard));
+    warnAboutLegacyExtension();
     // Track editor activity
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(onActivity), vscode.workspace.onDidChangeTextDocument(onActivity), vscode.window.onDidChangeTextEditorSelection(onActivity), vscode.workspace.onDidSaveTextDocument(onActivity));
     // Track window focus — mark idle immediately when VS Code loses focus
@@ -163,10 +164,6 @@ function getConfiguredValue(key, fallback) {
     const configured = getExplicitConfigValue(CONFIG_SECTION, key);
     if (configured !== undefined && configured !== '') {
         return configured;
-    }
-    const legacy = getExplicitConfigValue(LEGACY_CONFIG_SECTION, key);
-    if (legacy !== undefined && legacy !== '') {
-        return legacy;
     }
     return vscode.workspace.getConfiguration(CONFIG_SECTION).get(key) ?? fallback;
 }
@@ -398,12 +395,28 @@ async function handleManualDisconnect() {
         return;
     }
     hasShownDisconnectedNotice = true;
-    const selection = await vscode.window.showWarningMessage(`API key has been disconnected, please reconnect for ${getProductLabel()} tracking.`, 'Reconnect Now', 'Open Dashboard');
+    const legacyInstalled = Boolean(vscode.extensions.getExtension(LEGACY_EXTENSION_ID));
+    const selection = await vscode.window.showWarningMessage(legacyInstalled
+        ? `API key has been disconnected for ${getProductLabel()}. The old VS Integrate extension is also installed; uninstall it to stop duplicate tracking warnings.`
+        : `API key has been disconnected, please reconnect for ${getProductLabel()} tracking.`, 'Reconnect Now', 'Open Dashboard');
     if (selection === 'Reconnect Now') {
         await setApiKey();
     }
     else if (selection === 'Open Dashboard') {
         openDashboard();
+    }
+}
+async function warnAboutLegacyExtension() {
+    if (!vscode.extensions.getExtension(LEGACY_EXTENSION_ID)) {
+        return;
+    }
+    const selection = await vscode.window.showWarningMessage('The old VS Integrate extension is still installed. Uninstall it so Cadence is the only tracker running.', 'Copy uninstall command', 'Open Extensions');
+    if (selection === 'Copy uninstall command') {
+        await vscode.env.clipboard.writeText('code --uninstall-extension vsintegrate.vs-integrate-tracker');
+        vscode.window.showInformationMessage('Uninstall command copied.');
+    }
+    else if (selection === 'Open Extensions') {
+        vscode.commands.executeCommand('workbench.extensions.search', '@installed VS Integrate');
     }
 }
 async function setApiKey() {
