@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   AlertCircle,
   ArrowDown,
-  ArrowRight,
   Check,
   CheckCircle2,
   Copy,
@@ -163,7 +162,7 @@ export default function DashboardSetupPage() {
         setVerifyState({
           ide: selectedIde,
           status: 'success',
-          message: `${IDE_CONFIG[selectedIde].shortName} is verified. A heartbeat reached Cadence.`,
+          message: `verified! now u can start working on ${IDE_CONFIG[selectedIde].shortName}.`,
         })
         return
       }
@@ -198,22 +197,22 @@ export default function DashboardSetupPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-border bg-card/80 p-4 shadow-sm sm:p-5 xl:p-6" data-gsap="fade-up">
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 xl:p-8" data-gsap="fade-up">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="signal-kicker">Cadence key</p>
               <h2 className="mt-1 font-sans text-lg font-semibold">One key for all seven targets</h2>
             </div>
-            <div className="flex w-full flex-col gap-2 rounded-2xl border border-border bg-background/75 p-2 sm:flex-row sm:items-center lg:max-w-3xl">
-              <code className="min-w-0 flex-1 truncate rounded-xl bg-secondary px-3 py-2 font-mono text-xs text-muted-foreground">
+            <div className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-secondary/50 sm:flex-row sm:items-stretch lg:max-w-3xl">
+              <code className="min-w-0 flex-1 truncate px-4 py-3 font-mono text-xs text-muted-foreground">
                 {apiKey || 'Generate an API key before connecting an editor'}
               </code>
-              <div className="flex gap-2">
+              <div className="flex border-t border-border sm:border-l sm:border-t-0">
                 <button
                   type="button"
                   onClick={() => copyText('api-key-top', apiKey || '')}
                   disabled={!apiKey}
-                  className="signal-button signal-button-secondary min-h-10 px-3 disabled:opacity-45"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 border-r border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-45 sm:flex-none"
                 >
                   {copied === 'api-key-top' ? <Check className="size-4" /> : <Copy className="size-4" />}
                   Copy
@@ -222,19 +221,19 @@ export default function DashboardSetupPage() {
                   type="button"
                   onClick={generateKey}
                   disabled={generating}
-                  className="signal-button min-h-10 px-3"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 bg-foreground px-4 text-sm font-medium text-background hover:opacity-85 disabled:opacity-60 sm:flex-none"
                 >
-                  {generating ? <RefreshCw className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+                  {generating ? <RefreshCw className="size-4 animate-spin" /> : apiKey ? <RefreshCw className="size-4" /> : <KeyRound className="size-4" />}
                   {apiKey ? 'Regenerate' : 'Generate'}
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
+          <div className="mt-8 grid grid-cols-1 gap-4 border-b border-border pb-8 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
             {loading
               ? IDE_OPTIONS.map((definition) => (
-                <div key={definition.id} className="min-h-[8.25rem] animate-pulse rounded-2xl border border-border bg-secondary" />
+                <div key={definition.id} className="min-h-[8.25rem] animate-pulse rounded-xl border border-border bg-secondary" />
               ))
               : IDE_OPTIONS.map((definition) => {
                 const row = rows.find((item) => item.id === definition.id)
@@ -256,10 +255,10 @@ export default function DashboardSetupPage() {
               })}
           </div>
 
-          <div className="mt-6 border-t border-border pt-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="pt-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 items-start gap-3">
-                <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-background/80">
+                <span className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-border bg-background/80 shadow-sm">
                   <IdeIcon ide={selectedIde} className="size-10" />
                 </span>
                 <div className="min-w-0">
@@ -271,19 +270,22 @@ export default function DashboardSetupPage() {
               <ConnectionStatus row={selectedRow} ide={selectedIde} />
             </div>
 
-            <div className="mt-5 grid gap-4 xl:grid-cols-4">
-              {setupFlow.map((step, index) => (
-                <SetupStepCard
-                  key={`${selectedIde}-${step.title}`}
-                  step={step}
-                  index={index}
-                  copied={copied}
-                  verifyState={verifyState}
-                  selectedIde={selectedIde}
-                  onCopy={copyText}
-                  onVerify={verifySelected}
-                />
-              ))}
+            <div className="relative mt-8">
+              <div className="absolute left-[8%] right-[8%] top-6 z-0 hidden border-t-2 border-border xl:block" />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+                {setupFlow.map((step, index) => (
+                  <SetupStepCard
+                    key={`${selectedIde}-${step.title}`}
+                    step={step}
+                    index={index}
+                    copied={copied}
+                    verifyState={verifyState}
+                    selectedIde={selectedIde}
+                    onCopy={copyText}
+                    onVerify={verifySelected}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -311,28 +313,24 @@ function SetupStepCard({
   onCopy: (label: string, value?: string) => void
   onVerify: () => void
 }) {
+  const verified = verifyState?.ide === selectedIde && verifyState.status === 'success'
+
   return (
-    <div className="relative">
-      {index < 3 && (
-        <>
-          <ArrowRight className="absolute -right-3 top-8 z-10 hidden size-6 text-primary/70 xl:block" />
-          <ArrowDown className="mx-auto mb-1 size-5 text-primary/70 xl:hidden" />
-        </>
-      )}
-      <article className="flex h-full min-h-[24rem] flex-col rounded-2xl border border-border bg-background/70 p-4 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-foreground font-mono text-sm font-semibold text-background">
+    <div className="relative z-10 flex flex-col">
+      <article className={`flex h-full min-h-[27rem] flex-col rounded-xl border bg-card p-6 shadow-sm transition-colors ${
+        verified && index === 3 ? 'border-[var(--color-live)]/45 bg-[var(--color-live-soft)]/40' : 'border-border'
+      }`}>
+        <div className="mb-4 flex items-center gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground font-mono text-sm font-semibold text-background ring-4 ring-card">
             {index + 1}
           </span>
-          <div>
-            <p className="signal-kicker">{step.eyebrow}</p>
-            <h3 className="mt-1 font-sans text-lg font-semibold">{step.title}</h3>
-          </div>
+          <p className="signal-kicker">{step.eyebrow}</p>
         </div>
+        <h3 className="font-sans text-lg font-semibold leading-snug">{step.title}</h3>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{step.detail}</p>
 
         {step.placeholder ? (
-          <div className="mt-4 flex min-h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/55 p-4 text-center">
+          <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-secondary/45 p-6 text-center">
             <ImageIcon className="size-7 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium">{step.placeholder.title}</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.placeholder.detail}</p>
@@ -342,7 +340,7 @@ function SetupStepCard({
         {step.fields?.length ? (
           <div className="mt-4 space-y-3">
             {step.fields.map((field) => (
-              <div key={field.label} className="rounded-2xl border border-border bg-secondary/50 p-3">
+              <div key={field.label} className="rounded-xl border border-border bg-secondary/45 p-3">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <p className="signal-kicker">{field.label}</p>
                   <button
@@ -369,7 +367,7 @@ function SetupStepCard({
                   key={action.label}
                   href={action.href}
                   download={action.download}
-                  className="signal-button signal-button-secondary min-h-10 w-full justify-center text-sm"
+                  className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-secondary"
                 >
                   <Download className="size-4" />
                   {action.label}
@@ -384,7 +382,11 @@ function SetupStepCard({
                   type="button"
                   onClick={onVerify}
                   disabled={verifyState?.status === 'checking'}
-                  className="signal-button min-h-10 w-full justify-center text-sm disabled:opacity-60"
+                  className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-60 ${
+                    verified
+                      ? 'bg-[var(--color-live)] text-white hover:opacity-90'
+                      : 'bg-foreground text-background hover:opacity-85'
+                  }`}
                 >
                   {verifyState?.status === 'checking' ? <RefreshCw className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   {action.label}
@@ -398,7 +400,7 @@ function SetupStepCard({
                 type="button"
                 onClick={() => onCopy(action.label, action.value)}
                 disabled={action.disabled}
-                className="signal-button signal-button-secondary min-h-10 w-full justify-center text-sm disabled:opacity-45"
+                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-45"
               >
                 {copied === action.label ? <Check className="size-4" /> : <Copy className="size-4" />}
                 {action.label}
@@ -411,6 +413,7 @@ function SetupStepCard({
           ) : null}
         </div>
       </article>
+      {index < 3 ? <ArrowDown className="mx-auto my-2 size-5 text-muted-foreground md:hidden" /> : null}
     </div>
   )
 }

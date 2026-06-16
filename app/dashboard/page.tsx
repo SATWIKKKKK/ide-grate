@@ -687,19 +687,20 @@ export default function DashboardPage() {
  initial={{ opacity: 0, y: 20 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.08 }}
- className="app-card mb-6 p-4 sm:p-5"
+ className="app-card mb-6 p-4 sm:p-6"
  data-gsap-item
  >
- <div className="mb-4 flex items-center justify-between gap-3">
+ <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
  <div>
- {selectedIde !== 'combined' && <p className="signal-kicker">{idePrefix}</p>}
+ <p className="signal-kicker">{selectedIde !== 'combined' ? idePrefix : 'Editor targets'}</p>
  <h2 className="font-sans text-lg font-semibold">IDE activity breakdown</h2>
+ <p className="mt-1 max-w-2xl text-sm text-muted-foreground">A quick read on which editors are connected and where your time is landing.</p>
  </div>
  <Link href={setupHref} className="signal-button signal-button-secondary min-h-9 px-3 text-xs">
  Setup
  </Link>
  </div>
- <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(10rem,1fr))]">
+ <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
  {stats.ideBreakdown.map((item) => {
  const detailParts = [
  `${item.sessions} ${item.sessions === 1 ? 'session' : 'sessions'}`,
@@ -715,6 +716,7 @@ export default function DashboardPage() {
  setup={item.isSetup}
  metric={formatHoursShort(item.hours)}
  detail={detailParts.join(' · ')}
+ className="min-h-[9rem]"
  onClick={() => setSelectedIde(item.id as IdeSelection)}
  />
  )
