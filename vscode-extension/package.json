@@ -69,7 +69,7 @@
         "cadence.apiEndpoint": {
           "type": "string",
           "default": "",
-          "description": "API endpoint for heartbeat data (for example, https://your-cadence-site.vercel.app/api/heartbeat). Leave blank to use the default endpoint. You can enter either your site URL or the full /api/heartbeat path."
+          "description": "API endpoint for heartbeat data (for example, https://ca-dence.vercel.app/api/heartbeat). Leave blank to use the default endpoint. You can enter either your site URL or the full /api/heartbeat path."
         },
         "cadence.heartbeatInterval": {
           "type": "number",

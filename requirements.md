@@ -454,9 +454,9 @@ Note: The extension sends ide="cursor" automatically when running in Cursor.
    { "cadence": "*" }
 3. Add to ~/.config/zed/settings.json:
    {
-     "vs_integrate": {
+     "cadence": {
        "api_key": "YOUR_KEY",
-       "heartbeat_url": "https://cadence.vercel.app/api/heartbeat"
+       "endpoint": "https://ca-dence.vercel.app/api/heartbeat"
      }
    }
 4. Paste your API key: [API Key field with copy button]
@@ -732,7 +732,7 @@ authors = ["Cadence"]
 
 **`zed-extension/src/lib.rs`**:
 Build a minimal Rust Zed extension that:
-1. Reads config from Zed settings: `api_key` and `heartbeat_url`
+1. Reads config from Zed settings: `api_key` and `endpoint`
 2. On buffer save / buffer focus change, sends a heartbeat via HTTP POST
 3. Payload: `{ ide: "zed", language, project, filename, timestamp }`
 4. Uses a 2-minute debounce (don't send more than once per 2 min)
@@ -765,7 +765,7 @@ Create `neovim-plugin/` with:
 ```
 
 The plugin should:
-1. Accept config: `require("cadence").setup({ api_key = "...", heartbeat_url = "..." })`
+1. Accept config: `require("cadence").setup({ api_key = "...", endpoint = "..." })`
 2. Register autocmds on `BufEnter`, `InsertEnter`, `CursorMovedI` events
 3. Debounce heartbeats to max 1 per 2 minutes
 4. Send heartbeat via `curl` (using `vim.fn.system` or `vim.loop` async)
@@ -783,7 +783,7 @@ The plugin should:
 
 Add a public profile page at `/u/[username]` for **cadence** that shows:
 
-1. **URL**: `https://cadence.vercel.app/u/satwikchandra`
+1. **URL**: `https://ca-dence.vercel.app/u/satwikchandra`
 2. **No auth required** (public read)
 3. **Shows**:
    - User avatar + username + "X hours coded"

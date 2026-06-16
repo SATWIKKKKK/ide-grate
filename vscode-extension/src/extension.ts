@@ -16,7 +16,7 @@ let lastLanguageId: string = 'unknown';
 let isWindowFocused: boolean = true;
 const CONFIG_SECTION = 'cadence';
 const LEGACY_EXTENSION_ID = `vs${'integrate'}.vs-integrate-tracker`;
-const DEFAULT_API_ENDPOINT = 'https://cadence.vercel.app/api/heartbeat';
+const DEFAULT_API_ENDPOINT = 'https://ca-dence.vercel.app/api/heartbeat';
 const COMMANDS = {
     setApiKey: 'cadence.setApiKey',
     showStatus: 'cadence.showStatus',
@@ -499,7 +499,7 @@ function showStatus() {
     const timeSinceActivity = Math.round((Date.now() - lastActivityTime) / 1000);
     
     const message = config.apiKey 
-        ? `Cadence is ${isTracking ? 'tracking' : 'not tracking'} ${getProductLabel()}.\nLast activity: ${timeSinceActivity}s ago\nEndpoint: ${config.apiEndpoint}`
+        ? `Cadence is ${isTracking ? 'tracking' : 'not tracking'} ${getProductLabel()}.\nLast activity: ${timeSinceActivity}s ago`
         : 'Cadence needs an API key. Get one from your dashboard.';
     
     vscode.window.showInformationMessage(message, 'Set API Key', 'Open Dashboard').then((selection: string | undefined) => {

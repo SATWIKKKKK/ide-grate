@@ -9,7 +9,7 @@ Copy `lua/cadence.lua` into your runtime path, then configure:
 ```lua
 require("cadence").setup({
   api_key = "cad_your_key",
-  endpoint = "https://your-cadence-site.com/api/heartbeat",
+  endpoint = "https://ca-dence.vercel.app/api/heartbeat",
   debounce_ms = 30000,
 })
 ```

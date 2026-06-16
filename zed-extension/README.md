@@ -12,7 +12,7 @@ Current public Zed extension capabilities do not expose reliable general buffer-
 ```bash
 python companion/cadence_zed_heartbeat.py \
   --api-key cad_your_key \
-  --endpoint https://your-cadence-site.com/api/heartbeat
+  --endpoint https://ca-dence.vercel.app/api/heartbeat
 ```
 
 Connection test:

@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
       longestStreak,
       totalSessions,
       uniqueLanguages: Object.keys(languageTotals).length,
-      hoursToday: parseFloat(hoursToday.toFixed(1)),
+      hoursToday: parseFloat(hoursToday.toFixed(2)),
       maxDayHours: parseFloat(maxDayHours.toFixed(1)),
       hasEarlySession,
       hasLateSession,

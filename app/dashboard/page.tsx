@@ -467,10 +467,12 @@ export default function DashboardPage() {
  return days
  }, [contributions, dailyBarDays])
 
+ const todayHours = contributions[todayKey]?.hours ?? stats?.hoursToday ?? 0
+
  // Productivity radar data
  const radarData = useMemo(() => {
  if (!stats) return []
- const hoursScore = Math.min((stats.hoursToday / 4) * 100, 100)
+ const hoursScore = Math.min((todayHours / 4) * 100, 100)
  const streakScore = Math.min((stats.currentStreak / 30) * 100, 100)
  const langScore = Math.min((stats.uniqueLanguages / 5) * 100, 100)
  const consistencyScore = Math.min(((stats.weeklyBreakdown?.filter(h => h > 0).length || 0) / 7) * 100, 100)
@@ -484,7 +486,7 @@ export default function DashboardPage() {
  { subject: 'Sessions', value: sessionScore },
  { subject: 'Projects', value: projectScore },
  ]
- }, [stats])
+ }, [stats, todayHours])
 
  // Period editor hours for timer section (use local dates)
  const periodHours = useMemo(() => {
@@ -591,7 +593,7 @@ export default function DashboardPage() {
  Welcome back, <span className="font-bold tracking-normal text-primary">{session.user?.name?.split(' ')[0] || 'Developer'}</span>
  </h1>
  <p className="mt-2 text-base text-muted-foreground">
- {stats?.hoursToday ? `${formatHours(stats.hoursToday)} coded today in ${idePrefix}` : `Start coding to see ${idePrefix} stats`}
+ {todayHours ? `${formatHours(todayHours)} coded today in ${idePrefix}` : `Start coding to see ${idePrefix} stats`}
  </p>
  </div>
  </div>
@@ -771,7 +773,7 @@ export default function DashboardPage() {
  <div className="min-w-0">
  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Today&apos;s total</p>
  <p className="mt-1 break-words font-mono text-3xl font-bold tracking-normal text-primary sm:text-5xl">
- {formatHours(stats?.hoursToday || 0)}
+ {formatHours(todayHours)}
  </p>
  <p className="mt-2 text-xs text-muted-foreground">
  {connectionStatus.connected
@@ -887,11 +889,10 @@ export default function DashboardPage() {
  </AnimatePresence>
 
  {/* Stats Grid */}
- <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8" data-gsap-stagger>
+ <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8" data-gsap-stagger>
  {[
  { key: 'totalHours', label: 'Total Hours', value: formatHours(stats?.totalHours || 0), icon: Clock, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `${stats?.activeDays || 0} active days` },
  { key: 'streak', label: 'Current Streak', value: `${stats?.currentStreak || 0}d`, icon: Flame, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `Best: ${stats?.longestStreak || 0}d` },
- { key: 'today', label: 'Today', value: formatHours(stats?.hoursToday || 0), icon: Zap, iconClass: 'text-primary', glowClass: 'bg-primary/5', hoverClass: 'hover:border-primary/30', sub: `Score: ${stats?.productivityScore || 0}/100` },
  { key: 'languages', label: 'Languages', value: `${stats?.uniqueLanguages || 0}`, icon: Globe2, iconClass: 'text-[var(--color-accent-2)]', glowClass: 'bg-[color-mix(in_oklch,var(--color-accent-2)_10%,transparent)]', hoverClass: 'hover:border-[var(--color-accent-2)]', sub: `${stats?.totalSessions || 0} sessions` },
  ].map((stat, i) => (
  <motion.div
@@ -1025,7 +1026,7 @@ export default function DashboardPage() {
  </div>
  <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
  <span className="text-sm text-muted-foreground">Coded Today</span>
- <span className="text-sm font-semibold">{(stats?.hoursToday || 0) > 0 ? 'Yes' : 'Not yet'}</span>
+ <span className="text-sm font-semibold">{todayHours > 0 ? 'Yes' : 'Not yet'}</span>
  </div>
  <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
  <span className="text-sm text-muted-foreground">Productivity Score</span>
@@ -1033,48 +1034,6 @@ export default function DashboardPage() {
  </div>
  </div>
  <p className="text-xs text-muted-foreground mt-4 text-center">Code at least once per day to keep your streak alive!</p>
- </div>
- )}
-
- {/* Today Popup */}
- {activeStatPopup === 'today' && (
- <div className="p-4 sm:p-6">
- <div className="flex items-center justify-between mb-5">
- <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
- <Zap className="w-5 h-5 text-primary" />
- </div>
- <div>
- <h3 className="text-lg font-semibold">Today&apos;s Activity</h3>
- <p className="text-xs text-muted-foreground">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
- </div>
- </div>
- <button onClick={() => setActiveStatPopup(null)} className="p-1 hover:bg-secondary rounded-lg transition-colors">
- <X className="w-5 h-5 text-muted-foreground" />
- </button>
- </div>
- <div className="bg-primary/5 border border-primary/15 rounded-xl p-5 text-center mb-4">
- <p className="text-2xl font-bold text-primary">{formatHours(stats?.hoursToday || 0)}</p>
- <p className="text-xs text-muted-foreground mt-1">Coded today</p>
- </div>
- <div className="space-y-3">
- <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
- <span className="text-sm text-muted-foreground">Server-tracked</span>
- <span className="text-sm font-semibold">{formatHours(stats?.hoursToday || 0)}</span>
- </div>
- <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
- <span className="text-sm text-muted-foreground">Daily Average</span>
- <span className="text-sm font-semibold">{formatHours(stats?.avgDailyHours || 0)}</span>
- </div>
- <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
- <span className="text-sm text-muted-foreground">Productivity Score</span>
- <span className="text-sm font-semibold">{stats?.productivityScore || 0}/100</span>
- </div>
- <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
- <span className="text-sm text-muted-foreground">Best Day Ever</span>
- <span className="text-sm font-semibold">{formatHours(stats?.maxDayHours || 0)}</span>
- </div>
- </div>
  </div>
  )}
 
@@ -1896,7 +1855,7 @@ export default function DashboardPage() {
  </div>
  <div className="flex-1 space-y-2">
  {[
- { label: 'Hours Today', value: `${formatHours(stats?.hoursToday || 0)} / 4h`, pct: Math.min(100, ((stats?.hoursToday || 0) / 4) * 100), color: 'bg-primary' },
+ { label: 'Hours Today', value: `${formatHours(todayHours)} / 4h`, pct: Math.min(100, (todayHours / 4) * 100), color: 'bg-primary' },
  { label: 'Streak Bonus', value: `${stats?.currentStreak || 0} / 30 days`, pct: Math.min(100, ((stats?.currentStreak || 0) / 30) * 100), color: 'bg-primary' },
  { label: 'Consistency', value: 'This week', pct: Math.min(100, ((stats?.weeklyBreakdown?.filter(h => h > 0).length || 0) / 7) * 100), color: 'bg-primary' },
  ].map(item => (

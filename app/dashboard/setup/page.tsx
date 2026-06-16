@@ -19,6 +19,8 @@ import IdeTargetCard from '@/components/IdeTargetCard'
 import { IDE_CONFIG, IDE_OPTIONS, isIdeId, type IdeId, type IdeSelection } from '@/lib/ide-config'
 import { getIdeSetupGuide } from '@/lib/ide-setup-guides'
 
+const CADENCE_HEARTBEAT_ENDPOINT = 'https://ca-dence.vercel.app/api/heartbeat'
+
 type SetupRow = {
   id: IdeId
   shortName: string
@@ -75,7 +77,7 @@ export default function DashboardSetupPage() {
   const [selectionReady, setSelectionReady] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [verifyState, setVerifyState] = useState<VerifyState>(null)
-  const [endpoint, setEndpoint] = useState('https://cadence.vercel.app/api/heartbeat')
+  const [endpoint] = useState(CADENCE_HEARTBEAT_ENDPOINT)
 
   const selectedIde = selected === 'combined' ? 'vscode' : selected
   const selectedRow = rows.find((row) => row.id === selectedIde)
@@ -95,7 +97,6 @@ export default function DashboardSetupPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    setEndpoint(`${window.location.origin}/api/heartbeat`)
     const params = new URLSearchParams(window.location.search)
     const fromUrl = params.get('ide')
     const stored = window.localStorage.getItem('cadence-selected-ide')
@@ -633,9 +634,9 @@ function getConnectPayload(ide: IdeId, apiKey: string, endpoint: string): string
     return `python zed-extension\\companion\\cadence_zed_heartbeat.py --api-key "${apiKey}" --endpoint "${endpoint}"`
   }
   if (ide === 'neovim') {
-    return `require('cadence').setup({\n  api_key = '${apiKey}',\n  api_endpoint = '${endpoint}',\n})`
+    return `require('cadence').setup({\n  api_key = '${apiKey}',\n  endpoint = '${endpoint}',\n})`
   }
-  return `{\n  "api_key": "${apiKey}",\n  "api_endpoint": "${endpoint}"\n}`
+  return `{\n  "api_key": "${apiKey}",\n  "endpoint": "${endpoint}"\n}`
 }
 
 function getVerifyCommand(ide: IdeId, apiKey: string, endpoint: string): string {

@@ -182,7 +182,7 @@ export default function OnboardingPage() {
             </div>
             <div className="mt-5 hidden border-t border-border pt-5 lg:block">
               <p className="font-semibold">Endpoint</p>
-              <p className="mt-2 break-all rounded-sm border border-border bg-[var(--color-surface-container)] p-2 font-mono text-xs text-muted-foreground">https://your-cadence-site.vercel.app/api/heartbeat</p>
+              <p className="mt-2 break-all rounded-sm border border-border bg-[var(--color-surface-container)] p-2 font-mono text-xs text-muted-foreground">https://ca-dence.vercel.app/api/heartbeat</p>
             </div>
           </aside>
 

@@ -29,6 +29,6 @@ class CadenceConfigurable : Configurable {
 
     override fun apply() {
         settings.state.apiKey = apiKey.text.trim()
-        settings.state.endpoint = endpoint.text.trim().ifBlank { "https://cadence.vercel.app/api/heartbeat" }
+        settings.state.endpoint = endpoint.text.trim().ifBlank { "https://ca-dence.vercel.app/api/heartbeat" }
     }
 }
