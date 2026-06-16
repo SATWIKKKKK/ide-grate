@@ -165,10 +165,20 @@ body::selection {
     padding: var(--space-xl) 0 var(--space-2xl);
   }
 
+  .setup-shell {
+    width: min(100% - 2rem, 92rem);
+    margin-inline: auto;
+    padding: var(--space-xl) 0 var(--space-2xl);
+  }
+
   @media (max-width: 640px) {
     .signal-container,
     .dashboard-shell {
       width: min(100% - 1rem, 75rem);
+    }
+
+    .setup-shell {
+      width: min(100% - 1rem, 92rem);
     }
   }
 
