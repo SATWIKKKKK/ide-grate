@@ -326,7 +326,16 @@ export default function SettingsPage() {
  </div>
  )}
  <div>
- <h1 className="font-sans text-2xl font-semibold leading-tight sm:text-3xl">{session.user?.name || 'Settings'}</h1>
+ <h1 className="flex flex-wrap items-center gap-2 font-sans text-2xl font-semibold leading-tight sm:text-3xl">
+ <span>{session.user?.name || 'Settings'}</span>
+ <span
+ className="inline-flex size-6 items-center justify-center rounded-full bg-[var(--color-live-soft)] text-[var(--color-live)]"
+ title="Verified Cadence profile"
+ aria-label="Verified Cadence profile"
+ >
+ <CheckCircle2 className="size-4" />
+ </span>
+ </h1>
  <p className="mt-2 text-sm text-muted-foreground sm:text-base">{session.user?.email}</p>
  {accountCreatedAt && (
  <p className="mt-2 flex items-center gap-1 font-mono text-sm text-muted-foreground">

@@ -94,7 +94,7 @@ export default function IdeSelector({ value, onChange, statuses = [], includeCom
                   active={status?.active}
                   setup={status?.connected || status?.isSetup}
                   onClick={() => choose(definition.id)}
-                  leading={<IdeIcon ide={definition.id} className="size-8" />}
+                  leading={<span className="inline-flex size-8 items-center justify-center"><IdeIcon ide={definition.id} className="size-7" bare /></span>}
                 />
               )
             })}

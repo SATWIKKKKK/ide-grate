@@ -53,6 +53,7 @@ let isWindowFocused = true;
 const CONFIG_SECTION = 'cadence';
 const LEGACY_EXTENSION_ID = `vs${'integrate'}.vs-integrate-tracker`;
 const DEFAULT_API_ENDPOINT = 'https://ca-dence.vercel.app/api/heartbeat';
+const LEGACY_ENDPOINT_HOST = 'vs-integrate.vercel.app';
 const COMMANDS = {
     setApiKey: 'cadence.setApiKey',
     showStatus: 'cadence.showStatus',
@@ -80,6 +81,9 @@ function getProductLabel() {
 function normalizeApiEndpoint(input) {
     const trimmed = input.trim().replace(/\/+$/, '');
     if (!trimmed) {
+        return DEFAULT_API_ENDPOINT;
+    }
+    if (trimmed.includes(LEGACY_ENDPOINT_HOST)) {
         return DEFAULT_API_ENDPOINT;
     }
     if (trimmed.endsWith('/api/heartbeat')) {

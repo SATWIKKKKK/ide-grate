@@ -8,7 +8,8 @@ import {
   CheckCircle2,
   Copy,
   Download,
-  ImageIcon,
+  Eye,
+  EyeOff,
   KeyRound,
   RefreshCw,
 } from 'lucide-react'
@@ -39,6 +40,7 @@ type CopyField = {
   label: string
   value: string
   disabled?: boolean
+  secret?: boolean
 }
 
 type SetupAction = {
@@ -56,10 +58,6 @@ type SetupFlowStep = {
   detail: string
   fields?: CopyField[]
   actions?: SetupAction[]
-  placeholder?: {
-    title: string
-    detail: string
-  }
 }
 
 type VerifyState = {
@@ -76,6 +74,7 @@ export default function DashboardSetupPage() {
   const [generating, setGenerating] = useState(false)
   const [selectionReady, setSelectionReady] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({})
   const [verifyState, setVerifyState] = useState<VerifyState>(null)
   const [endpoint] = useState(CADENCE_HEARTBEAT_ENDPOINT)
 
@@ -139,6 +138,10 @@ export default function DashboardSetupPage() {
     window.setTimeout(() => setCopied((current) => (current === label ? null : current)), 1400)
   }
 
+  function toggleSecret(label: string) {
+    setVisibleSecrets((current) => ({ ...current, [label]: !current[label] }))
+  }
+
   async function generateKey() {
     setGenerating(true)
     try {
@@ -163,7 +166,7 @@ export default function DashboardSetupPage() {
         setVerifyState({
           ide: selectedIde,
           status: 'success',
-          message: `verified! now u can start working on ${IDE_CONFIG[selectedIde].shortName}.`,
+          message: `Verified! Now you can start working on ${IDE_CONFIG[selectedIde].shortName}.`,
         })
         return
       }
@@ -206,9 +209,19 @@ export default function DashboardSetupPage() {
             </div>
             <div className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-secondary/50 sm:flex-row sm:items-stretch lg:max-w-3xl">
               <code className="min-w-0 flex-1 truncate px-4 py-3 font-mono text-xs text-muted-foreground">
-                {apiKey || 'Generate an API key before connecting an editor'}
+                {apiKey ? formatSecret(apiKey, Boolean(visibleSecrets['api-key-top'])) : 'Generate an API key before connecting an editor'}
               </code>
               <div className="flex border-t border-border sm:border-l sm:border-t-0">
+                {apiKey ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSecret('api-key-top')}
+                    className="inline-flex min-h-11 items-center justify-center border-r border-border bg-card px-3 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    aria-label={visibleSecrets['api-key-top'] ? 'Hide API key' : 'Show API key'}
+                  >
+                    {visibleSecrets['api-key-top'] ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => copyText('api-key-top', apiKey || '')}
@@ -283,7 +296,9 @@ export default function DashboardSetupPage() {
                     verifyState={verifyState}
                     selectedIde={selectedIde}
                     alreadyVerified={Boolean(selectedRow?.isConnected)}
+                    visibleSecrets={visibleSecrets}
                     onCopy={copyText}
+                    onToggleSecret={toggleSecret}
                     onVerify={verifySelected}
                   />
                 ))}
@@ -305,7 +320,9 @@ function SetupStepCard({
   verifyState,
   selectedIde,
   alreadyVerified,
+  visibleSecrets,
   onCopy,
+  onToggleSecret,
   onVerify,
 }: {
   step: SetupFlowStep
@@ -314,7 +331,9 @@ function SetupStepCard({
   verifyState: VerifyState
   selectedIde: IdeId
   alreadyVerified: boolean
+  visibleSecrets: Record<string, boolean>
   onCopy: (label: string, value?: string) => void
+  onToggleSecret: (label: string) => void
   onVerify: () => void
 }) {
   const verified = alreadyVerified || (verifyState?.ide === selectedIde && verifyState.status === 'success')
@@ -333,31 +352,38 @@ function SetupStepCard({
         <h3 className="font-sans text-lg font-semibold leading-snug">{step.title}</h3>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{step.detail}</p>
 
-        {step.placeholder ? (
-          <div className="mt-4 flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-secondary/45 p-6 text-center">
-            <ImageIcon className="size-7 text-muted-foreground" />
-            <p className="mt-3 text-sm font-medium">{step.placeholder.title}</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.placeholder.detail}</p>
-          </div>
-        ) : null}
-
         {step.fields?.length ? (
           <div className="mt-4 space-y-3">
             {step.fields.map((field) => (
               <div key={field.label} className="rounded-xl border border-border bg-secondary/45 p-3">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <p className="signal-kicker">{field.label}</p>
-                  <button
-                    type="button"
-                    onClick={() => onCopy(field.label, field.value)}
-                    disabled={field.disabled}
-                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label={`Copy ${field.label}`}
-                  >
-                    {copied === field.label ? <Check className="size-4 text-[var(--color-live)]" /> : <Copy className="size-4" />}
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {field.secret ? (
+                      <button
+                        type="button"
+                        onClick={() => onToggleSecret(field.label)}
+                        disabled={field.disabled}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label={visibleSecrets[field.label] ? `Hide ${field.label}` : `Show ${field.label}`}
+                      >
+                        {visibleSecrets[field.label] ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => onCopy(field.label, field.value)}
+                      disabled={field.disabled}
+                      className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={`Copy ${field.label}`}
+                    >
+                      {copied === field.label ? <Check className="size-4 text-[var(--color-live)]" /> : <Copy className="size-4" />}
+                    </button>
+                  </div>
                 </div>
-                <code className="block break-all font-mono text-xs text-foreground/85">{field.value}</code>
+                <code className="block break-all font-mono text-xs text-foreground/85">
+                  {field.secret ? formatSecret(field.value, Boolean(visibleSecrets[field.label])) : field.value}
+                </code>
               </div>
             ))}
           </div>
@@ -489,12 +515,18 @@ function targetDetail(row?: SetupRow): string {
   return 'No heartbeat yet'
 }
 
+function formatSecret(value: string, visible: boolean): string {
+  if (!value || value === 'Generate an API key first') return value
+  if (visible) return value
+  return `${value.slice(0, 8)}${'•'.repeat(18)}${value.slice(-6)}`
+}
+
 function buildSetupFlow(ide: IdeId, apiKey: string | null, endpoint: string): SetupFlowStep[] {
   const keyValue = apiKey || 'Generate an API key first'
   const hasKey = Boolean(apiKey)
   const definition = IDE_CONFIG[ide]
-  const commandName = getCommandName(ide)
   const verifyCommand = getVerifyCommand(ide, keyValue, endpoint)
+  const connectAction = getConnectAction(ide, keyValue, endpoint, hasKey)
 
   return [
     {
@@ -507,29 +539,17 @@ function buildSetupFlow(ide: IdeId, apiKey: string | null, endpoint: string): Se
       eyebrow: 'Install',
       title: `Install in ${definition.shortName}`,
       detail: getInstallDetail(ide),
-      placeholder: {
-        title: `${definition.shortName} install screenshot`,
-        detail: 'Drop the install screenshot here when the final walkthrough images are ready.',
-      },
-      actions: getInstallActions(ide),
+      fields: getInstallFields(ide),
     },
     {
       eyebrow: 'Connect',
       title: 'Save the Cadence settings',
       detail: getConnectDetail(ide),
       fields: [
-        { label: 'API key', value: keyValue, disabled: !hasKey },
+        { label: 'API key', value: keyValue, disabled: !hasKey, secret: hasKey },
         { label: 'Heartbeat endpoint', value: endpoint },
-        { label: 'Open command', value: commandName },
       ],
-      actions: [
-        {
-          label: getConnectActionLabel(ide),
-          type: 'copy',
-          value: getConnectPayload(ide, keyValue, endpoint),
-          disabled: !hasKey,
-        },
-      ],
+      actions: connectAction ? [connectAction] : [],
     },
     {
       eyebrow: 'Verify',
@@ -591,58 +611,62 @@ function getDownloadActions(ide: IdeId): SetupAction[] {
 }
 
 function getInstallDetail(ide: IdeId): string {
-  if (ide === 'vscode') return 'Open Extensions, choose Install from VSIX, select cadence.vsix, then reload VS Code if prompted.'
-  if (ide === 'cursor') return 'Open Cursor Extensions, choose Install from VSIX, select cadence.vsix, then reload Cursor.'
-  if (ide === 'antigravity') return 'Open Antigravity Extensions and install the same Cadence VSIX package.'
-  if (ide === 'jetbrains') return 'Open Settings > Plugins, install the generated ZIP from disk, then restart the IDE.'
-  if (ide === 'zed') return 'Keep the companion command running beside Zed while editing a project.'
-  if (ide === 'neovim') return 'Restart Neovim after the Lua file is on your runtime path.'
-  return 'Restart Sublime Text after the package folder is in place.'
+  if (ide === 'vscode') return 'In VS Code, press Ctrl+Shift+P, install cadence.vsix from the command palette, then run the Cadence setup command.'
+  if (ide === 'cursor') return 'In Cursor, press Ctrl+Shift+P, install cadence.vsix from the command palette, then run the Cadence setup command.'
+  if (ide === 'antigravity') return 'In Antigravity, open the command palette, install the Cadence VSIX, then run the Cadence setup command.'
+  if (ide === 'jetbrains') return 'In JetBrains, open Settings with Ctrl+Alt+S, install the plugin ZIP from disk, restart, then open the Cadence tool settings.'
+  if (ide === 'zed') return 'In Zed, keep the Cadence companion script available from your project terminal before you start the connection command.'
+  if (ide === 'neovim') return 'In Neovim, copy cadence.lua into your Lua runtime path, then open your init.lua to add the setup snippet.'
+  return 'In Sublime Text, copy the Cadence package folder into Packages, then open the Cadence package settings file.'
 }
 
-function getInstallActions(ide: IdeId): SetupAction[] {
+function getInstallFields(ide: IdeId): CopyField[] {
   if (isVsixIde(ide)) {
-    return [{ label: 'Copy install menu path', type: 'copy', value: 'Extensions > ... > Install from VSIX > cadence.vsix' }]
+    return [
+      { label: 'Command palette shortcut', value: 'Ctrl+Shift+P' },
+      { label: 'Install command', value: 'Extensions: Install from VSIX' },
+      { label: 'Open command', value: 'Cadence: Set API Key' },
+    ]
   }
   if (ide === 'jetbrains') {
-    return [{ label: 'Copy install menu path', type: 'copy', value: 'Settings > Plugins > Install Plugin from Disk' }]
+    return [
+      { label: 'Settings shortcut', value: 'Ctrl+Alt+S' },
+      { label: 'Install path', value: 'Settings > Plugins > Gear > Install Plugin from Disk' },
+      { label: 'Open command', value: 'Settings > Tools > Cadence' },
+    ]
   }
   if (ide === 'zed') {
-    return [{ label: 'Copy run note', type: 'copy', value: 'Run the Cadence companion while Zed is open.' }]
+    return [
+      { label: 'Open terminal', value: 'Zed: Terminal > New Terminal' },
+      { label: 'Companion script', value: 'python zed-extension\\companion\\cadence_zed_heartbeat.py --help' },
+      { label: 'Open command', value: 'Run the companion while Zed is open' },
+    ]
   }
   if (ide === 'neovim') {
-    return [{ label: 'Copy reload command', type: 'copy', value: ':luafile %' }]
+    return [
+      { label: 'Install command', value: 'mkdir -p ~/.config/nvim/lua && cp neovim-plugin/lua/cadence.lua ~/.config/nvim/lua/cadence.lua' },
+      { label: 'Config file', value: '~/.config/nvim/init.lua' },
+      { label: 'Open command', value: ':edit ~/.config/nvim/init.lua' },
+    ]
   }
-  return [{ label: 'Copy package path', type: 'copy', value: '%APPDATA%\\Sublime Text\\Packages\\Cadence' }]
+  return [
+    { label: 'Package path', value: '%APPDATA%\\Sublime Text\\Packages\\Cadence' },
+    { label: 'Settings path', value: 'Preferences > Package Settings > Cadence > Settings' },
+    { label: 'Open command', value: 'Command Palette > Cadence: Test Connection' },
+  ]
 }
 
 function getConnectDetail(ide: IdeId): string {
-  if (isVsixIde(ide)) return 'Run the command palette action, paste the API key, then paste the endpoint exactly as shown.'
-  if (ide === 'jetbrains') return 'Open Cadence settings and paste the API key plus heartbeat endpoint.'
-  if (ide === 'zed') return 'Start the companion with the API key and endpoint arguments.'
-  if (ide === 'neovim') return 'Paste the Lua setup snippet into your Neovim config.'
-  return 'Paste the settings JSON into the Cadence package settings file.'
-}
-
-function getCommandName(ide: IdeId): string {
-  if (isVsixIde(ide)) return 'Cadence: Set API Key'
-  if (ide === 'jetbrains') return 'Settings > Tools > Cadence'
-  if (ide === 'zed') return 'python zed-extension\\companion\\cadence_zed_heartbeat.py'
-  if (ide === 'neovim') return "require('cadence').setup(...)"
-  return 'Preferences > Package Settings > Cadence > Settings'
-}
-
-function getConnectActionLabel(ide: IdeId): string {
-  if (isVsixIde(ide)) return 'Copy command name'
-  if (ide === 'jetbrains') return 'Copy settings path'
-  if (ide === 'zed') return 'Copy start command'
-  if (ide === 'neovim') return 'Copy Lua setup'
-  return 'Copy settings JSON'
+  if (isVsixIde(ide)) return 'After running Cadence: Set API Key, paste the API key first, then paste the heartbeat endpoint exactly as shown.'
+  if (ide === 'jetbrains') return 'Paste the API key and heartbeat endpoint into Settings > Tools > Cadence, then save.'
+  if (ide === 'zed') return 'Copy and run the companion start command with your API key and heartbeat endpoint.'
+  if (ide === 'neovim') return 'Copy the Lua setup snippet into init.lua, then restart Neovim or reload the file.'
+  return 'Paste the settings JSON into the Cadence package settings file, then restart Sublime Text.'
 }
 
 function getConnectPayload(ide: IdeId, apiKey: string, endpoint: string): string {
   if (isVsixIde(ide)) return 'Cadence: Set API Key'
-  if (ide === 'jetbrains') return 'Settings > Tools > Cadence'
+  if (ide === 'jetbrains') return `API key: ${apiKey}\nHeartbeat endpoint: ${endpoint}`
   if (ide === 'zed') {
     return `python zed-extension\\companion\\cadence_zed_heartbeat.py --api-key "${apiKey}" --endpoint "${endpoint}"`
   }
@@ -650,6 +674,40 @@ function getConnectPayload(ide: IdeId, apiKey: string, endpoint: string): string
     return `require('cadence').setup({\n  api_key = '${apiKey}',\n  endpoint = '${endpoint}',\n})`
   }
   return `{\n  "api_key": "${apiKey}",\n  "endpoint": "${endpoint}"\n}`
+}
+
+function getConnectAction(ide: IdeId, apiKey: string, endpoint: string, hasKey: boolean): SetupAction | null {
+  if (isVsixIde(ide)) return null
+  if (ide === 'jetbrains') {
+    return {
+      label: 'Copy settings values',
+      type: 'copy',
+      value: getConnectPayload(ide, apiKey, endpoint),
+      disabled: !hasKey,
+    }
+  }
+  if (ide === 'zed') {
+    return {
+      label: 'Copy start command',
+      type: 'copy',
+      value: getConnectPayload(ide, apiKey, endpoint),
+      disabled: !hasKey,
+    }
+  }
+  if (ide === 'neovim') {
+    return {
+      label: 'Copy Lua setup',
+      type: 'copy',
+      value: getConnectPayload(ide, apiKey, endpoint),
+      disabled: !hasKey,
+    }
+  }
+  return {
+    label: 'Copy settings JSON',
+    type: 'copy',
+    value: getConnectPayload(ide, apiKey, endpoint),
+    disabled: !hasKey,
+  }
 }
 
 function getVerifyCommand(ide: IdeId, apiKey: string, endpoint: string): string {

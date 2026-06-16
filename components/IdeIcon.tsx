@@ -42,7 +42,7 @@ const iconMap: Record<IdeId, IconDef> = {
 const pngIconMap: Partial<Record<IdeId, string | { light: string; dark: string }>> = {
   vscode: "/vscode.png",
   cursor: {
-    light: "/cursor-darkmode.png",
+    light: "/cursor-lightmode.png",
     dark: "/cursor-darkmode.png",
   },
   antigravity: "/antigravity.png",

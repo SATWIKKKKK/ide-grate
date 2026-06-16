@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  Eye,
+  EyeOff,
   KeyRound,
   Loader2,
   RefreshCw,
@@ -38,6 +40,7 @@ export default function OnboardingPage() {
   const [verifyStartedAt, setVerifyStartedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/signup')
@@ -221,7 +224,16 @@ export default function OnboardingPage() {
                       <div className="rounded-md border border-border bg-background/80 p-4">
                         <p className="mb-2 text-xs font-semibold text-muted-foreground">Your API key</p>
                         <div className="flex items-center gap-2">
-                          <code className="min-w-0 flex-1 break-all font-mono text-sm text-primary">{apiKey}</code>
+                          <code className="min-w-0 flex-1 break-all font-mono text-sm text-primary">
+                            {showApiKey ? apiKey : `${apiKey.slice(0, 8)}${'•'.repeat(18)}${apiKey.slice(-6)}`}
+                          </code>
+                          <button
+                            onClick={() => setShowApiKey((value) => !value)}
+                            className="rounded-md border border-border bg-secondary p-2 hover:border-primary"
+                            aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
+                          >
+                            {showApiKey ? <EyeOff className="size-4 text-muted-foreground" /> : <Eye className="size-4 text-muted-foreground" />}
+                          </button>
                           <button onClick={copyKey} className="rounded-md border border-border bg-secondary p-2 hover:border-primary" aria-label="Copy API key">
                             {copied ? <Check className="size-4 text-primary" /> : <Copy className="size-4 text-muted-foreground" />}
                           </button>
