@@ -41,10 +41,6 @@ const iconMap: Record<IdeId, IconDef> = {
 
 const pngIconMap: Partial<Record<IdeId, string | { light: string; dark: string }>> = {
   vscode: "/vscode.png",
-  cursor: {
-    light: "/cursor-lightmode.png",
-    dark: "/cursor-darkmode.png",
-  },
   antigravity: "/antigravity.png",
   jetbrains: "/jetbrains.png",
 }
@@ -65,7 +61,7 @@ function PngIcon({ src, className, title }: { src: string | { light: string; dar
 export default function IdeIcon({ ide, className = "size-5", bare = false }: Props) {
   const config = IDE_CONFIG[ide]
   const icon = iconMap[ide]
-  const color = icon.hex ? `#${icon.hex.replace(/^#/, "")}` : config.color
+  const color = ide === "cursor" ? "currentColor" : (icon.hex ? `#${icon.hex.replace(/^#/, "")}` : config.color)
   const pngIcon = pngIconMap[ide]
 
   if (bare) {
