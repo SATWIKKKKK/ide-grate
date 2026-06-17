@@ -575,7 +575,7 @@ function getDownloadTitle(ide: IdeId): string {
 }
 
 function getDownloadDetail(ide: IdeId): string {
-  if (isVsixIde(ide)) return 'Use the Cadence VSIX from this site. Keep it somewhere easy to find before opening the editor installer.'
+  if (isVsixIde(ide)) return 'Download the Cadence VSIX from this site. In VS Code, Go to Extensions > Install from VSIX.'
   if (ide === 'jetbrains') return 'Build the local JetBrains plugin ZIP from the repo, then install it from disk.'
   if (ide === 'zed') return 'Zed uses the Cadence companion script while native extension telemetry remains limited.'
   if (ide === 'neovim') return 'Place cadence.lua in your Neovim Lua runtime path before adding setup code.'
@@ -611,7 +611,7 @@ function getDownloadActions(ide: IdeId): SetupAction[] {
 }
 
 function getInstallDetail(ide: IdeId): string {
-  if (ide === 'vscode') return 'In VS Code, press Ctrl+Shift+P, install cadence.vsix from the command palette, then run the Cadence setup command.'
+  if (ide === 'vscode') return 'Once the extension is installed, Generate an API Key & Go to VS Code & press Ctrl+Shift+P(Command Palette) and paste the open command(Cadence: Set API Key).'
   if (ide === 'cursor') return 'In Cursor, press Ctrl+Shift+P, install cadence.vsix from the command palette, then run the Cadence setup command.'
   if (ide === 'antigravity') return 'In Antigravity, open the command palette, install the Cadence VSIX, then run the Cadence setup command.'
   if (ide === 'jetbrains') return 'In JetBrains, open Settings with Ctrl+Alt+S, install the plugin ZIP from disk, restart, then open the Cadence tool settings.'
@@ -657,7 +657,7 @@ function getInstallFields(ide: IdeId): CopyField[] {
 }
 
 function getConnectDetail(ide: IdeId): string {
-  if (isVsixIde(ide)) return 'After running Cadence: Set API Key, paste the API key first, then paste the heartbeat endpoint exactly as shown.'
+  if (isVsixIde(ide)) return 'After running Cadence: Set API Key, paste the API key first generated from the setup page, & then paste the heartbeat endpoint exactly as shown automatically and click on Enter. Tracking will start immediately.'
   if (ide === 'jetbrains') return 'Paste the API key and heartbeat endpoint into Settings > Tools > Cadence, then save.'
   if (ide === 'zed') return 'Copy and run the companion start command with your API key and heartbeat endpoint.'
   if (ide === 'neovim') return 'Copy the Lua setup snippet into init.lua, then restart Neovim or reload the file.'
