@@ -1370,7 +1370,8 @@ export default function DashboardPage() {
  initial={{ width: 0 }}
  animate={{ width: `${project.percentage}%` }}
  transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }}
- className="h-full rounded-full bg-primary"
+ className="h-full rounded-full"
+ style={{ backgroundColor: `var(--color-chart-${(i % 5) + 1})` }}
  />
  </div>
  </div>
@@ -1412,7 +1413,8 @@ export default function DashboardPage() {
  initial={{ height: 0 }}
  animate={{ height: `${pct}%` }}
  transition={{ delay: 0.6 + i * 0.05, duration: 0.6, ease: 'easeOut' }}
- className="absolute bottom-0 w-full rounded-t-lg bg-primary"
+ className="absolute bottom-0 w-full rounded-t-lg"
+ style={{ backgroundColor: 'var(--color-chart-2)' }}
  />
  </div>
  <span className="text-[10px] text-muted-foreground">{day}</span>
@@ -1445,8 +1447,8 @@ export default function DashboardPage() {
  <AreaChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
  <defs>
  <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.35} />
- <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
+ <stop offset="5%" stopColor="var(--color-chart-1)" stopOpacity={0.35} />
+ <stop offset="95%" stopColor="var(--color-chart-1)" stopOpacity={0} />
  </linearGradient>
  </defs>
  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-rule)" vertical={false} />
@@ -1472,11 +1474,11 @@ export default function DashboardPage() {
  <Area
  type="monotone"
  dataKey="hours"
- stroke="var(--color-accent)"
+ stroke="var(--color-chart-1)"
  fill="url(#trendGrad)"
  strokeWidth={2}
  dot={false}
- activeDot={{ r: 4, fill: 'var(--color-accent)', strokeWidth: 0 }}
+ activeDot={{ r: 4, fill: 'var(--color-chart-1)', strokeWidth: 0 }}
  />
  </AreaChart>
  </ResponsiveContainer>
@@ -1599,7 +1601,7 @@ export default function DashboardPage() {
  labelStyle={{ color: 'var(--color-muted)' }}
  cursor={{ fill: 'color-mix(in oklch, var(--color-accent) 8%, transparent)' }}
  />
- <Bar dataKey="hours" fill="var(--color-accent)" radius={[4, 4, 0, 0]} />
+ <Bar dataKey="hours" fill="var(--color-chart-4)" radius={[4, 4, 0, 0]} />
  </BarChart>
  </ResponsiveContainer>
  </motion.div>
@@ -1630,8 +1632,8 @@ export default function DashboardPage() {
  <Radar
  name="Score"
  dataKey="value"
- stroke="var(--color-accent-2)"
- fill="var(--color-accent-2)"
+ stroke="var(--color-chart-5)"
+ fill="var(--color-chart-5)"
  fillOpacity={0.25}
  strokeWidth={2}
  />

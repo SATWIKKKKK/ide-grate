@@ -199,14 +199,14 @@ export default function PublicProfile() {
                 Top languages
               </h2>
               <div className="space-y-3">
-                {languages.slice(0, 6).map((lang) => (
+                {languages.slice(0, 6).map((lang, index) => (
                   <div key={lang.language}>
                     <div className="mb-1 flex items-center justify-between gap-3 text-xs">
                       <span className="truncate capitalize text-muted-foreground">{lang.language}</span>
                       <span className="text-muted-foreground">{lang.percentage}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-secondary">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${lang.percentage}%` }} />
+                      <div className="h-full rounded-full" style={{ width: `${lang.percentage}%`, backgroundColor: `var(--color-chart-${(index % 5) + 1})` }} />
                     </div>
                   </div>
                 ))}
